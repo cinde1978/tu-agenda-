@@ -1,0 +1,151 @@
+{
+  "entities": {
+    "Business": {
+      "title": "Business",
+      "description": "Profile and settings for a beauty salon, barbershop or independent professional.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "name": { "type": "string", "maxLength": 100 },
+        "category": { "type": "string", "maxLength": 50 },
+        "phone": { "type": "string", "maxLength": 30 },
+        "address": { "type": "string", "maxLength": 200 },
+        "currency": { "type": "string", "maxLength": 10 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["ownerId", "name"]
+    },
+    "Client": {
+      "title": "Client",
+      "description": "Client profile with contact information and history summary.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "businessId": { "type": "string" },
+        "name": { "type": "string", "maxLength": 100 },
+        "phone": { "type": "string", "maxLength": 30 },
+        "email": { "type": "string", "maxLength": 100 },
+        "notes": { "type": "string", "maxLength": 500 },
+        "birthday": { "type": "string", "maxLength": 15 },
+        "totalVisits": { "type": "number" },
+        "totalSpent": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["businessId", "name"]
+    },
+    "Service": {
+      "title": "Service",
+      "description": "Offered service with duration, price, and category.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "businessId": { "type": "string" },
+        "name": { "type": "string", "maxLength": 100 },
+        "category": { "type": "string", "maxLength": 50 },
+        "durationMinutes": { "type": "number" },
+        "price": { "type": "number" },
+        "description": { "type": "string", "maxLength": 300 },
+        "color": { "type": "string", "maxLength": 20 },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["businessId", "name", "durationMinutes", "price"]
+    },
+    "StaffMember": {
+      "title": "StaffMember",
+      "description": "Staff member or specialist with working hours and schedule settings.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "businessId": { "type": "string" },
+        "name": { "type": "string", "maxLength": 100 },
+        "role": { "type": "string", "maxLength": 50 },
+        "phone": { "type": "string", "maxLength": 30 },
+        "color": { "type": "string", "maxLength": 20 },
+        "branchId": { "type": "string", "maxLength": 20 },
+        "workingDays": { "type": "array" },
+        "workingHoursStart": { "type": "string", "maxLength": 10 },
+        "workingHoursEnd": { "type": "string", "maxLength": 10 },
+        "blockedDates": { "type": "array" },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["businessId", "name"]
+    },
+    "Appointment": {
+      "title": "Appointment",
+      "description": "Scheduled appointment with client, staff, service, deposit, and status.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "businessId": { "type": "string" },
+        "clientId": { "type": "string" },
+        "clientName": { "type": "string", "maxLength": 100 },
+        "clientPhone": { "type": "string", "maxLength": 30 },
+        "staffId": { "type": "string" },
+        "staffName": { "type": "string", "maxLength": 100 },
+        "serviceId": { "type": "string" },
+        "serviceName": { "type": "string", "maxLength": 100 },
+        "date": { "type": "string", "maxLength": 15 },
+        "time": { "type": "string", "maxLength": 10 },
+        "durationMinutes": { "type": "number" },
+        "price": { "type": "number" },
+        "depositAmount": { "type": "number" },
+        "remainingBalance": { "type": "number" },
+        "status": { "type": "string", "maxLength": 30 },
+        "paymentMethod": { "type": "string", "maxLength": 30 },
+        "notes": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["businessId", "clientName", "date", "time", "serviceName", "status"]
+    },
+    "CashMovement": {
+      "title": "CashMovement",
+      "description": "Daily register financial movement (income or expense).",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "businessId": { "type": "string" },
+        "date": { "type": "string", "maxLength": 15 },
+        "type": { "type": "string", "maxLength": 20 },
+        "category": { "type": "string", "maxLength": 50 },
+        "amount": { "type": "number" },
+        "paymentMethod": { "type": "string", "maxLength": 30 },
+        "description": { "type": "string", "maxLength": 300 },
+        "appointmentId": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["businessId", "date", "type", "amount"]
+    }
+  },
+  "firestore": {
+    "/businesses/{businessId}": {
+      "schema": "Business",
+      "description": "Root document for a business profile owned by an authenticated user."
+    },
+    "/businesses/{businessId}/clients/{clientId}": {
+      "schema": "Client",
+      "description": "Clients belonging to this specific business."
+    },
+    "/businesses/{businessId}/services/{serviceId}": {
+      "schema": "Service",
+      "description": "Catalog of services for this business."
+    },
+    "/businesses/{businessId}/staff/{staffId}": {
+      "schema": "StaffMember",
+      "description": "Professionals and staff members for this business."
+    },
+    "/businesses/{businessId}/appointments/{appointmentId}": {
+      "schema": "Appointment",
+      "description": "Booked appointments for this business."
+    },
+    "/businesses/{businessId}/cashMovements/{movementId}": {
+      "schema": "CashMovement",
+      "description": "Daily cash flow entries (income & expenses) for this business."
+    }
+  }
+}

@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+/* Base Body Styles - Calming soft blue-slate background, no stark blinding white */
+html, body, #root {
+  background-color: #e6edf5;
+  color: #0f172a;
+  min-height: 100vh;
+  margin: 0;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Modal and Drawer Backdrop */
+.modal-backdrop,
+.fixed.inset-0.bg-slate-900\/40,
+.fixed.inset-0.bg-slate-900\/50,
+.fixed.inset-0.bg-black\/50,
+.fixed.inset-0.bg-black\/60,
+.fixed.inset-0.bg-black\/70 {
+  background-color: rgba(15, 23, 42, 0.55);
+}
+
+/* Subtle Custom Scrollbar for sidebars and tables */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: #cbd5e1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Print styling */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}

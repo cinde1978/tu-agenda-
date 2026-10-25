@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background Squircle Gradient: Deep Onyx -->
+    <linearGradient id="iconBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1A1E29" />
+      <stop offset="50%" stop-color="#121620" />
+      <stop offset="100%" stop-color="#0B0F17" />
+    </linearGradient>
+
+    <!-- Golden Rim Gradient -->
+    <linearGradient id="goldRimGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF2B2" />
+      <stop offset="25%" stop-color="#E2BA55" />
+      <stop offset="50%" stop-color="#D4AF37" />
+      <stop offset="75%" stop-color="#9E7317" />
+      <stop offset="100%" stop-color="#F5D77F" />
+    </linearGradient>
+
+    <!-- Letter A Chiseled Light Facet -->
+    <linearGradient id="letterLightFacet" x1="100" y1="90" x2="260" y2="420" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="20%" stop-color="#FFF3B8" />
+      <stop offset="60%" stop-color="#E2BA4E" />
+      <stop offset="100%" stop-color="#B3841D" />
+    </linearGradient>
+
+    <!-- Letter A Chiseled Shadow Facet -->
+    <linearGradient id="letterShadowFacet" x1="250" y1="90" x2="410" y2="420" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#E8C462" />
+      <stop offset="40%" stop-color="#C4982C" />
+      <stop offset="80%" stop-color="#8C6212" />
+      <stop offset="100%" stop-color="#543805" />
+    </linearGradient>
+
+    <!-- Arch Crossbar Gradient -->
+    <linearGradient id="archCrossbar" x1="160" y1="280" x2="350" y2="340" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFBE8" />
+      <stop offset="35%" stop-color="#FFE06B" />
+      <stop offset="70%" stop-color="#D4AF37" />
+      <stop offset="100%" stop-color="#9E7315" />
+    </linearGradient>
+
+    <!-- Radial Glint -->
+    <radialGradient id="apexGlint" cx="256" cy="98" r="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.95" />
+      <stop offset="40%" stop-color="#FFECA0" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="#D4AF37" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Drop Shadow for 3D Relief Depth -->
+    <filter id="reliefShadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="16" stdDeviation="12" flood-color="#000000" flood-opacity="0.65" />
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#78530A" flood-opacity="0.4" />
+    </filter>
+
+    <!-- Inner Triangular Hole Mask for Hollow Letter 'A' -->
+    <mask id="letterInnerHole">
+      <rect width="512" height="512" fill="#FFFFFF" />
+      <polygon points="256,150 210,270 302,270" fill="#000000" />
+    </mask>
+  </defs>
+
+  <!-- Squircle Base with smooth rounded corners -->
+  <rect width="512" height="512" rx="128" fill="url(#iconBgGrad)" />
+  <rect x="8" y="8" width="496" height="496" rx="120" fill="none" stroke="url(#goldRimGrad)" stroke-width="4" stroke-opacity="0.65" />
+
+  <!-- Embossed Stylized 'A' Group -->
+  <g filter="url(#reliefShadow)" mask="url(#letterInnerHole)">
+    <!-- Left Pillar of 'A' -->
+    <path d="M256 86 L236 86 C226 86 218 94 213 104 L102 380 C95 398 72 404 56 406 V434 H184 V406 C166 404 151 398 156 380 L187 302 H256 L256 86 Z" fill="url(#letterLightFacet)" />
+
+    <!-- Right Pillar of 'A' -->
+    <path d="M256 86 L276 86 C286 86 294 94 299 104 L410 380 C417 398 440 404 456 406 V434 H328 V406 C346 404 361 398 356 380 L325 302 H256 L256 86 Z" fill="url(#letterShadowFacet)" />
+
+    <!-- Apex Top Chamfer -->
+    <path d="M226 96 C238 76 274 76 286 96 L256 86 Z" fill="#FFFFFF" />
+
+    <!-- High-Shine Stylized Arch Crossbar -->
+    <path d="M174 312 C214 298 298 298 338 312 L328 342 C288 330 224 330 184 342 L174 312 Z" fill="url(#archCrossbar)" />
+
+    <!-- Specular Ridge Crease Line -->
+    <line x1="256" y1="86" x2="256" y2="150" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" stroke-opacity="0.95" />
+
+    <!-- Left Bevel Highlight Stripe -->
+    <line x1="251" y1="96" x2="118" y2="390" stroke="#FFFDF2" stroke-width="4.5" stroke-linecap="round" stroke-opacity="0.75" />
+
+    <!-- Crossbar Specular Rim -->
+    <path d="M180 312 C220 300 292 300 332 312" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-opacity="0.9" fill="none" />
+
+    <!-- Apex Star Glint -->
+    <circle cx="256" cy="92" r="8" fill="#FFFFFF" />
+    <circle cx="256" cy="92" r="32" fill="url(#apexGlint)" />
+  </g>
+</svg>

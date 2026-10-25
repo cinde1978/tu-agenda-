@@ -1,0 +1,64 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default-deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isBusinessOwner(businessId) {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/businesses/$(businessId)) &&
+        get(/databases/$(database)/documents/businesses/$(businessId)).data.ownerId == request.auth.uid;
+    }
+
+    match /businesses/{businessId} {
+      allow get: if isSignedIn() && isValidId(businessId) && (resource.data.ownerId == request.auth.uid);
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid);
+      allow create: if isSignedIn() && isValidId(businessId) &&
+        request.resource.data.ownerId == request.auth.uid &&
+        request.resource.data.name is string &&
+        request.resource.data.name.size() > 0 &&
+        request.resource.data.name.size() <= 100;
+      allow update: if isSignedIn() && isValidId(businessId) &&
+        resource.data.ownerId == request.auth.uid &&
+        request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if isSignedIn() && isValidId(businessId) &&
+        resource.data.ownerId == request.auth.uid;
+
+      match /clients/{clientId} {
+        allow get, list: if isBusinessOwner(businessId);
+        allow create, update, delete: if isBusinessOwner(businessId) && isValidId(clientId);
+      }
+
+      match /services/{serviceId} {
+        allow get, list: if isBusinessOwner(businessId);
+        allow create, update, delete: if isBusinessOwner(businessId) && isValidId(serviceId);
+      }
+
+      match /staff/{staffId} {
+        allow get, list: if isBusinessOwner(businessId);
+        allow create, update, delete: if isBusinessOwner(businessId) && isValidId(staffId);
+      }
+
+      match /appointments/{appointmentId} {
+        allow get, list: if isBusinessOwner(businessId);
+        allow create, update, delete: if isBusinessOwner(businessId) && isValidId(appointmentId);
+      }
+
+      match /cashMovements/{movementId} {
+        allow get, list: if isBusinessOwner(businessId);
+        allow create, update, delete: if isBusinessOwner(businessId) && isValidId(movementId);
+      }
+    }
+  }
+}

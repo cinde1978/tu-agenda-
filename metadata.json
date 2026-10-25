@@ -1,0 +1,8 @@
+{
+  "name": "tu-agenda-lista-2",
+  "description": "Imported from GitHub: cinde1978/tu-agenda-lista",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
