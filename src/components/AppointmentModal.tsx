@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { X, Calendar, Clock, User, Sparkles, DollarSign, AlertCircle, Plus, Check, Palette, CreditCard, QrCode, Building2, MessageCircle } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { X, Calendar, Clock, User, Sparkles, DollarSign, AlertCircle, Plus, Check, Palette, CreditCard, QrCode, Building2, Users, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { Appointment, AppointmentStatus, PaymentMethod, APPOINTMENT_COLORS, BranchId } from '../types';
 import { useApp } from '../context/AppContext';
 import { getTodayDateString } from '../utils/initialData';
 import { MercadoPagoModal } from './mercadopago/MercadoPagoModal';
 import { MercadoPagoIcon } from './icons/MercadoPagoIcon';
+import { checkStaffAvailability, getStaffDaySchedule } from '../utils/staffSchedule';
 
 interface AppointmentModalProps {
   initialDate?: string;
@@ -12,7 +13,7 @@ interface AppointmentModalProps {
   initialStaffId?: string;
   appointmentToEdit?: Appointment | null;
   onClose: () => void;
-  onSaved: (aptId: string) => void;
+  onSaved: (appointment: Appointment) => void;
 }
 
 export function AppointmentModal({
@@ -29,6 +30,7 @@ export function AppointmentModal({
     services,
     staff,
     appointments,
+    allAppointments,
     selectedBranch,
     branches,
     createAppointment,
@@ -36,6 +38,8 @@ export function AppointmentModal({
     createClient,
     createCashMovement,
   } = useApp();
+
+  const sourceAppointments = allAppointments && allAppointments.length > 0 ? allAppointments : appointments;
 
   // Form states
   const [branchId, setBranchId] = useState<BranchId>(appointmentToEdit?.branchId || selectedBranch);
@@ -62,6 +66,8 @@ export function AppointmentModal({
 
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [overrideScheduleValidation, setOverrideScheduleValidation] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   // When selected service changes, automatically complete duration & price
   const handleServiceChange = (id: string) => {
@@ -74,13 +80,41 @@ export function AppointmentModal({
     }
   };
 
+  // Harmonize branch assignment if the professional has a specific single branch for this day
+  const syncBranchWithStaffSchedule = (sId: string, dStr: string) => {
+    if (appointmentToEdit) return;
+    const chosenStaff = staff.find((s) => s.id === sId);
+    if (!chosenStaff || !dStr) return;
+
+    const [y, m, d] = dStr.split('-').map(Number);
+    const dayOfWeek = new Date(y, m - 1, d).getDay();
+    const daySchedule = getStaffDaySchedule(chosenStaff, dayOfWeek);
+
+    if (daySchedule.active) {
+      if (daySchedule.branchId === 'sucursal_1' || daySchedule.branchId === 'sucursal_2') {
+        setBranchId(daySchedule.branchId);
+      }
+    }
+  };
+
+  const handleStaffChange = (newStaffId: string) => {
+    setStaffId(newStaffId);
+    syncBranchWithStaffSchedule(newStaffId, date);
+  };
+
+  const handleDateChange = (newDate: string) => {
+    setDate(newDate);
+    syncBranchWithStaffSchedule(staffId, newDate);
+  };
+
   // Sync staffId if currently selected staff is removed or empty
   useEffect(() => {
     if (staff.length > 0 && (!staffId || !staff.some((s) => s.id === staffId))) {
       const match = initialStaffId && staff.some((s) => s.id === initialStaffId) ? initialStaffId : staff[0].id;
       setStaffId(match);
+      syncBranchWithStaffSchedule(match, date);
     }
-  }, [staff, staffId, initialStaffId]);
+  }, [staff, staffId, initialStaffId, appointmentToEdit, date]);
 
   // Set initial price and duration from first service if creating
   useEffect(() => {
@@ -117,24 +151,35 @@ export function AppointmentModal({
   // Calculate remaining balance
   const remainingBalance = Math.max(0, price - depositAmount);
 
-  // Check conflicts
+  // Check availability and working hours of chosen staff
   const selectedStaff = staff.find((s) => s.id === staffId);
-  const selectedDateObj = new Date(date + 'T12:00:00');
-  const dayOfWeek = selectedDateObj.getDay();
-  const isStaffOffDay = selectedStaff && !selectedStaff.workingDays.includes(dayOfWeek);
-  const isStaffDateBlocked = selectedStaff && selectedStaff.blockedDates.includes(date);
+  const staffAvailability = selectedStaff && date && time
+    ? checkStaffAvailability(selectedStaff, date, time, Number(durationMinutes || 30), branchId)
+    : { available: true };
 
-  const hasConflict = appointments.some((apt) => {
+  // Calculate start & end minutes of current slot
+  const [curH, curM] = time.split(':').map(Number);
+  const curStart = (curH || 0) * 60 + (curM || 0);
+  const curEnd = curStart + Number(durationMinutes || 30);
+
+  // Overlap strictly for the SAME professional across ALL branches (prevent cross-branch double bookings)
+  const overlappingAppointmentsSameStaff = sourceAppointments.filter((apt) => {
     if (appointmentToEdit && apt.id === appointmentToEdit.id) return false;
     if (apt.date !== date || apt.staffId !== staffId || apt.status === 'cancelado') return false;
     const [aptH, aptM] = apt.time.split(':').map(Number);
-    const aptStart = aptH * 60 + aptM;
-    const aptEnd = aptStart + apt.durationMinutes;
+    const aptStart = (aptH || 0) * 60 + (aptM || 0);
+    const aptEnd = aptStart + (apt.durationMinutes || 30);
+    return Math.max(aptStart, curStart) < Math.min(aptEnd, curEnd);
+  });
+  const hasConflictSameStaff = overlappingAppointmentsSameStaff.length > 0;
 
-    const [curH, curM] = time.split(':').map(Number);
-    const curStart = curH * 60 + curM;
-    const curEnd = curStart + durationMinutes;
-
+  // Simultaneous appointments with OTHER professionals at this exact same time (VALID!)
+  const simultaneousAppointmentsOtherStaff = appointments.filter((apt) => {
+    if (appointmentToEdit && apt.id === appointmentToEdit.id) return false;
+    if (apt.date !== date || apt.staffId === staffId || apt.status === 'cancelado') return false;
+    const [aptH, aptM] = apt.time.split(':').map(Number);
+    const aptStart = (aptH || 0) * 60 + (aptM || 0);
+    const aptEnd = aptStart + (apt.durationMinutes || 30);
     return Math.max(aptStart, curStart) < Math.min(aptEnd, curEnd);
   });
 
@@ -152,6 +197,22 @@ export function AppointmentModal({
 
     if (!date || !time) {
       setErrorMsg('Por favor indica fecha y hora del turno.');
+      return;
+    }
+
+    // Schedule restriction check: block outside hours, break intervals or same-staff double booking unless authorized
+    if ((!staffAvailability.available || hasConflictSameStaff) && !overrideScheduleValidation) {
+      if (!staffAvailability.available) {
+        setErrorMsg(
+          `${staffAvailability.message || 'Fuera de disponibilidad laboral del profesional.'} Puedes confirmarlo marcando la casilla de autorización abajo.`
+        );
+      } else {
+        const conflict = overlappingAppointmentsSameStaff[0];
+        const conflictBranchName = conflict?.branchId === 'sucursal_2' ? 'Soham Rioja' : 'Soham Montevideo';
+        setErrorMsg(
+          `Superposición de turnos para ${selectedStaff?.name || 'este profesional'} (${conflict?.time} hs en ${conflictBranchName} con ${conflict?.clientName}). Para agendar simultáneo al mismo profesional marca la casilla de autorización.`
+        );
+      }
       return;
     }
 
@@ -198,7 +259,11 @@ export function AppointmentModal({
           updatedAt: getTodayDateString(),
         };
         await updateAppointment(updated);
-        onSaved(updated.id);
+        setSuccessMessage('✓ Turno actualizado con éxito');
+        setTimeout(() => {
+          onSaved(updated);
+          onClose();
+        }, 300);
       } else {
         const newId = await createAppointment({
           clientId: finalClientId,
@@ -229,14 +294,42 @@ export function AppointmentModal({
             category: 'seña',
             amount: Number(depositAmount),
             paymentMethod: paymentMethod === 'pendiente' ? 'efectivo' : paymentMethod,
-            description: `[${branchId === 'sucursal_1' ? 'Sucursal 1' : 'Sucursal 2'}] Seña para turno de ${finalClientName} (${srvObj?.name || 'Servicio'})`,
+            description: `[${branchId === 'sucursal_2' ? 'Soham Rioja' : 'Soham Montevideo'}] Seña para turno de ${finalClientName} (${srvObj?.name || 'Servicio'})`,
             appointmentId: newId,
           });
         }
 
-        onSaved(newId);
+        const createdApt: Appointment = {
+          id: newId,
+          businessId: '',
+          clientId: finalClientId,
+          clientName: finalClientName,
+          clientPhone: clientPhone.trim(),
+          serviceId,
+          serviceName: srvObj ? srvObj.name : 'Servicio general',
+          staffId,
+          staffName: stfObj ? stfObj.name : 'Personal asignado',
+          branchId,
+          date,
+          time,
+          durationMinutes: Number(durationMinutes),
+          price: Number(price),
+          depositAmount: Number(depositAmount),
+          remainingBalance,
+          color,
+          status,
+          paymentMethod,
+          notes,
+          createdAt: getTodayDateString(),
+          updatedAt: getTodayDateString(),
+        };
+
+        setSuccessMessage('✓ Turno guardado con éxito');
+        setTimeout(() => {
+          onSaved(createdApt);
+          onClose();
+        }, 300);
       }
-      onClose();
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err.message || 'Error al guardar el turno');
@@ -272,7 +365,13 @@ export function AppointmentModal({
         </div>
 
         {/* Form Body - Scrollable with max-h-[85vh] overflow-y-auto */}
-        <form id="appointment-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4 text-[#000000]">
+        <form id="appointment-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4 text-[#0F172A]">
+          {successMessage && (
+            <div className="p-3 bg-emerald-50 border-2 border-emerald-400 text-emerald-950 text-xs rounded-xl flex items-center gap-2 font-bold animate-in fade-in">
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-700" />
+              <span>{successMessage}</span>
+            </div>
+          )}
           {errorMsg && (
             <div className="p-3 bg-rose-50 border-2 border-rose-300 text-rose-800 text-xs rounded-xl flex items-center gap-2 font-bold">
               <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
@@ -380,17 +479,17 @@ export function AppointmentModal({
               </label>
               <select
                 value={staffId}
-                onChange={(e) => setStaffId(e.target.value)}
+                onChange={(e) => handleStaffChange(e.target.value)}
                 className="w-full text-sm font-black p-2.5 rounded-xl border-2 border-slate-300 bg-white focus:border-[#1E3A8A] outline-none text-[#000000]"
               >
                 {staff.length === 0 ? (
-                  <option value="" className="text-slate-700 font-bold bg-white">
-                    -- No hay profesionales registrados --
+                  <option value="" className="text-[#000000] font-bold bg-white">
+                    -- No hay profesionales (crea uno en Ajustes) --
                   </option>
                 ) : (
                   staff.map((st) => (
-                    <option key={st.id} value={st.id} className="text-slate-900 font-semibold bg-white">
-                      {st.name} ({st.role}) · {st.branchId === 'ambas' ? 'Ambas Sucursales' : st.branchId === 'sucursal_2' ? 'Sucursal 2' : 'Sucursal 1'}
+                    <option key={st.id} value={st.id} className="text-[#000000] font-bold bg-white">
+                      {st.name} ({st.role})
                     </option>
                   ))
                 )}
@@ -398,26 +497,65 @@ export function AppointmentModal({
             </div>
           </div>
 
-          {/* Warnings */}
-          {isStaffOffDay && (
-            <div className="p-2.5 bg-amber-50 border-2 border-amber-300 rounded-xl text-amber-900 text-xs font-bold flex items-center gap-2">
-              ⚠️ {selectedStaff?.name} no suele trabajar los días seleccionados.
+          {/* Warnings & Availability Check */}
+          {!staffAvailability.available && (
+            <div className="p-3 bg-amber-50 border-2 border-amber-400 rounded-xl text-amber-950 text-xs font-bold flex items-start gap-2 shadow-2xs">
+              <AlertCircle className="w-4 h-4 shrink-0 text-amber-700 mt-0.5" />
+              <div>
+                <span className="font-black text-amber-900 block mb-0.5">Disponibilidad del profesional:</span>
+                <span>{staffAvailability.message}</span>
+              </div>
             </div>
           )}
-          {isStaffDateBlocked && (
-            <div className="p-2.5 bg-rose-50 border-2 border-rose-300 rounded-xl text-rose-900 text-xs font-bold flex items-center gap-2">
-              🚫 {selectedStaff?.name} tiene esta fecha bloqueada.
+
+          {hasConflictSameStaff && (
+            <div className="p-3 bg-rose-50 border-2 border-rose-400 rounded-xl text-rose-950 text-xs font-bold flex items-start gap-2 shadow-2xs">
+              <ShieldAlert className="w-4 h-4 shrink-0 text-rose-700 mt-0.5" />
+              <div>
+                <span className="font-black text-rose-900 block mb-0.5">Superposición detectada para {selectedStaff?.name}:</span>
+                <span>
+                  Ya tiene reservado el turno de {overlappingAppointmentsSameStaff[0]?.time} hs en {overlappingAppointmentsSameStaff[0]?.branchId === 'sucursal_2' ? 'Soham Rioja' : 'Soham Montevideo'} con {overlappingAppointmentsSameStaff[0]?.clientName} ({overlappingAppointmentsSameStaff[0]?.serviceName}).
+                </span>
+              </div>
             </div>
           )}
-          {hasConflict && (
-            <div className="p-2.5 bg-orange-50 border-2 border-orange-300 rounded-xl text-orange-950 text-xs font-bold flex items-center gap-2">
-              ⚠️ Advertencia: Ya existe otro turno en este horario para este profesional.
+
+          {simultaneousAppointmentsOtherStaff.length > 0 && (
+            <div className="p-3 bg-emerald-50 border-2 border-emerald-400 rounded-xl text-emerald-950 text-xs font-bold flex items-start gap-2 shadow-2xs">
+              <Users className="w-4 h-4 shrink-0 text-emerald-700 mt-0.5" />
+              <div>
+                <span className="font-black text-emerald-900 block mb-0.5">✓ Turno simultáneo en salón permitido:</span>
+                <span>
+                  En este mismo horario atienden: {simultaneousAppointmentsOtherStaff.map((a) => `${a.staffName} (${a.clientName})`).join(', ')}. Al ser con diferentes profesionales, el sistema permite agendar sin conflictos.
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Explicit authorization toggle if outside hours or same-staff double booking */}
+          {(!staffAvailability.available || hasConflictSameStaff) && (
+            <div className="p-3.5 bg-amber-50/90 border-2 border-amber-300 rounded-xl space-y-1">
+              <div className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  id="overrideScheduleValidation"
+                  checked={overrideScheduleValidation}
+                  onChange={(e) => setOverrideScheduleValidation(e.target.checked)}
+                  className="w-4 h-4 mt-0.5 rounded border-2 border-amber-400 text-[#1E3A8A] focus:ring-[#1E3A8A] cursor-pointer"
+                />
+                <label htmlFor="overrideScheduleValidation" className="text-xs font-black text-amber-950 cursor-pointer">
+                  Autorizar turno fuera de horario o sobreturno especial para {selectedStaff?.name || 'el profesional'}
+                </label>
+              </div>
+              <p className="text-[11px] text-amber-800 font-semibold pl-6">
+                Marca esta casilla para confirmar la reserva por excepción de la secretaria.
+              </p>
             </div>
           )}
 
           {/* Sucursal / Local */}
           <div>
-            <label className="text-xs font-black text-[#000000] flex items-center gap-1.5 mb-1.5">
+            <label className="text-xs font-black text-[#0F172A] flex items-center gap-1.5 mb-1.5">
               <Building2 className="w-3.5 h-3.5 text-[#1E3A8A]" />
               <span>Sucursal asignada</span>
             </label>
@@ -430,7 +568,7 @@ export function AppointmentModal({
                   className={`py-2 px-3 rounded-xl text-xs font-black transition-all border-2 text-center cursor-pointer ${
                     branchId === b.id
                       ? 'bg-[#1E3A8A] border-[#1E3A8A] text-white shadow-xs'
-                      : 'bg-white border-slate-300 text-[#000000] hover:bg-slate-100 hover:border-slate-500'
+                      : 'bg-white border-slate-300 text-[#0F172A] hover:bg-slate-100 hover:border-slate-500'
                   }`}
                 >
                   {b.name}
@@ -450,7 +588,7 @@ export function AppointmentModal({
                 type="date"
                 required
                 value={date}
-                onChange={(e) => setDate(e.target.value)}
+                onChange={(e) => handleDateChange(e.target.value)}
                 className="w-full text-sm font-bold p-2.5 rounded-xl border-2 border-slate-300 bg-white text-[#000000] focus:border-[#1E3A8A] outline-none"
               />
             </div>

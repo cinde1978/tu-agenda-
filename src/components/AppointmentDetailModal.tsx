@@ -15,6 +15,7 @@ import {
   ArrowRight,
   CreditCard,
   QrCode,
+  Building2,
 } from 'lucide-react';
 import { Appointment, PaymentMethod } from '../types';
 import { useApp } from '../context/AppContext';
@@ -41,13 +42,17 @@ export function AppointmentDetailModal({
   const [collectedAmount, setCollectedAmount] = useState(appointment.remainingBalance);
   const [completePaymentMethod, setCompletePaymentMethod] = useState<PaymentMethod>('efectivo');
   const [isDeleting, setIsDeleting] = useState(false);
+  const [completeSuccess, setCompleteSuccess] = useState('');
 
   const statusInfo = getStatusBadge(appointment.status);
 
   const handleCompleteTurn = async () => {
     await markAppointmentCompleted(appointment, Number(collectedAmount), completePaymentMethod);
-    setShowCompletePrompt(false);
-    onClose();
+    setCompleteSuccess('✓ Turno completado y cobro registrado en caja diaria con éxito');
+    setTimeout(() => {
+      setShowCompletePrompt(false);
+      onClose();
+    }, 700);
   };
 
   const handleCancelTurn = async () => {
@@ -70,11 +75,11 @@ export function AppointmentDetailModal({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
-        <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-          {/* Header */}
-          <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-            <div className="flex items-center gap-3">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto">
+        <div className="bg-white rounded-2xl shadow-2xl border-2 border-slate-300 w-full max-w-lg max-h-[92vh] sm:max-h-[88vh] flex flex-col my-auto overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+          {/* Header - Fixed Top Bar */}
+          <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50 shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
               <span className={`px-3 py-1 rounded-full text-xs font-semibold border flex items-center gap-1.5 ${statusInfo.bg}`}>
                 <span className={`w-2 h-2 rounded-full ${statusInfo.dot}`} />
                 {statusInfo.label}
@@ -82,20 +87,28 @@ export function AppointmentDetailModal({
               <span className="text-xs text-slate-500 font-medium">
                 Ref #{appointment.id.slice(-6)}
               </span>
-              <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-slate-100 text-[#0F172A] border border-slate-300 shadow-2xs">
-                {appointment.branchId === 'sucursal_2' ? 'Sucursal 2' : 'Sucursal 1'}
+              <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-blue-50 text-[#1E3A8A] border-2 border-blue-200 shadow-2xs flex items-center gap-1">
+                <Building2 className="w-3.5 h-3.5 text-[#1E3A8A]" />
+                <span>{appointment.branchId === 'sucursal_2' ? 'Soham Rioja' : 'Soham Montevideo'}</span>
               </span>
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 hover:bg-slate-200/60 rounded-lg text-slate-400 hover:text-slate-700 transition-colors"
+              className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+              title="Cerrar"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Body */}
-          <div className="p-6 space-y-5">
+          {/* Body - Fully Scrollable with vertical scroll for phones and desktops */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-[#0F172A]">
+            {completeSuccess && (
+              <div className="p-3 bg-emerald-50 border-2 border-emerald-400 text-emerald-950 text-xs rounded-xl flex items-center gap-2 font-bold animate-in fade-in">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-700" />
+                <span>{completeSuccess}</span>
+              </div>
+            )}
             {/* Client card */}
             <div className="flex items-start justify-between bg-blue-50/50 p-4 rounded-xl border border-blue-100">
               <div className="flex items-center gap-3">
@@ -137,58 +150,48 @@ export function AppointmentDetailModal({
 
             {/* Service & Staff Info */}
             <div className="grid grid-cols-2 gap-3 text-sm">
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <div className="text-xs text-slate-400 font-medium flex items-center gap-1 mb-1">
+              <div className="p-3 bg-white rounded-xl border-2 border-slate-300 shadow-2xs">
+                <div className="text-xs font-black text-slate-700 flex items-center gap-1 mb-1">
                   <Sparkles className="w-3.5 h-3.5 text-blue-600" />
                   Servicio
                 </div>
-                <div className="font-bold text-slate-800">{appointment.serviceName}</div>
-                <div className="text-xs text-slate-500 mt-0.5">{appointment.durationMinutes} minutos</div>
+                <div className="font-black text-[#0F172A]">{appointment.serviceName}</div>
+                <div className="text-xs text-slate-700 font-bold mt-0.5">{appointment.durationMinutes} minutos</div>
               </div>
-
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <div className="text-xs text-slate-400 font-medium flex items-center gap-1 mb-1">
+              <div className="p-3 bg-white rounded-xl border-2 border-slate-300 shadow-2xs">
+                <div className="text-xs font-black text-slate-700 flex items-center gap-1 mb-1">
                   <User className="w-3.5 h-3.5 text-sky-600" />
                   Profesional
                 </div>
-                <div className="font-bold text-slate-800">{appointment.staffName}</div>
-                <div className="text-xs text-slate-500 mt-0.5">Especialista</div>
+                <div className="font-black text-[#0F172A]">{appointment.staffName}</div>
+                <div className="text-xs text-slate-700 font-bold mt-0.5">Especialista</div>
               </div>
             </div>
 
-            {/* Date, Time & Branch */}
-            <div className="flex flex-wrap items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-100 text-sm gap-2">
-              <div className="flex items-center gap-2 text-slate-700">
+            {/* Date and Time */}
+            <div className="flex items-center justify-between p-3.5 bg-white rounded-xl border-2 border-slate-300 text-sm shadow-2xs">
+              <div className="flex items-center gap-2 text-slate-900">
                 <Calendar className="w-4 h-4 text-blue-600" />
-                <span className="font-semibold capitalize">{formatDateSpanishLong(appointment.date)}</span>
+                <span className="font-black capitalize">{formatDateSpanishLong(appointment.date)}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className={`px-2 py-0.5 rounded-md text-xs font-bold ${
-                  (appointment.branchId || 'sucursal_1') === 'sucursal_2'
-                    ? 'bg-purple-100 text-purple-700'
-                    : 'bg-blue-100 text-blue-700'
-                }`}>
-                  {(appointment.branchId || 'sucursal_1') === 'sucursal_2' ? 'Sucursal 2' : 'Sucursal 1'}
-                </span>
-                <div className="flex items-center gap-1.5 font-bold text-blue-700 bg-blue-100/60 px-2.5 py-1 rounded-lg text-xs">
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>{appointment.time} hs</span>
-                </div>
+              <div className="flex items-center gap-1.5 font-black text-blue-900 bg-blue-100 px-2.5 py-1 rounded-lg text-xs border border-blue-300">
+                <Clock className="w-3.5 h-3.5" />
+                <span>{appointment.time} hs</span>
               </div>
             </div>
 
             {/* Financial summary */}
-            <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-2">
-              <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
+            <div className="p-4 bg-white rounded-xl border-2 border-slate-300 space-y-2 shadow-2xs">
+              <div className="flex items-center justify-between text-xs text-slate-700 font-bold">
                 <span>Precio Total</span>
-                <span className="font-bold text-slate-900 text-sm">
+                <span className="font-black text-[#0F172A] text-sm">
                   {formatCurrency(appointment.price, business?.currency)}
                 </span>
               </div>
               {appointment.depositAmount > 0 && (
-                <div className="flex items-center justify-between text-xs text-emerald-700">
+                <div className="flex items-center justify-between text-xs text-emerald-800 font-bold">
                   <span>Seña Abonada</span>
-                  <span className="font-bold">
+                  <span className="font-black">
                     - {formatCurrency(appointment.depositAmount, business?.currency)}
                   </span>
                 </div>
@@ -251,16 +254,16 @@ export function AppointmentDetailModal({
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-600 font-medium mb-1">Medio de pago</label>
+                    <label className="block text-[#0F172A] font-black mb-1">Medio de pago</label>
                     <select
                       value={completePaymentMethod}
                       onChange={(e) => setCompletePaymentMethod(e.target.value as PaymentMethod)}
-                      className="w-full p-2 border border-blue-200 rounded-lg bg-white text-slate-800 outline-none"
+                      className="w-full p-2 border-2 border-slate-300 rounded-lg bg-white text-[#0F172A] font-black outline-none focus:border-[#1E3A8A]"
                     >
-                      <option value="efectivo">Efectivo</option>
-                      <option value="transferencia">Transferencia</option>
-                      <option value="mercadopago">Mercado Pago</option>
-                      <option value="tarjeta">Tarjeta</option>
+                      <option value="efectivo" className="text-[#0F172A] font-bold bg-white">Efectivo</option>
+                      <option value="transferencia" className="text-[#0F172A] font-bold bg-white">Transferencia</option>
+                      <option value="mercadopago" className="text-[#0F172A] font-bold bg-white">Mercado Pago</option>
+                      <option value="tarjeta" className="text-[#0F172A] font-bold bg-white">Tarjeta</option>
                     </select>
                   </div>
                 </div>
@@ -298,9 +301,9 @@ export function AppointmentDetailModal({
                     onClose();
                     onEdit(appointment);
                   }}
-                  className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors"
+                  className="p-2.5 bg-white border-2 border-slate-300 hover:bg-slate-100 text-[#0F172A] font-black text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
                 >
-                  <Edit2 className="w-3.5 h-3.5" />
+                  <Edit2 className="w-3.5 h-3.5 stroke-[2.5]" />
                   <span>Editar / Reprogramar</span>
                 </button>
 
@@ -308,9 +311,9 @@ export function AppointmentDetailModal({
                   <button
                     type="button"
                     onClick={handleCancelTurn}
-                    className="p-2.5 border border-rose-200 hover:bg-rose-50 text-rose-700 font-medium text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors"
+                    className="p-2.5 bg-white border-2 border-rose-300 hover:bg-rose-50 text-rose-800 font-black text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
                   >
-                    <XCircle className="w-3.5 h-3.5" />
+                    <XCircle className="w-3.5 h-3.5 stroke-[2.5]" />
                     <span>Cancelar Turno</span>
                   </button>
                 )}
@@ -319,9 +322,9 @@ export function AppointmentDetailModal({
                   type="button"
                   onClick={handleDeleteTurn}
                   disabled={isDeleting}
-                  className="p-2.5 border border-slate-200 hover:bg-slate-100 text-slate-500 hover:text-rose-600 font-medium text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors"
+                  className="p-2.5 bg-white border-2 border-slate-300 hover:bg-rose-50 hover:border-rose-400 text-slate-700 hover:text-rose-700 font-black text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="w-3.5 h-3.5 stroke-[2.5]" />
                   <span>Eliminar</span>
                 </button>
               </div>

@@ -19,7 +19,7 @@ export function UpcomingTodayWidget({
   const { upcomingTodayAppointments, business } = useApp();
 
   return (
-    <div className="bg-[#f1f5f9] rounded-2xl border-2 border-slate-300 p-5 shadow-xs space-y-4">
+    <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4">
       {/* Widget Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
@@ -74,7 +74,7 @@ export function UpcomingTodayWidget({
               <div
                 key={apt.id}
                 onClick={() => onSelectAppointment(apt)}
-                className="p-4 rounded-xl border-2 border-slate-300 hover:border-blue-600 bg-[#f8fafc] hover:bg-blue-100 shadow-xs hover:shadow-md cursor-pointer transition-all flex items-center justify-between gap-3 group min-w-0"
+                className="p-4 rounded-xl border border-slate-200/80 hover:border-blue-400 bg-white hover:bg-blue-50/20 shadow-xs hover:shadow-sm cursor-pointer transition-all flex items-center justify-between gap-3 group min-w-0"
               >
                 {/* Client Avatar + Details */}
                 <div className="flex items-center gap-3.5 min-w-0 flex-1">

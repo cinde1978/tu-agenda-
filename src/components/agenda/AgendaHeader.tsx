@@ -33,7 +33,6 @@ export const AgendaHeader: React.FC<AgendaHeaderProps> = ({
       onNavigate(direction);
       return;
     }
-
     if (direction === 'today') {
       onDateChange(getTodayDateString());
       return;
@@ -59,33 +58,35 @@ export const AgendaHeader: React.FC<AgendaHeaderProps> = ({
   const isToday = currentDate === getTodayDateString();
 
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#f1f5f9] p-4 rounded-2xl border-2 border-slate-300 shadow-xs">
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-2xl border-2 border-slate-300 shadow-xs">
       {/* Date Navigation & Controls */}
       <div className="flex flex-wrap items-center gap-2.5">
-        <div className="flex items-center bg-slate-200 rounded-xl p-1 border border-slate-300">
+        <div className="flex items-center bg-slate-100 rounded-xl p-1 border-2 border-slate-300">
           <button
             type="button"
             onClick={() => handleNavigate('prev')}
-            className="p-1.5 hover:bg-blue-600 hover:text-white rounded-lg text-slate-800 transition-colors cursor-pointer"
+            className="p-1.5 hover:bg-slate-200 rounded-lg text-[#0F172A] transition-colors cursor-pointer"
             title="Anterior"
           >
             <ChevronLeft className="w-4 h-4 stroke-[3]" />
           </button>
+
           <button
             type="button"
             onClick={() => handleNavigate('today')}
             className={`px-3 py-1 text-xs font-black rounded-lg transition-colors cursor-pointer ${
               isToday
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-800 hover:bg-blue-600 hover:text-white'
+                ? 'bg-[#1E3A8A] text-white shadow-xs'
+                : 'text-[#0F172A] hover:bg-slate-200'
             }`}
           >
             Hoy
           </button>
+
           <button
             type="button"
             onClick={() => handleNavigate('next')}
-            className="p-1.5 hover:bg-blue-600 hover:text-white rounded-lg text-slate-800 transition-colors cursor-pointer"
+            className="p-1.5 hover:bg-slate-200 rounded-lg text-[#0F172A] transition-colors cursor-pointer"
             title="Siguiente"
           >
             <ChevronRight className="w-4 h-4 stroke-[3]" />
@@ -101,8 +102,8 @@ export const AgendaHeader: React.FC<AgendaHeaderProps> = ({
               onChange={(e) => e.target.value && onDateChange(e.target.value)}
               className="sr-only"
             />
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 border-slate-300 bg-slate-200 group-hover:bg-blue-600 group-hover:border-blue-600 text-slate-900 group-hover:text-white text-xs font-extrabold transition-all shadow-2xs">
-              <CalendarIcon className="w-3.5 h-3.5 text-blue-700 group-hover:text-white" />
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 border-slate-300 bg-white group-hover:border-blue-600 text-[#0F172A] text-xs font-extrabold transition-all shadow-2xs">
+              <CalendarIcon className="w-3.5 h-3.5 text-blue-700" />
               <span className="capitalize">{formatDateSpanishLong(currentDate) || formatDateSpanish(currentDate)}</span>
             </div>
           </label>
@@ -115,18 +116,18 @@ export const AgendaHeader: React.FC<AgendaHeaderProps> = ({
               <select
                 value={selectedStaffId}
                 onChange={(e) => onStaffChange(e.target.value)}
-                className="pl-7 pr-4 py-1.5 text-xs font-bold rounded-xl border-2 border-slate-300 bg-slate-200 hover:border-blue-600 focus:border-blue-700 text-slate-900 focus:outline-none appearance-none cursor-pointer"
+                className="pl-7 pr-4 py-1.5 text-xs font-black rounded-xl border-2 border-slate-300 bg-white hover:border-[#1E3A8A] focus:border-[#1E3A8A] text-[#0F172A] focus:outline-none appearance-none cursor-pointer"
               >
-                <option value="todos">Todos los profesionales</option>
+                <option value="todos" className="text-[#0F172A] font-bold bg-white">Todos los profesionales</option>
                 {staff
                   .filter((s) => s.active)
                   .map((s) => (
-                    <option key={s.id} value={s.id}>
+                    <option key={s.id} value={s.id} className="text-[#0F172A] font-bold bg-white">
                       {s.name} ({s.role}) · {s.branchId === 'ambas' ? 'Ambas' : s.branchId === 'sucursal_2' ? 'Suc. 2' : 'Suc. 1'}
                     </option>
                   ))}
               </select>
-              <Users className="w-3.5 h-3.5 text-blue-700 absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none stroke-[2.5]" />
+              <Users className="w-3.5 h-3.5 text-[#1E3A8A] absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none stroke-[2.5]" />
             </div>
           </div>
         )}
@@ -135,47 +136,50 @@ export const AgendaHeader: React.FC<AgendaHeaderProps> = ({
       {/* Mode Switcher & New Appointment CTA */}
       <div className="flex flex-wrap items-center gap-3">
         {/* Mode Buttons */}
-        <div className="flex items-center bg-slate-200 p-1 rounded-xl border border-slate-300">
+        <div className="flex items-center bg-white p-1 rounded-xl border-2 border-slate-300 shadow-2xs gap-1">
           <button
             type="button"
             onClick={() => onModeChange('dia')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer border-2 ${
               agendaMode === 'dia'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-800 hover:bg-blue-600 hover:text-white'
+                ? 'bg-[#1E3A8A] text-white border-[#1E3A8A] shadow-xs'
+                : 'bg-white text-[#0F172A] border-transparent hover:bg-slate-100 hover:border-slate-300'
             }`}
           >
             Día
           </button>
+
           <button
             type="button"
             onClick={() => onModeChange('semana')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer border-2 ${
               agendaMode === 'semana'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-800 hover:bg-blue-600 hover:text-white'
+                ? 'bg-[#1E3A8A] text-white border-[#1E3A8A] shadow-xs'
+                : 'bg-white text-[#0F172A] border-transparent hover:bg-slate-100 hover:border-slate-300'
             }`}
           >
             Semana
           </button>
+
           <button
             type="button"
             onClick={() => onModeChange('mes')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer border-2 ${
               agendaMode === 'mes'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-800 hover:bg-blue-600 hover:text-white'
+                ? 'bg-[#1E3A8A] text-white border-[#1E3A8A] shadow-xs'
+                : 'bg-white text-[#0F172A] border-transparent hover:bg-slate-100 hover:border-slate-300'
             }`}
           >
             Mes
           </button>
+
           <button
             type="button"
             onClick={() => onModeChange('staff')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer border-2 ${
               agendaMode === 'staff'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-800 hover:bg-blue-600 hover:text-white'
+                ? 'bg-[#1E3A8A] text-white border-[#1E3A8A] shadow-xs'
+                : 'bg-white text-[#0F172A] border-transparent hover:bg-slate-100 hover:border-slate-300'
             }`}
           >
             Staff

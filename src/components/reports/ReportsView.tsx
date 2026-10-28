@@ -106,32 +106,32 @@ export function ReportsView() {
   return (
     <div className="space-y-7 max-w-7xl mx-auto">
       {/* Top Header & Period Selector */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#f1f5f9] p-6 rounded-2xl border-2 border-slate-300 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs">
         <div>
           <div className="flex items-center gap-2">
-            <span className="p-2 rounded-xl bg-blue-100 text-blue-800 border border-blue-200">
+            <span className="p-2 rounded-xl bg-purple-50 text-purple-700">
               <BarChart3 className="w-5 h-5" />
             </span>
-            <h2 className="text-xl font-black text-slate-900 tracking-tight">
+            <h2 className="text-xl font-extrabold text-gray-900 tracking-tight">
               Métricas & Rendimiento del Negocio
             </h2>
           </div>
-          <p className="text-xs text-slate-700 font-bold mt-1 pl-9">
+          <p className="text-xs text-gray-500 mt-1 pl-9">
             Resumen de facturación, tasa de asistencia y servicios con mayor demanda
           </p>
         </div>
 
         {/* Period Pills (Segmented control) */}
-        <div className="flex items-center bg-slate-200 p-1 rounded-xl border border-slate-300 self-start sm:self-auto">
+        <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-xl border-2 border-slate-300 self-start sm:self-auto">
           {(['hoy', 'semana', 'mes', 'todo'] as const).map((p) => (
             <button
               key={p}
               type="button"
               onClick={() => setPeriod(p)}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-black capitalize transition-all cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-black capitalize border-2 transition-all cursor-pointer ${
                 period === p
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'text-slate-800 hover:bg-blue-200 hover:text-blue-950'
+                  ? 'bg-[#1E3A8A] text-white border-[#1E3A8A] shadow-xs'
+                  : 'bg-white text-[#0F172A] border-slate-300 hover:bg-slate-50'
               }`}
             >
               {p === 'hoy' ? 'Hoy' : p === 'semana' ? 'Esta Semana' : p === 'mes' ? 'Este Mes' : 'Histórico Total'}
@@ -143,22 +143,22 @@ export function ReportsView() {
       {/* Prominent Summary KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Facturación */}
-        <div className="bg-[#f8fafc] p-6 rounded-2xl border-2 border-slate-300 shadow-xs flex flex-col justify-between group hover:border-blue-500 hover:bg-blue-50/40 transition-colors">
+        <div className="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs flex flex-col justify-between group hover:border-purple-200 transition-colors">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <span className="text-xs font-black text-slate-600 uppercase tracking-wider block">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block">
                 Facturación Cobrada
               </span>
-              <div className="text-3xl font-black text-slate-900 tracking-tight mt-1">
+              <div className="text-3xl font-extrabold text-gray-900 tracking-tight mt-1">
                 {formatCurrency(totalRevenue, business?.currency)}
               </div>
             </div>
-            <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-800 border border-blue-200 flex items-center justify-center shrink-0 shadow-xs">
-              <TrendingUp className="w-6 h-6 stroke-[2.5]" />
+            <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-700 flex items-center justify-center shrink-0 shadow-xs">
+              <TrendingUp className="w-6 h-6" />
             </div>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-slate-700 font-bold pt-2 border-t border-slate-200">
-            <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-emerald-100 text-emerald-950 border border-emerald-300">
+          <div className="flex items-center gap-1.5 text-xs text-gray-500 pt-2 border-t border-gray-100">
+            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
               {completedTurns.length} completados
             </span>
             <span>en este período</span>
@@ -166,22 +166,22 @@ export function ReportsView() {
         </div>
 
         {/* Turnos Totales */}
-        <div className="bg-[#f8fafc] p-6 rounded-2xl border-2 border-slate-300 shadow-xs flex flex-col justify-between group hover:border-blue-500 hover:bg-blue-50/40 transition-colors">
+        <div className="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs flex flex-col justify-between group hover:border-blue-200 transition-colors">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <span className="text-xs font-black text-slate-600 uppercase tracking-wider block">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block">
                 Turnos Agendados
               </span>
-              <div className="text-3xl font-black text-slate-900 tracking-tight mt-1">
+              <div className="text-3xl font-extrabold text-gray-900 tracking-tight mt-1">
                 {totalTurns}
               </div>
             </div>
-            <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-800 border border-blue-200 flex items-center justify-center shrink-0 shadow-xs">
-              <CalendarCheck className="w-6 h-6 stroke-[2.5]" />
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 shadow-xs">
+              <CalendarCheck className="w-6 h-6" />
             </div>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-slate-700 font-bold pt-2 border-t border-slate-200">
-            <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-blue-100 text-blue-900 border border-blue-300">
+          <div className="flex items-center gap-1.5 text-xs text-gray-500 pt-2 border-t border-gray-100">
+            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200/60">
               {confirmedTurns.length} programados
             </span>
             <span>listos para atender</span>
@@ -189,22 +189,22 @@ export function ReportsView() {
         </div>
 
         {/* Asistencias y Cancelaciones */}
-        <div className="bg-[#f8fafc] p-6 rounded-2xl border-2 border-slate-300 shadow-xs flex flex-col justify-between group hover:border-blue-500 hover:bg-blue-50/40 transition-colors">
+        <div className="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs flex flex-col justify-between group hover:border-emerald-200 transition-colors">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <span className="text-xs font-black text-slate-600 uppercase tracking-wider block">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block">
                 Tasa de Asistencia
               </span>
-              <div className="text-3xl font-black text-emerald-800 tracking-tight mt-1">
+              <div className="text-3xl font-extrabold text-emerald-600 tracking-tight mt-1">
                 {attendanceRate}%
               </div>
             </div>
-            <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center justify-center shrink-0 shadow-xs">
-              <CheckCircle2 className="w-6 h-6 stroke-[2.5]" />
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 shadow-xs">
+              <CheckCircle2 className="w-6 h-6" />
             </div>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-slate-700 font-bold pt-2 border-t border-slate-200">
-            <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-rose-100 text-rose-950 border border-rose-300">
+          <div className="flex items-center gap-1.5 text-xs text-gray-500 pt-2 border-t border-gray-100">
+            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200/60">
               {cancelledTurns.length} cancelados
             </span>
             <span>total de bajas</span>
@@ -212,21 +212,21 @@ export function ReportsView() {
         </div>
 
         {/* Ticket Promedio */}
-        <div className="bg-[#f8fafc] p-6 rounded-2xl border-2 border-slate-300 shadow-xs flex flex-col justify-between group hover:border-blue-500 hover:bg-blue-50/40 transition-colors">
+        <div className="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs flex flex-col justify-between group hover:border-indigo-200 transition-colors">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <span className="text-xs font-black text-slate-600 uppercase tracking-wider block">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block">
                 Ticket Promedio
               </span>
-              <div className="text-3xl font-black text-blue-900 tracking-tight mt-1">
+              <div className="text-3xl font-extrabold text-purple-700 tracking-tight mt-1">
                 {formatCurrency(averageTicket, business?.currency)}
               </div>
             </div>
-            <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-800 border border-blue-200 flex items-center justify-center shrink-0 shadow-xs">
-              <Receipt className="w-6 h-6 stroke-[2.5]" />
+            <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-700 flex items-center justify-center shrink-0 shadow-xs">
+              <Receipt className="w-6 h-6" />
             </div>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-slate-700 font-bold pt-2 border-t border-slate-200">
+          <div className="flex items-center gap-1.5 text-xs text-gray-500 pt-2 border-t border-gray-100">
             <span>Inversión media por visita</span>
           </div>
         </div>
@@ -235,17 +235,17 @@ export function ReportsView() {
       {/* Breakdown Grids */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Services */}
-        <div className="bg-[#f8fafc] p-6 rounded-2xl border-2 border-slate-300 shadow-xs space-y-4">
+        <div className="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs space-y-4">
           <div>
-            <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-blue-600" />
+            <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-purple-600" />
               Servicios Más Demandados
             </h3>
-            <p className="text-xs text-slate-600 font-bold mt-0.5">Top tratamientos por facturación y volumen</p>
+            <p className="text-xs text-gray-500 mt-0.5">Top tratamientos por facturación y volumen</p>
           </div>
 
           {serviceStats.length === 0 ? (
-            <p className="text-xs text-slate-500 font-bold text-center py-8">No hay turnos registrados en este período.</p>
+            <p className="text-xs text-gray-400 text-center py-8">No hay turnos registrados en este período.</p>
           ) : (
             <div className="space-y-4 pt-2">
               {serviceStats.map((srv, idx) => {
@@ -253,26 +253,26 @@ export function ReportsView() {
                 const percentage = Math.round((srv.revenue / maxRev) * 100);
                 return (
                   <div key={srv.name} className="space-y-1.5">
-                    <div className="flex items-center justify-between text-xs font-bold">
-                      <span className="text-slate-900 flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-900 font-black text-[10px] flex items-center justify-center border border-blue-200">
+                    <div className="flex items-center justify-between text-xs font-semibold">
+                      <span className="text-gray-800 flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-purple-50 text-purple-700 font-bold text-[10px] flex items-center justify-center">
                           {idx + 1}
                         </span>
                         {srv.name}
                       </span>
                       <div className="text-right">
-                        <span className="text-slate-900 font-black">
+                        <span className="text-gray-900 font-extrabold">
                           {formatCurrency(srv.revenue, business?.currency)}
                         </span>
-                        <span className="text-slate-600 text-[10px] ml-1.5 font-bold">
+                        <span className="text-gray-400 text-[10px] ml-1.5 font-normal">
                           ({srv.count} turnos)
                         </span>
                       </div>
                     </div>
                     {/* Progress Bar */}
-                    <div className="h-2.5 w-full bg-slate-200 rounded-full overflow-hidden border border-slate-300">
+                    <div className="h-2.5 w-full bg-gray-100 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-blue-600 rounded-full transition-all duration-500"
+                        className="h-full bg-gradient-to-r from-purple-700 to-indigo-500 rounded-full transition-all duration-500"
                         style={{ width: `${percentage}%` }}
                       />
                     </div>
@@ -284,39 +284,39 @@ export function ReportsView() {
         </div>
 
         {/* Staff Performance */}
-        <div className="bg-[#f8fafc] p-6 rounded-2xl border-2 border-slate-300 shadow-xs space-y-4">
+        <div className="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs space-y-4">
           <div>
-            <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
-              <Award className="w-4 h-4 text-blue-600" />
+            <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
+              <Award className="w-4 h-4 text-purple-600" />
               Rendimiento por Profesional
             </h3>
-            <p className="text-xs text-slate-600 font-bold mt-0.5">Turnos atendidos y aportes a la facturación</p>
+            <p className="text-xs text-gray-500 mt-0.5">Turnos atendidos y aportes a la facturación</p>
           </div>
 
           {staffStats.length === 0 ? (
-            <p className="text-xs text-slate-500 font-bold text-center py-8">No hay profesionales registrados.</p>
+            <p className="text-xs text-gray-400 text-center py-8">No hay profesionales registrados.</p>
           ) : (
             <div className="space-y-3 pt-2">
               {staffStats.map((st) => (
                 <div
                   key={st.name}
-                  className="p-3.5 bg-slate-100 hover:bg-blue-100 rounded-xl border border-slate-200 flex items-center justify-between transition-colors"
+                  className="p-3.5 bg-gray-50/70 hover:bg-purple-50/30 rounded-xl border border-gray-100 flex items-center justify-between transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-600 text-white font-black text-sm flex items-center justify-center shadow-xs">
+                    <div className="w-10 h-10 rounded-xl bg-purple-700 text-white font-bold text-sm flex items-center justify-center shadow-xs">
                       {st.name.charAt(0)}
                     </div>
                     <div>
-                      <h4 className="font-black text-slate-900 text-sm leading-tight">{st.name}</h4>
-                      <p className="text-xs text-slate-600 font-semibold">{st.role}</p>
+                      <h4 className="font-bold text-gray-800 text-sm leading-tight">{st.name}</h4>
+                      <p className="text-xs text-gray-500">{st.role}</p>
                     </div>
                   </div>
 
                   <div className="text-right">
-                    <div className="font-black text-slate-900 text-sm">
+                    <div className="font-extrabold text-gray-900 text-sm">
                       {formatCurrency(st.revenue, business?.currency)}
                     </div>
-                    <div className="text-xs text-blue-800 font-black">
+                    <div className="text-xs text-purple-700 font-semibold">
                       {st.count} turnos realizados
                     </div>
                   </div>
@@ -328,29 +328,29 @@ export function ReportsView() {
       </div>
 
       {/* Top Frequent Clients */}
-      <div className="bg-[#f8fafc] p-6 rounded-2xl border-2 border-slate-300 shadow-xs space-y-4">
+      <div className="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs space-y-4">
         <div>
-          <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
-            <Users className="w-4 h-4 text-blue-600" />
+          <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
+            <Users className="w-4 h-4 text-purple-600" />
             Clientes Destacados del Período
           </h3>
-          <p className="text-xs text-slate-600 font-bold mt-0.5">Clientes frecuentes e inversión acumulada</p>
+          <p className="text-xs text-gray-500 mt-0.5">Clientes frecuentes e inversión acumulada</p>
         </div>
 
         {topClients.length === 0 ? (
-          <p className="text-xs text-slate-500 font-bold text-center py-6">Sin datos de visitas en este período.</p>
+          <p className="text-xs text-gray-400 text-center py-6">Sin datos de visitas en este período.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
             {topClients.map((cli, i) => (
-              <div key={cli.name} className="p-4 bg-slate-100 hover:bg-blue-100 border border-slate-200 rounded-xl text-center transition-colors">
-                <div className="w-9 h-9 rounded-full bg-blue-200 text-blue-950 font-black mx-auto mb-2 flex items-center justify-center text-xs">
+              <div key={cli.name} className="p-4 bg-gray-50/60 hover:bg-purple-50/20 border border-gray-100 rounded-xl text-center transition-colors">
+                <div className="w-9 h-9 rounded-full bg-purple-100 text-purple-800 font-extrabold mx-auto mb-2 flex items-center justify-center text-xs">
                   #{i + 1}
                 </div>
-                <h5 className="font-black text-xs text-slate-900 truncate mb-1">{cli.name}</h5>
-                <div className="text-xs font-black text-blue-900">
+                <h5 className="font-bold text-xs text-gray-900 truncate mb-1">{cli.name}</h5>
+                <div className="text-xs font-extrabold text-purple-700">
                   {formatCurrency(cli.spent, business?.currency)}
                 </div>
-                <div className="text-[10px] text-slate-600 mt-0.5 font-bold">{cli.count} visitas</div>
+                <div className="text-[10px] text-gray-500 mt-0.5 font-medium">{cli.count} visitas</div>
               </div>
             ))}
           </div>

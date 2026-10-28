@@ -79,93 +79,93 @@ export function ClientModal({ clientToEdit, onClose, onSaved }: ClientModalProps
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="text-xs font-semibold text-slate-700 block mb-1">Nombre Completo *</label>
+            <label className="text-xs font-black text-[#0F172A] block mb-1">Nombre Completo *</label>
             <div className="relative">
-              <User className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+              <User className="w-4 h-4 text-slate-500 absolute left-3 top-3.5" />
               <input
                 type="text"
                 required
                 placeholder="Ej. Camila Morales"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full text-sm pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 outline-none"
+                className="w-full text-sm pl-9 pr-3 py-2.5 rounded-xl border-2 border-slate-300 bg-white text-slate-900 font-bold placeholder-slate-400 focus:border-blue-600 outline-none shadow-2xs"
               />
             </div>
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-slate-700 block mb-1">WhatsApp / Teléfono</label>
+            <label className="text-xs font-black text-[#0F172A] block mb-1">WhatsApp / Teléfono</label>
             <div className="relative">
-              <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+              <Phone className="w-4 h-4 text-slate-500 absolute left-3 top-3.5" />
               <input
                 type="tel"
                 placeholder="Ej. +54 9 11 1234-5678"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full text-sm pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 outline-none"
+                className="w-full text-sm pl-9 pr-3 py-2.5 rounded-xl border-2 border-slate-300 bg-white text-slate-900 font-bold placeholder-slate-400 focus:border-blue-600 outline-none shadow-2xs"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Email</label>
+              <label className="text-xs font-black text-[#0F172A] block mb-1">Email</label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-3.5" />
                 <input
                   type="email"
                   placeholder="cliente@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full text-sm pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 outline-none"
+                  className="w-full text-sm pl-9 pr-3 py-2.5 rounded-xl border-2 border-slate-300 bg-white text-slate-900 font-bold placeholder-slate-400 focus:border-blue-600 outline-none shadow-2xs"
                 />
               </div>
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Cumpleaños</label>
+              <label className="text-xs font-black text-[#0F172A] block mb-1">Cumpleaños</label>
               <div className="relative">
-                <Calendar className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <Calendar className="w-4 h-4 text-slate-500 absolute left-3 top-3.5" />
                 <input
                   type="date"
                   value={birthday}
                   onChange={(e) => setBirthday(e.target.value)}
-                  className="w-full text-sm pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 outline-none"
+                  className="w-full text-sm pl-9 pr-3 py-2.5 rounded-xl border-2 border-slate-300 bg-white text-slate-900 font-bold placeholder-slate-400 focus:border-blue-600 outline-none shadow-2xs"
                 />
               </div>
             </div>
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-slate-700 block mb-1">
+            <label className="text-xs font-black text-[#0F172A] block mb-1">
               Ficha Técnica / Preferencias / Alergias
             </label>
             <div className="relative">
-              <FileText className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+              <FileText className="w-4 h-4 text-slate-500 absolute left-3 top-3.5" />
               <textarea
                 rows={3}
                 placeholder="Fórmulas de tinte, tipo de piel, alergias a cosméticos, preferencias..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="w-full text-sm pl-9 pr-3 py-2 rounded-xl border border-slate-200 focus:border-blue-600 outline-none resize-none"
+                className="w-full text-sm pl-9 pr-3 py-2 rounded-xl border-2 border-slate-300 bg-white text-slate-900 font-bold placeholder-slate-400 focus:border-blue-600 outline-none resize-none shadow-2xs"
               />
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+          <div className="flex items-center justify-end gap-3 pt-3 border-t-2 border-slate-200">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-sm font-medium"
+              className="px-4 py-2.5 rounded-xl border-2 border-slate-300 hover:bg-slate-100 text-[#0F172A] text-sm font-bold cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-md flex items-center gap-2"
+              className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-sm shadow-md flex items-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50"
             >
-              <Check className="w-4 h-4" />
-              <span>{isSubmitting ? 'Guardando...' : clientToEdit ? 'Guardar' : 'Crear Cliente'}</span>
+              <Check className="w-4 h-4 stroke-[3]" />
+              <span>{isSubmitting ? 'Guardando...' : clientToEdit ? 'Guardar Cambios' : 'Registrar Cliente'}</span>
             </button>
           </div>
         </form>

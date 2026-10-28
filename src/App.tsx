@@ -54,11 +54,13 @@ function MainAppContent() {
   const [selectedAppointmentForDetail, setSelectedAppointmentForDetail] = useState<Appointment | null>(null);
   const [appointmentForWhatsApp, setAppointmentForWhatsApp] = useState<Appointment | null>(null);
   const [slotInitialTime, setSlotInitialTime] = useState<string | undefined>(undefined);
+  const [slotInitialStaffId, setSlotInitialStaffId] = useState<string | undefined>(undefined);
 
-  const handleOpenNewAppointment = (date?: string, time?: string) => {
+  const handleOpenNewAppointment = (date?: string, time?: string, staffId?: string) => {
     setAppointmentToEdit(null);
     if (date) setCurrentDate(date);
     setSlotInitialTime(time);
+    setSlotInitialStaffId(staffId);
     setIsAppointmentModalOpen(true);
   };
 
@@ -191,7 +193,7 @@ function MainAppContent() {
                     setSelectedAppointmentForDetail(apt);
                   }}
                   onSelectSlot={(staffId, time) => {
-                    handleOpenNewAppointment(currentDate, time);
+                    handleOpenNewAppointment(currentDate, time, staffId);
                   }}
                 />
               )}
@@ -224,16 +226,16 @@ function MainAppContent() {
               <strong className="text-slate-900 font-extrabold">{business?.name || 'Tu Agenda Lista'}</strong>
               <span className="text-slate-400">© {new Date().getFullYear()}</span>
               <span className="text-slate-300 hidden sm:inline">·</span>
-              <span className="text-slate-600 font-medium">
-                Desarrollado por <strong className="text-slate-900 font-extrabold tracking-tight">Iris Quiroz</strong>
+              <span className="text-slate-700 font-bold">
+                Desarrollado por <strong className="text-slate-950 font-black tracking-tight">Iris Quiroz</strong>
               </span>
             </div>
-            <div className="flex items-center gap-2 text-slate-600 justify-center sm:justify-end">
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 shadow-2xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <div className="flex items-center gap-2 text-slate-700 justify-center sm:justify-end">
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-black text-amber-900 bg-amber-100 px-3 py-1 rounded-full border border-amber-300 shadow-2xs">
+                <span className="w-2 h-2 rounded-full bg-amber-600 animate-pulse" />
                 <span>Período de Prueba Activo (7 Días Gratis) · $45.000 / mes</span>
               </span>
-              <span className="hidden md:inline text-[11px] text-slate-400 font-medium">Software SaaS</span>
+              <span className="hidden md:inline text-[11px] text-slate-700 font-bold">Web & Celular</span>
             </div>
           </div>
         </footer>
@@ -259,17 +261,21 @@ function MainAppContent() {
         <AppointmentModal
           initialDate={currentDate}
           initialTime={slotInitialTime}
-          initialStaffId={selectedStaffId !== 'todos' ? selectedStaffId : undefined}
+          initialStaffId={slotInitialStaffId || (selectedStaffId !== 'todos' ? selectedStaffId : undefined)}
           appointmentToEdit={appointmentToEdit}
           onClose={() => {
             setIsAppointmentModalOpen(false);
             setAppointmentToEdit(null);
             setSlotInitialTime(undefined);
+            setSlotInitialStaffId(undefined);
           }}
-          onSaved={(aptId) => {
+          onSaved={(savedApt) => {
             setIsAppointmentModalOpen(false);
             setAppointmentToEdit(null);
             setSlotInitialTime(undefined);
+            setSlotInitialStaffId(undefined);
+            // Open the detail modal for review and WhatsApp OK confirmation
+            setSelectedAppointmentForDetail(savedApt);
           }}
         />
       )}

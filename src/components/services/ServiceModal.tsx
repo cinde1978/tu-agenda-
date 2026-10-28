@@ -106,26 +106,26 @@ export function ServiceModal({ serviceToEdit, onClose, onSaved }: ServiceModalPr
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="text-xs font-semibold text-slate-700 block mb-1">Nombre del Servicio *</label>
+            <label className="text-xs font-black text-[#0F172A] block mb-1">Nombre del Servicio *</label>
             <input
               type="text"
               required
               placeholder="Ej. Limpieza Facial Profunda"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full text-sm p-2.5 rounded-xl border border-slate-200 focus:border-blue-600 outline-none"
+              className="w-full text-sm p-2.5 rounded-xl border-2 border-slate-300 bg-white text-slate-900 font-bold placeholder-slate-400 focus:border-blue-600 outline-none shadow-2xs"
             />
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-slate-700 block mb-1">Categoría</label>
+            <label className="text-xs font-black text-[#0F172A] block mb-1">Categoría</label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full text-sm p-2.5 rounded-xl border border-slate-200 bg-white focus:border-blue-600 outline-none"
+              className="w-full text-sm p-2.5 rounded-xl border-2 border-slate-300 bg-white text-slate-900 font-bold focus:border-blue-600 outline-none shadow-2xs cursor-pointer"
             >
               {CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
+                <option key={cat} value={cat} className="text-[#0F172A] font-bold bg-white">
                   {cat}
                 </option>
               ))}
@@ -134,9 +134,9 @@ export function ServiceModal({ serviceToEdit, onClose, onSaved }: ServiceModalPr
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Duración (minutos) *</label>
+              <label className="text-xs font-black text-[#0F172A] block mb-1">Duración (minutos) *</label>
               <div className="relative">
-                <Clock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <Clock className="w-4 h-4 text-slate-500 absolute left-3 top-3.5" />
                 <input
                   type="number"
                   step="5"
@@ -144,15 +144,15 @@ export function ServiceModal({ serviceToEdit, onClose, onSaved }: ServiceModalPr
                   required
                   value={durationMinutes}
                   onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                  className="w-full text-sm pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 outline-none"
+                  className="w-full text-sm pl-9 pr-3 py-2.5 rounded-xl border-2 border-slate-300 bg-white text-slate-900 font-bold placeholder-slate-400 focus:border-blue-600 outline-none shadow-2xs"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">Precio ({business?.currency || '$'}) *</label>
+              <label className="text-xs font-black text-[#0F172A] block mb-1">Precio ({business?.currency || '$'}) *</label>
               <div className="relative">
-                <DollarSign className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <DollarSign className="w-4 h-4 text-slate-500 absolute left-3 top-3.5" />
                 <input
                   type="number"
                   step="100"
@@ -160,33 +160,33 @@ export function ServiceModal({ serviceToEdit, onClose, onSaved }: ServiceModalPr
                   required
                   value={price}
                   onChange={(e) => setPrice(Number(e.target.value))}
-                  className="w-full text-sm pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 outline-none"
+                  className="w-full text-sm pl-9 pr-3 py-2.5 rounded-xl border-2 border-slate-300 bg-white text-slate-900 font-bold placeholder-slate-400 focus:border-blue-600 outline-none shadow-2xs"
                 />
               </div>
             </div>
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-slate-700 block mb-1">Descripción / Detalles</label>
+            <label className="text-xs font-black text-[#0F172A] block mb-1">Descripción / Detalles</label>
             <textarea
               rows={2}
               placeholder="Detalle de qué incluye el servicio para informar al cliente..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full text-sm p-2.5 rounded-xl border border-slate-200 focus:border-blue-600 outline-none resize-none"
+              className="w-full text-sm p-2.5 rounded-xl border-2 border-slate-300 bg-white text-slate-900 font-bold placeholder-slate-400 focus:border-blue-600 outline-none resize-none shadow-2xs"
             />
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-slate-700 block mb-1.5">Color identificador en agenda</label>
+            <label className="text-xs font-black text-[#0F172A] block mb-1.5">Color identificador en agenda</label>
             <div className="flex items-center gap-2 flex-wrap">
               {COLORS.map((c) => (
                 <button
                   key={c}
                   type="button"
                   onClick={() => setColor(c)}
-                  className={`w-7 h-7 rounded-full border-2 transition-all ${
-                    color === c ? 'scale-110 border-slate-800 shadow-xs' : 'border-transparent hover:scale-105'
+                  className={`w-7 h-7 rounded-full border-2 transition-all cursor-pointer ${
+                    color === c ? 'scale-110 border-slate-900 shadow-xs ring-2 ring-blue-500/30' : 'border-transparent hover:scale-105'
                   }`}
                   style={{ backgroundColor: c }}
                 />
@@ -195,12 +195,12 @@ export function ServiceModal({ serviceToEdit, onClose, onSaved }: ServiceModalPr
           </div>
 
           <div className="pt-1">
-            <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-700 font-medium">
+            <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-[#0F172A] font-bold">
               <input
                 type="checkbox"
                 checked={active}
                 onChange={(e) => setActive(e.target.checked)}
-                className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4"
+                className="rounded border-2 border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
               />
               <span>Servicio activo y disponible para turnos</span>
             </label>

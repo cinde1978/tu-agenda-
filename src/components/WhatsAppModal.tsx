@@ -60,10 +60,10 @@ export function WhatsAppModal({ appointment, business, onClose }: WhatsAppModalP
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-5 text-white flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/65 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl border-2 border-slate-300 w-full max-w-lg max-h-[92vh] sm:max-h-[88vh] flex flex-col my-auto overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        {/* Header - Fixed Top */}
+        <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-4 sm:p-5 text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-white/20 rounded-xl backdrop-blur-xs">
               <WhatsAppIcon size={24} variant="monochrome" className="text-white" />
@@ -77,27 +77,27 @@ export function WhatsAppModal({ appointment, business, onClose }: WhatsAppModalP
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 hover:bg-white/20 rounded-lg text-white/80 hover:text-white transition-colors"
+            className="p-1.5 hover:bg-white/20 rounded-lg text-white/80 hover:text-white transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-4">
+        {/* Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-[#0F172A]">
           {/* Template pills */}
           <div>
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 block">
+            <label className="text-xs font-black uppercase tracking-wider text-[#0F172A] mb-2 block">
               Elegir plantilla rápida:
             </label>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <button
                 type="button"
                 onClick={() => handleTemplateChange('reminder')}
-                className={`p-2.5 rounded-xl border text-left font-medium transition-all ${
+                className={`p-2.5 rounded-xl border-2 text-left transition-all cursor-pointer ${
                   templateType === 'reminder'
-                    ? 'border-emerald-500 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-500/20'
-                    : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-slate-50/50'
+                    ? 'border-emerald-700 bg-emerald-100 text-emerald-950 font-black shadow-xs'
+                    : 'border-slate-300 hover:border-slate-500 text-[#0F172A] bg-white font-bold'
                 }`}
               >
                 🔔 Recordatorio de turno
@@ -105,10 +105,10 @@ export function WhatsAppModal({ appointment, business, onClose }: WhatsAppModalP
               <button
                 type="button"
                 onClick={() => handleTemplateChange('confirm')}
-                className={`p-2.5 rounded-xl border text-left font-medium transition-all ${
+                className={`p-2.5 rounded-xl border-2 text-left transition-all cursor-pointer ${
                   templateType === 'confirm'
-                    ? 'border-emerald-500 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-500/20'
-                    : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-slate-50/50'
+                    ? 'border-emerald-700 bg-emerald-100 text-emerald-950 font-black shadow-xs'
+                    : 'border-slate-300 hover:border-slate-500 text-[#0F172A] bg-white font-bold'
                 }`}
               >
                 ✨ Confirmación inmediata
@@ -116,10 +116,10 @@ export function WhatsAppModal({ appointment, business, onClose }: WhatsAppModalP
               <button
                 type="button"
                 onClick={() => handleTemplateChange('deposit')}
-                className={`p-2.5 rounded-xl border text-left font-medium transition-all ${
+                className={`p-2.5 rounded-xl border-2 text-left transition-all cursor-pointer ${
                   templateType === 'deposit'
-                    ? 'border-emerald-500 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-500/20'
-                    : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-slate-50/50'
+                    ? 'border-emerald-700 bg-emerald-100 text-emerald-950 font-black shadow-xs'
+                    : 'border-slate-300 hover:border-slate-500 text-[#0F172A] bg-white font-bold'
                 }`}
               >
                 💳 Solicitud de seña
@@ -127,10 +127,10 @@ export function WhatsAppModal({ appointment, business, onClose }: WhatsAppModalP
               <button
                 type="button"
                 onClick={() => handleTemplateChange('reschedule')}
-                className={`p-2.5 rounded-xl border text-left font-medium transition-all ${
+                className={`p-2.5 rounded-xl border-2 text-left transition-all cursor-pointer ${
                   templateType === 'reschedule'
-                    ? 'border-emerald-500 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-500/20'
-                    : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-slate-50/50'
+                    ? 'border-emerald-700 bg-emerald-100 text-emerald-950 font-black shadow-xs'
+                    : 'border-slate-300 hover:border-slate-500 text-[#0F172A] bg-white font-bold'
                 }`}
               >
                 🗓️ Reprogramar turno
@@ -141,21 +141,21 @@ export function WhatsAppModal({ appointment, business, onClose }: WhatsAppModalP
           {/* Editable Textarea */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <label className="text-xs font-black uppercase tracking-wider text-[#0F172A]">
                 Mensaje a enviar:
               </label>
-              <span className="text-xs text-slate-400">Puedes editar el texto libremente</span>
+              <span className="text-xs text-slate-600 font-bold">Puedes editar el texto libremente</span>
             </div>
             <textarea
               rows={7}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              className="w-full text-sm p-3.5 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none text-slate-800 bg-slate-50/30 resize-none font-sans leading-relaxed"
+              className="w-full text-sm p-3.5 rounded-xl border-2 border-slate-300 focus:border-emerald-600 outline-none text-[#0F172A] font-semibold bg-white resize-none font-sans leading-relaxed shadow-2xs"
             />
           </div>
 
           {!cleanPhone && (
-            <div className="p-3 bg-slate-100 border border-slate-300 rounded-xl text-[#0F172A] font-bold text-xs flex items-center gap-2">
+            <div className="p-3 bg-amber-50 border-2 border-amber-300 rounded-xl text-amber-950 font-bold text-xs flex items-center gap-2">
               ⚠️ Este cliente no tiene número de teléfono guardado. Puedes copiar el texto manualmente.
             </div>
           )}
@@ -165,16 +165,16 @@ export function WhatsAppModal({ appointment, business, onClose }: WhatsAppModalP
             <button
               type="button"
               onClick={handleCopy}
-              className="px-4 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-medium text-sm flex items-center gap-2 transition-colors"
+              className="px-4 py-2.5 rounded-xl border-2 border-slate-300 hover:bg-slate-100 text-[#0F172A] font-bold text-sm flex items-center gap-2 transition-colors cursor-pointer"
             >
               {copied ? (
                 <>
-                  <Check className="w-4 h-4 text-emerald-600" />
-                  <span>¡Copiado!</span>
+                  <Check className="w-4 h-4 text-emerald-700 stroke-[3]" />
+                  <span className="text-emerald-800 font-black">¡Copiado!</span>
                 </>
               ) : (
                 <>
-                  <Copy className="w-4 h-4 text-slate-500" />
+                  <Copy className="w-4 h-4 text-slate-700" />
                   <span>Copiar texto</span>
                 </>
               )}

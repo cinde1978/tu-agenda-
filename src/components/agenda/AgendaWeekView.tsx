@@ -49,8 +49,8 @@ export function AgendaWeekView({
   }, [currentDate]);
 
   return (
-    <div className="bg-[#f1f5f9] rounded-2xl border-2 border-slate-300 shadow-sm overflow-hidden">
-      <div className="grid grid-cols-1 md:grid-cols-7 divide-y md:divide-y-0 md:divide-x divide-slate-300 min-h-[500px]">
+    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+      <div className="grid grid-cols-1 md:grid-cols-7 divide-y md:divide-y-0 md:divide-x divide-slate-100 min-h-[500px]">
         {weekDays.map((day) => {
           const isToday = day.dateStr === todayStr;
 
@@ -63,18 +63,18 @@ export function AgendaWeekView({
             .sort((a, b) => a.time.localeCompare(b.time));
 
           return (
-            <div key={day.dateStr} className="flex flex-col bg-[#f8fafc]">
+            <div key={day.dateStr} className="flex flex-col bg-white">
               <div
-                className={`p-3 text-center border-b-2 transition-colors ${
-                  isToday ? 'bg-blue-100/90 border-blue-500' : 'bg-slate-200/80 border-slate-300'
+                className={`p-3 text-center border-b border-slate-100 transition-colors ${
+                  isToday ? 'bg-blue-50/80' : 'bg-slate-50/50'
                 }`}
               >
-                <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider block">
+                <span className="text-[11px] font-bold text-[#0F172A] uppercase tracking-wider block">
                   {day.dayName}
                 </span>
                 <span
                   className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-black mt-0.5 ${
-                    isToday ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-900'
+                    isToday ? 'bg-[#1E3A8A] text-white shadow-xs' : 'text-[#0F172A]'
                   }`}
                 >
                   {day.dayNumber}
@@ -84,15 +84,15 @@ export function AgendaWeekView({
                 </span>
               </div>
 
-              <div className="flex-1 p-2 space-y-2 overflow-y-auto max-h-[600px] bg-slate-100/60">
+              <div className="flex-1 p-2 space-y-2 overflow-y-auto max-h-[600px] bg-slate-50/20">
                 {dayAppointments.length === 0 ? (
                   <div
                     onClick={() => onDayClick(day.dateStr)}
-                    className="h-28 rounded-xl border-2 border-dashed border-slate-300 hover:border-blue-600 hover:bg-blue-100/80 cursor-pointer flex flex-col items-center justify-center text-slate-500 hover:text-blue-950 transition-all text-xs group p-2 text-center"
+                    className="h-28 rounded-xl border-2 border-dashed border-slate-300 hover:border-blue-500 hover:bg-blue-50/50 cursor-pointer flex flex-col items-center justify-center text-slate-600 hover:text-blue-700 transition-all text-xs group p-2 text-center"
                   >
-                    <Plus className="w-4 h-4 mb-1 group-hover:scale-110 transition-transform" />
+                    <Plus className="w-4 h-4 mb-1 group-hover:scale-110 transition-transform stroke-[2.5]" />
                     <span className="font-bold">Sin turnos</span>
-                    <span className="text-[10px] text-slate-600 font-semibold group-hover:text-blue-900">Toca para agendar</span>
+                    <span className="text-[10px] text-slate-600 font-semibold group-hover:text-blue-700">Toca para agendar</span>
                   </div>
                 ) : (
                   dayAppointments.map((apt) => {
@@ -104,41 +104,41 @@ export function AgendaWeekView({
                       <div
                         key={apt.id}
                         onClick={() => onSelectAppointment(apt)}
-                        className={`p-2.5 rounded-xl border-2 border-slate-300 bg-slate-50 hover:bg-blue-100 hover:border-blue-600 hover:shadow-md cursor-pointer transition-all relative overflow-hidden group ${
+                        className={`p-2.5 rounded-xl border border-slate-200/90 bg-white hover:border-blue-500 hover:shadow-md cursor-pointer transition-all relative overflow-hidden group ${
                           apt.status === 'cancelado' ? 'opacity-50 line-through' : ''
                         }`}
                       >
                         <div
-                          className="absolute left-0 top-0 bottom-0 w-2"
+                          className="absolute left-0 top-0 bottom-0 w-1.5"
                           style={{ backgroundColor: cardColor }}
                         />
 
-                        <div className="pl-2 space-y-1">
-                          <div className="flex items-center justify-between text-xs font-black">
-                            <span className="text-blue-900 bg-blue-100 px-1.5 py-0.5 rounded text-[10px] font-black border border-blue-200">
+                        <div className="pl-1.5 space-y-1">
+                          <div className="flex items-center justify-between text-xs font-bold">
+                            <span className="text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded text-[10px]">
                               {apt.time} hs
                             </span>
-                            <span className={`px-1.5 py-0.2 rounded text-[9px] font-black border ${status.bg}`}>
+                            <span className={`px-1.5 py-0.2 rounded text-[9px] font-semibold border ${status.bg}`}>
                               {status.label}
                             </span>
                           </div>
 
-                          <div className="font-black text-xs text-slate-900 group-hover:text-blue-950 truncate flex items-center gap-1.5">
+                          <div className="font-bold text-xs text-slate-900 group-hover:text-blue-600 truncate flex items-center gap-1.5">
                             <span
-                              className="w-2.5 h-2.5 rounded-full shrink-0 border border-black/10"
+                              className="w-2 h-2 rounded-full shrink-0"
                               style={{ backgroundColor: cardColor }}
                             />
                             <span className="truncate">{apt.clientName}</span>
                           </div>
 
-                          <div className="text-[11px] text-slate-700 font-bold truncate flex items-center gap-1">
-                            <Sparkles className="w-3 h-3 text-blue-600 shrink-0" />
-                            <span className="truncate">{apt.serviceName}</span>
+                          <div className="text-[11px] text-slate-700 font-medium truncate flex items-center gap-1">
+                            <Sparkles className="w-2.5 h-2.5 text-blue-600" />
+                            <span>{apt.serviceName}</span>
                           </div>
 
-                          <div className="flex items-center justify-between pt-1 border-t border-slate-200 text-[10px] font-bold">
-                            <span className="text-slate-600 truncate">{apt.staffName}</span>
-                            <span className="font-black text-slate-900">
+                          <div className="flex items-center justify-between pt-1 border-t border-slate-200 text-[10px]">
+                            <span className="text-slate-700 font-bold truncate">{apt.staffName}</span>
+                            <span className="font-extrabold text-slate-900">
                               {formatCurrency(apt.price, business?.currency)}
                             </span>
                           </div>
@@ -149,13 +149,13 @@ export function AgendaWeekView({
                 )}
               </div>
 
-              <div className="p-1.5 border-t border-slate-300 bg-slate-200/50">
+              <div className="p-1.5 border-t border-slate-100 bg-white">
                 <button
                   type="button"
                   onClick={() => onDayClick(day.dateStr)}
-                  className="w-full py-1.5 text-slate-700 hover:text-white hover:bg-blue-600 rounded-lg text-[11px] font-black flex items-center justify-center gap-1 transition-colors border border-slate-300"
+                  className="w-full py-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors"
                 >
-                  <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                  <Plus className="w-3 h-3" />
                   <span>Agendar</span>
                 </button>
               </div>

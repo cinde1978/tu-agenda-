@@ -44,10 +44,10 @@ export function ExportView() {
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       {/* Top Action Card - Hidden in print */}
-      <div className="no-print bg-[#f1f5f9] p-5 rounded-2xl border-2 border-slate-300 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="no-print bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-black text-slate-900">Imprimir y Descargar Agenda</h2>
-          <p className="text-xs text-slate-700 font-bold mt-0.5">
+          <h2 className="text-xl font-extrabold text-slate-900">Imprimir y Descargar Agenda</h2>
+          <p className="text-xs text-slate-500 mt-0.5">
             Genera hojas de papel listas para imprimir, guardar en PDF o descargar en Excel
           </p>
         </div>
@@ -57,7 +57,7 @@ export function ExportView() {
           <button
             type="button"
             onClick={handleDownloadExcel}
-            className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
+            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
             <FileSpreadsheet className="w-4 h-4" />
             <span>Descargar Excel (.CSV)</span>
@@ -66,7 +66,7 @@ export function ExportView() {
           <button
             type="button"
             onClick={handlePrint}
-            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
+            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-blue-600/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
             <Printer className="w-4 h-4" />
             <span>Imprimir / Guardar en PDF</span>
@@ -75,13 +75,13 @@ export function ExportView() {
       </div>
 
       {/* Filter controls - Hidden in print */}
-      <div className="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-200 p-3.5 rounded-xl border border-slate-300">
+      <div className="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-100/80 p-3.5 rounded-xl border border-slate-200/80">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setFilterMode('dia')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
-              filterMode === 'dia' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-800 hover:bg-blue-200 hover:text-blue-950 font-bold'
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-black border-2 transition-all cursor-pointer ${
+              filterMode === 'dia' ? 'bg-[#1E3A8A] text-white border-[#1E3A8A] shadow-xs' : 'bg-white text-[#0F172A] border-slate-300 hover:bg-slate-50'
             }`}
           >
             Por Día Específico
@@ -89,8 +89,8 @@ export function ExportView() {
           <button
             type="button"
             onClick={() => setFilterMode('todos')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
-              filterMode === 'todos' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-800 hover:bg-blue-200 hover:text-blue-950 font-bold'
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-black border-2 transition-all cursor-pointer ${
+              filterMode === 'todos' ? 'bg-[#1E3A8A] text-white border-[#1E3A8A] shadow-xs' : 'bg-white text-[#0F172A] border-slate-300 hover:bg-slate-50'
             }`}
           >
             Todos los Turnos
@@ -99,19 +99,19 @@ export function ExportView() {
 
         {filterMode === 'dia' && (
           <div className="flex items-center gap-2">
-            <label className="text-xs text-slate-700 font-bold">Fecha:</label>
+            <label className="text-xs text-slate-500 font-medium">Fecha:</label>
             <input
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="text-xs p-2 rounded-lg border-2 border-slate-300 bg-slate-50 font-black text-slate-900 outline-none focus:border-blue-600"
+              className="text-xs p-2 rounded-lg border border-slate-300 bg-white font-semibold text-slate-800 outline-none"
             />
           </div>
         )}
       </div>
 
       {/* Printable Sheet View - Styled both on screen and on paper */}
-      <div className="print-page bg-[#f8fafc] rounded-2xl border-2 border-slate-300 p-6 sm:p-8 shadow-xs space-y-6">
+      <div className="print-page bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
         {/* Document Header */}
         <div className="flex items-start justify-between border-b border-slate-200 pb-5">
           <div>

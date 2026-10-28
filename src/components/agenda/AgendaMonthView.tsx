@@ -60,16 +60,16 @@ export function AgendaMonthView({
   }, [year, month]);
 
   return (
-    <div className="bg-[#f1f5f9] rounded-2xl border-2 border-slate-300 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xs overflow-hidden">
       {/* Month Days Header */}
-      <div className="grid grid-cols-7 border-b-2 border-slate-300 bg-slate-200/90 text-center text-xs font-black text-slate-800 py-3 uppercase tracking-wider">
+      <div className="grid grid-cols-7 border-b border-gray-200 bg-slate-50 text-center text-xs font-black text-[#0F172A] py-3">
         {WEEKDAYS.map((w) => (
           <div key={w}>{w}</div>
         ))}
       </div>
 
       {/* Grid of days */}
-      <div className="grid grid-cols-7 divide-x divide-y divide-slate-300 min-h-[500px]">
+      <div className="grid grid-cols-7 divide-x divide-y divide-gray-100 min-h-[500px]">
         {calendarDays.map((day) => {
           const isToday = day.dateStr === todayStr;
 
@@ -87,21 +87,21 @@ export function AgendaMonthView({
             <div
               key={day.dateStr}
               onClick={() => onSelectDay(day.dateStr)}
-              className={`min-h-[95px] sm:min-h-[110px] p-2 flex flex-col justify-between hover:bg-blue-100 hover:border-blue-600 cursor-pointer transition-colors relative group ${
-                day.isCurrentMonth ? 'bg-[#f8fafc]' : 'bg-slate-200/60 opacity-60'
+              className={`min-h-[95px] sm:min-h-[110px] p-2 flex flex-col justify-between hover:bg-blue-50/40 cursor-pointer transition-colors relative group ${
+                day.isCurrentMonth ? 'bg-white' : 'bg-gray-50/50 opacity-40'
               }`}
             >
               <div className="flex items-center justify-between">
                 <span
                   className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${
-                    isToday ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-900'
+                    isToday ? 'bg-[#1E3A8A] text-white shadow-xs' : 'text-[#0F172A]'
                   }`}
                 >
                   {day.dayNum}
                 </span>
 
                 {dayAppointments.length > 0 && (
-                  <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-blue-100 text-blue-900 border border-blue-300">
+                  <span className="px-1.5 py-0.5 rounded-md text-[10px] font-black bg-blue-50 text-[#1E3A8A] border border-blue-200">
                     {dayAppointments.length}
                   </span>
                 )}
@@ -116,13 +116,13 @@ export function AgendaMonthView({
                       e.stopPropagation();
                       onSelectAppointment(apt);
                     }}
-                    className="text-[10px] truncate px-1.5 py-0.5 rounded bg-slate-200 hover:bg-blue-600 text-slate-800 hover:text-white font-bold transition-colors"
+                    className="text-[10px] truncate px-1.5 py-0.5 rounded bg-slate-100 hover:bg-blue-100 text-[#0F172A] font-bold transition-colors"
                   >
                     {apt.time} - {apt.clientName.split(' ')[0]}
                   </div>
                 ))}
                 {dayAppointments.length > 2 && (
-                  <div className="text-[9px] text-slate-600 font-bold pl-1">
+                  <div className="text-[9px] text-slate-500 font-bold pl-1">
                     +{dayAppointments.length - 2} más
                   </div>
                 )}

@@ -477,16 +477,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     async (aptData: Omit<Appointment, 'id' | 'businessId' | 'createdAt' | 'updatedAt'>): Promise<string> => {
       const id = `apt_${Date.now()}`;
       const today = getTodayDateString();
+      const targetBranch = aptData.branchId || selectedBranch;
       const newApt: Appointment = {
-        ...aptData,
         id,
         businessId: currentBusinessId,
-        branchId: aptData.branchId || selectedBranch,
+        clientId: aptData.clientId || '',
+        clientName: aptData.clientName || 'Cliente',
+        clientPhone: aptData.clientPhone || '',
+        serviceId: aptData.serviceId || '',
+        serviceName: aptData.serviceName || 'Servicio',
+        staffId: aptData.staffId || '',
+        staffName: aptData.staffName || 'Personal',
+        branchId: targetBranch,
+        date: aptData.date,
+        time: aptData.time,
+        durationMinutes: Number(aptData.durationMinutes || 30),
+        price: Number(aptData.price || 0),
+        depositAmount: Number(aptData.depositAmount || 0),
+        remainingBalance: Math.max(0, Number(aptData.price || 0) - Number(aptData.depositAmount || 0)),
+        color: aptData.color || '#2563eb',
+        status: aptData.status || 'confirmado',
+        paymentMethod: aptData.paymentMethod || 'pendiente',
+        notes: aptData.notes || '',
         createdAt: today,
         updatedAt: today,
       };
-
-      setAppointments((prev) => [newApt, ...prev]);
 
       if (user && currentBusinessId) {
         try {
@@ -495,9 +510,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           handleFirestoreError(err, OperationType.CREATE, `businesses/${currentBusinessId}/appointments/${id}`);
         }
       }
+
+      setAppointments((prev) => {
+        if (prev.some((a) => a.id === id)) return prev;
+        return [newApt, ...prev];
+      });
+
+      // Automatically switch active branch to the booked appointment branch so it appears immediately on agenda
+      if (targetBranch !== selectedBranch) {
+        setSelectedBranch(targetBranch);
+      }
+
       return id;
     },
-    [currentBusinessId, user, selectedBranch]
+    [currentBusinessId, user, selectedBranch, setSelectedBranch]
   );
 
   const updateAppointment = useCallback(
@@ -717,18 +743,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     async (stfData: Omit<StaffMember, 'id' | 'businessId' | 'createdAt'>): Promise<string> => {
       const id = `stf_${Date.now()}`;
       const today = getTodayDateString();
-      const newStaff: StaffMember = {
+      const rawStaff: StaffMember = {
         ...stfData,
         id,
         businessId: currentBusinessId,
         createdAt: today,
       };
+      const cleanStaff: StaffMember = JSON.parse(JSON.stringify(rawStaff));
 
-      setStaff((prev) => [newStaff, ...prev]);
+      setStaff((prev) => [cleanStaff, ...prev]);
 
       if (user && currentBusinessId) {
         try {
-          await setDoc(doc(db, `businesses/${currentBusinessId}/staff`, id), newStaff);
+          await setDoc(doc(db, `businesses/${currentBusinessId}/staff`, id), cleanStaff);
         } catch (err) {
           handleFirestoreError(err, OperationType.CREATE, `businesses/${currentBusinessId}/staff/${id}`);
         }
@@ -740,12 +767,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const updateStaff = useCallback(
     async (stf: StaffMember) => {
-      setStaff((prev) => prev.map((s) => (s.id === stf.id ? stf : s)));
+      const cleanStaff: StaffMember = JSON.parse(JSON.stringify(stf));
+      setStaff((prev) => prev.map((s) => (s.id === cleanStaff.id ? cleanStaff : s)));
       if (user && currentBusinessId) {
         try {
-          await setDoc(doc(db, `businesses/${currentBusinessId}/staff`, stf.id), stf);
+          await setDoc(doc(db, `businesses/${currentBusinessId}/staff`, cleanStaff.id), cleanStaff);
         } catch (err) {
-          handleFirestoreError(err, OperationType.UPDATE, `businesses/${currentBusinessId}/staff/${stf.id}`);
+          handleFirestoreError(err, OperationType.UPDATE, `businesses/${currentBusinessId}/staff/${cleanStaff.id}`);
         }
       }
     },

@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { WhatsAppIcon, MercadoPagoIcon } from './icons';
-import { THEME_COLOR_OPTIONS, StaffMember, Service, StaffBranchScope } from '../types';
+import { THEME_COLOR_OPTIONS, StaffMember, Service } from '../types';
 import { StaffModal } from './staff/StaffModal';
 import { ServiceModal } from './services/ServiceModal';
 import { formatCurrency } from '../utils/formatters';
@@ -47,7 +47,7 @@ const SERVICE_CATEGORY_PRESETS = [
 ];
 
 // Enlaces directos a WhatsApp de Iris Quiroz (Soporte Técnico y Suscripción)
-const IRIS_WHATSAPP_NUMBER = '5493413540643';
+const IRIS_WHATSAPP_NUMBER = '54911XXXXXXX';
 const SUPPORT_MESSAGE = 'Hola Iris, necesito ayuda con Tu Agenda Lista';
 const SUBSCRIPTION_MESSAGE = 'Hola Iris, quiero abonar mi suscripción mensual de $45.000 de Tu Agenda Lista';
 
@@ -87,7 +87,6 @@ export function SettingsView() {
   const [newStaffName, setNewStaffName] = useState('');
   const [newStaffRole, setNewStaffRole] = useState('');
   const [newStaffPhone, setNewStaffPhone] = useState('');
-  const [newStaffBranch, setNewStaffBranch] = useState<StaffBranchScope>('sucursal_1');
   const [isQuickAddingStaff, setIsQuickAddingStaff] = useState(false);
 
   // Quick inline add states for Services
@@ -154,8 +153,7 @@ export function SettingsView() {
         name: newStaffName.trim(),
         role: newStaffRole.trim() || 'Especialista',
         phone: newStaffPhone.trim(),
-        color: '#2563eb',
-        branchId: newStaffBranch,
+        color: '#1E3A8A',
         workingDays: [1, 2, 3, 4, 5, 6],
         workingHoursStart: '09:00',
         workingHoursEnd: '20:00',
@@ -304,7 +302,7 @@ export function SettingsView() {
   });
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto text-white">
+    <div className="space-y-6 max-w-5xl mx-auto text-[#000000]">
       {/* Selector de sub-sección con alto contraste y bordes visibles */}
       <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl border-2 border-slate-300 overflow-x-auto shadow-2xs">
         <button
@@ -313,13 +311,13 @@ export function SettingsView() {
           className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black border-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
             activeTab === 'profesionales'
               ? 'bg-[#1E3A8A] text-white border-[#1E3A8A] shadow-xs'
-              : 'bg-white text-[#000000] border-slate-300 hover:border-slate-700 hover:bg-slate-50'
+              : 'bg-slate-100 text-[#0F172A] border-slate-300 hover:bg-white hover:border-slate-500'
           }`}
         >
           <UserCheck className="w-4 h-4 stroke-[2.5]" />
           <span>Gestionar Profesionales</span>
           <span className={`px-2 py-0.5 rounded-full text-xs font-black ${
-            activeTab === 'profesionales' ? 'bg-white text-[#1E3A8A]' : 'bg-slate-200 text-[#000000]'
+            activeTab === 'profesionales' ? 'bg-white text-[#1E3A8A]' : 'bg-slate-200 text-[#0F172A]'
           }`}>
             {staff.length}
           </span>
@@ -331,13 +329,13 @@ export function SettingsView() {
           className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black border-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
             activeTab === 'servicios'
               ? 'bg-[#1E3A8A] text-white border-[#1E3A8A] shadow-xs'
-              : 'bg-white text-[#000000] border-slate-300 hover:border-slate-700 hover:bg-slate-50'
+              : 'bg-slate-100 text-[#0F172A] border-slate-300 hover:bg-white hover:border-slate-500'
           }`}
         >
           <Sparkles className="w-4 h-4 stroke-[2.5]" />
           <span>Gestionar Servicios</span>
           <span className={`px-2 py-0.5 rounded-full text-xs font-black ${
-            activeTab === 'servicios' ? 'bg-white text-[#1E3A8A]' : 'bg-slate-200 text-[#000000]'
+            activeTab === 'servicios' ? 'bg-white text-[#1E3A8A]' : 'bg-slate-200 text-[#0F172A]'
           }`}>
             {services.length}
           </span>
@@ -349,7 +347,7 @@ export function SettingsView() {
           className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black border-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
             activeTab === 'negocio'
               ? 'bg-[#1E3A8A] text-white border-[#1E3A8A] shadow-xs'
-              : 'bg-white text-[#000000] border-slate-300 hover:border-slate-700 hover:bg-slate-50'
+              : 'bg-slate-100 text-[#0F172A] border-slate-300 hover:bg-white hover:border-slate-500'
           }`}
         >
           <Building2 className="w-4 h-4 stroke-[2.5]" />
@@ -362,7 +360,7 @@ export function SettingsView() {
           className={`px-3 py-2.5 rounded-xl text-xs sm:text-sm font-black border-2 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
             activeTab === 'todos'
               ? 'bg-[#1E3A8A] text-white border-[#1E3A8A] shadow-xs'
-              : 'bg-white text-[#000000] border-slate-300 hover:border-slate-700 hover:bg-slate-50'
+              : 'bg-slate-100 text-[#0F172A] border-slate-300 hover:bg-white hover:border-slate-500'
           }`}
         >
           <span>Ver Todo</span>
@@ -430,52 +428,39 @@ export function SettingsView() {
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-slate-800 block mb-1">Nombre Completo *</label>
+                  <label className="text-xs font-black text-[#000000] block mb-1">Nombre Completo *</label>
                   <input
                     type="text"
                     required
                     placeholder="Ej. Sofía Gómez"
                     value={newStaffName}
                     onChange={(e) => setNewStaffName(e.target.value)}
-                    className="w-full text-xs sm:text-sm font-semibold p-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 focus:border-blue-600 outline-none"
+                    className="w-full text-sm font-black p-2.5 rounded-xl border-2 border-slate-300 bg-white text-[#000000] focus:border-[#1E3A8A] outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-800 block mb-1">Especialidad o Rol</label>
+                  <label className="text-xs font-black text-[#000000] block mb-1">Especialidad o Rol</label>
                   <input
                     type="text"
-                    placeholder="Ej. Colorista, Estilista..."
+                    placeholder="Ej. Colorista, Estilista, Manicura..."
                     value={newStaffRole}
                     onChange={(e) => setNewStaffRole(e.target.value)}
-                    className="w-full text-xs sm:text-sm font-semibold p-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 focus:border-blue-600 outline-none"
+                    className="w-full text-sm font-black p-2.5 rounded-xl border-2 border-slate-300 bg-white text-[#000000] focus:border-[#1E3A8A] outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-800 block mb-1">WhatsApp / Teléfono</label>
+                  <label className="text-xs font-black text-[#000000] block mb-1">WhatsApp / Teléfono</label>
                   <input
                     type="tel"
                     placeholder="Ej. +54 9 11 1234-5678"
                     value={newStaffPhone}
                     onChange={(e) => setNewStaffPhone(e.target.value)}
-                    className="w-full text-xs sm:text-sm font-semibold p-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 focus:border-blue-600 outline-none"
+                    className="w-full text-sm font-black p-2.5 rounded-xl border-2 border-slate-300 bg-white text-[#000000] focus:border-[#1E3A8A] outline-none"
                   />
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold text-slate-800 block mb-1">Sucursal Asignada</label>
-                  <select
-                    value={newStaffBranch}
-                    onChange={(e) => setNewStaffBranch(e.target.value as StaffBranchScope)}
-                    className="w-full text-xs sm:text-sm font-bold p-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 focus:border-blue-600 outline-none cursor-pointer"
-                  >
-                    <option value="sucursal_1">Sucursal 1</option>
-                    <option value="sucursal_2">Sucursal 2</option>
-                    <option value="ambas">Ambas Sucursales</option>
-                  </select>
                 </div>
               </div>
 
@@ -483,7 +468,7 @@ export function SettingsView() {
                 <button
                   type="submit"
                   disabled={isQuickAddingStaff}
-                  className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-98 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                  className="w-full sm:w-auto px-6 py-2.5 bg-[#1E3A8A] hover:bg-[#172554] active:scale-98 text-white rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer disabled:opacity-50"
                 >
                   <Plus className="w-4 h-4 stroke-[3]" />
                   <span>{isQuickAddingStaff ? 'Guardando...' : '+ Guardar Profesional'}</span>
@@ -522,25 +507,10 @@ export function SettingsView() {
                               {member.name.charAt(0).toUpperCase()}
                             </div>
                             <div className="min-w-0">
-                              <h4 className="font-bold text-slate-900 text-base truncate">{member.name}</h4>
-                              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                                <span className="px-2 py-0.5 rounded-md text-xs font-bold bg-slate-100 text-slate-800 border border-slate-200">
-                                  {member.role || 'Especialista'}
-                                </span>
-                                {member.branchId === 'sucursal_2' ? (
-                                  <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
-                                    Sucursal 2
-                                  </span>
-                                ) : member.branchId === 'ambas' ? (
-                                  <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                    Ambas
-                                  </span>
-                                ) : (
-                                  <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                                    Sucursal 1
-                                  </span>
-                                )}
-                              </div>
+                              <h4 className="font-black text-[#000000] text-base truncate">{member.name}</h4>
+                              <span className="inline-block mt-0.5 px-2 py-0.5 rounded-md text-xs font-black bg-blue-100 text-[#1E3A8A] border border-blue-300 truncate max-w-full">
+                                {member.role || 'Especialista'}
+                              </span>
                             </div>
                           </div>
 

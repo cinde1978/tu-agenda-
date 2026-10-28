@@ -59,6 +59,33 @@ export interface Service {
 export type BranchId = 'sucursal_1' | 'sucursal_2';
 export type StaffBranchScope = BranchId | 'ambas';
 
+export interface StaffBreak {
+  id: string;
+  start: string; // e.g. "13:00"
+  end: string; // e.g. "14:00"
+  description?: string; // e.g. "Almuerzo"
+}
+
+export interface StaffBranchShift {
+  active: boolean; // ¿Atiende en esta sucursal en este día?
+  start: string; // "09:00"
+  end: string; // "14:00"
+  breaks?: StaffBreak[];
+}
+
+export interface StaffDaySchedule {
+  day: number; // 0: Dom, 1: Lun, 2: Mar, 3: Mié, 4: Jue, 5: Vie, 6: Sáb
+  active: boolean; // ¿Laboral o descanso semanal?
+  start: string; // "09:00" (horario habitual / general)
+  end: string; // "20:00" (horario habitual / general)
+  breaks: StaffBreak[]; // Uno o más descansos
+  branchId?: StaffBranchScope; // 'sucursal_1' | 'sucursal_2' | 'ambas'
+  branchShifts?: {
+    sucursal_1?: StaffBranchShift;
+    sucursal_2?: StaffBranchShift;
+  };
+}
+
 export interface StaffMember {
   id: string;
   businessId: string;
@@ -68,8 +95,9 @@ export interface StaffMember {
   color: string;
   branchId?: StaffBranchScope; // 'sucursal_1' | 'sucursal_2' | 'ambas'
   workingDays: number[]; // 0: Dom, 1: Lun, 2: Mar, 3: Mié, 4: Jue, 5: Vie, 6: Sáb
-  workingHoursStart: string; // "08:00"
+  workingHoursStart: string; // "09:00"
   workingHoursEnd: string; // "20:00"
+  daySchedules?: StaffDaySchedule[]; // Horarios independientes por día con descansos y sucursales
   blockedDates: string[]; // ['2026-10-12', ...]
   active: boolean;
   createdAt: string;
@@ -81,8 +109,8 @@ export interface Branch {
 }
 
 export const BRANCHES: Branch[] = [
-  { id: 'sucursal_1', name: 'Sucursal 1' },
-  { id: 'sucursal_2', name: 'Sucursal 2' },
+  { id: 'sucursal_1', name: 'Soham Montevideo' },
+  { id: 'sucursal_2', name: 'Soham Rioja' },
 ];
 
 export interface Appointment {

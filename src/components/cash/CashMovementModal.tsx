@@ -6,8 +6,6 @@ import { getTodayDateString } from '../../utils/initialData';
 
 interface CashMovementModalProps {
   initialDate?: string;
-  initialType?: CashMovementType;
-  initialBranchId?: BranchId;
   onClose: () => void;
   onSaved: (id: string) => void;
 }
@@ -15,18 +13,12 @@ interface CashMovementModalProps {
 const INCOME_CATEGORIES: CashMovementCategory[] = ['turno', 'seña', 'saldo', 'otro'];
 const EXPENSE_CATEGORIES: CashMovementCategory[] = ['insumos', 'alquiler', 'servicios', 'comisiones', 'otro'];
 
-export function CashMovementModal({
-  initialDate,
-  initialType = 'ingreso',
-  initialBranchId,
-  onClose,
-  onSaved,
-}: CashMovementModalProps) {
+export function CashMovementModal({ initialDate, onClose, onSaved }: CashMovementModalProps) {
   const { createCashMovement, business, selectedBranch, branches } = useApp();
-  const [branchId, setBranchId] = useState<BranchId>(initialBranchId || selectedBranch);
+  const [branchId, setBranchId] = useState<BranchId>(selectedBranch);
   const [date, setDate] = useState(initialDate || getTodayDateString());
-  const [type, setType] = useState<CashMovementType>(initialType);
-  const [category, setCategory] = useState<CashMovementCategory>(initialType === 'ingreso' ? 'turno' : 'insumos');
+  const [type, setType] = useState<CashMovementType>('ingreso');
+  const [category, setCategory] = useState<CashMovementCategory>('turno');
   const [amount, setAmount] = useState<number>(1000);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('efectivo');
   const [description, setDescription] = useState('');
@@ -124,7 +116,7 @@ export function CashMovementModal({
           {/* Sucursal Selector */}
           <div>
             <label className="text-xs font-black text-[#0F172A] flex items-center gap-1.5 mb-1.5">
-              <Building2 className="w-3.5 h-3.5 text-[#0F172A]" />
+              <Building2 className="w-3.5 h-3.5 text-[#1E3A8A]" />
               <span>Sucursal asignada</span>
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -133,9 +125,9 @@ export function CashMovementModal({
                   key={b.id}
                   type="button"
                   onClick={() => setBranchId(b.id)}
-                  className={`py-2 px-3 rounded-xl text-xs font-black transition-all border text-center cursor-pointer ${
+                  className={`py-2 px-3 rounded-xl text-xs font-black transition-all border-2 text-center cursor-pointer ${
                     branchId === b.id
-                      ? 'bg-[#0F172A] border-[#0F172A] text-white shadow-xs'
+                      ? 'bg-[#1E3A8A] border-[#1E3A8A] text-white shadow-xs'
                       : 'bg-white border-slate-300 text-[#0F172A] hover:bg-slate-50'
                   }`}
                 >
@@ -147,11 +139,11 @@ export function CashMovementModal({
 
           {/* Amount */}
           <div>
-            <label className="text-xs font-semibold text-slate-700 block mb-1">
+            <label className="text-xs font-black text-[#0F172A] block mb-1">
               Monto ({business?.currency || '$'}) *
             </label>
             <div className="relative">
-              <DollarSign className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+              <DollarSign className="w-4 h-4 text-slate-500 absolute left-3 top-3.5" />
               <input
                 type="number"
                 min="1"
@@ -159,7 +151,7 @@ export function CashMovementModal({
                 required
                 value={amount}
                 onChange={(e) => setAmount(Number(e.target.value))}
-                className="w-full text-base font-bold pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 focus:border-blue-600 outline-none"
+                className="w-full text-base font-bold pl-9 pr-3 py-2.5 rounded-xl border-2 border-slate-300 bg-white text-slate-900 focus:border-blue-600 outline-none shadow-2xs"
               />
             </div>
           </div>
@@ -167,14 +159,14 @@ export function CashMovementModal({
           {/* Category & Payment Method */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-black text-[#000000] block mb-1">Categoría</label>
+              <label className="text-xs font-black text-[#0F172A] block mb-1">Categoría</label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as CashMovementCategory)}
-                className="w-full text-xs font-black p-2.5 rounded-xl border-2 border-slate-300 bg-white text-[#000000] capitalize outline-none"
+                className="w-full text-xs font-black p-2.5 rounded-xl border-2 border-slate-300 bg-white text-[#0F172A] capitalize outline-none"
               >
                 {(type === 'ingreso' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES).map((cat) => (
-                  <option key={cat} value={cat} className="text-[#000000] font-bold bg-white">
+                  <option key={cat} value={cat} className="text-[#0F172A] font-bold bg-white">
                     {cat}
                   </option>
                 ))}
@@ -182,17 +174,17 @@ export function CashMovementModal({
             </div>
 
             <div>
-              <label className="text-xs font-black text-[#000000] block mb-1">Medio de Pago</label>
+              <label className="text-xs font-black text-[#0F172A] block mb-1">Medio de Pago</label>
               <select
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
-                className="w-full text-xs font-black p-2.5 rounded-xl border-2 border-slate-300 bg-white text-[#000000] capitalize outline-none"
+                className="w-full text-xs font-black p-2.5 rounded-xl border-2 border-slate-300 bg-white text-[#0F172A] capitalize outline-none"
               >
-                <option value="efectivo" className="text-[#000000] font-bold bg-white">Efectivo</option>
-                <option value="transferencia" className="text-[#000000] font-bold bg-white">Transferencia</option>
-                <option value="mercadopago" className="text-[#000000] font-bold bg-white">Mercado Pago</option>
-                <option value="tarjeta" className="text-[#000000] font-bold bg-white">Tarjeta</option>
-                <option value="otro" className="text-[#000000] font-bold bg-white">Otro</option>
+                <option value="efectivo" className="text-[#0F172A] font-bold bg-white">Efectivo</option>
+                <option value="transferencia" className="text-[#0F172A] font-bold bg-white">Transferencia</option>
+                <option value="mercadopago" className="text-[#0F172A] font-bold bg-white">Mercado Pago</option>
+                <option value="tarjeta" className="text-[#0F172A] font-bold bg-white">Tarjeta</option>
+                <option value="otro" className="text-[#0F172A] font-bold bg-white">Otro</option>
               </select>
             </div>
           </div>
