@@ -123,7 +123,7 @@ export const AgendaHeader: React.FC<AgendaHeaderProps> = ({
                   .filter((s) => s.active)
                   .map((s) => (
                     <option key={s.id} value={s.id} className="text-[#0F172A] font-bold bg-white">
-                      {s.name} ({s.role}) · {s.branchId === 'ambas' ? 'Ambas' : s.branchId === 'sucursal_2' ? 'Suc. 2' : 'Suc. 1'}
+                      {s.name} ({s.role}) · {s.branchId === 'ambas' ? 'Ambas Sucursales' : s.branchId === 'sucursal_2' ? 'Soham Rioja' : 'Soham Montevideo'}
                     </option>
                   ))}
               </select>

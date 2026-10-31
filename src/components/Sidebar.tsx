@@ -14,6 +14,8 @@ import {
   ChevronRight,
   Clock,
   Download,
+  Gift,
+  Layers,
 } from 'lucide-react';
 import { ViewTab } from '../types';
 import { useApp } from '../context/AppContext';
@@ -52,8 +54,10 @@ export function Sidebar({
     { id: 'clientes', label: 'Clientes', icon: <Users className="w-4 h-4" /> },
     { id: 'servicios', label: 'Servicios', icon: <Sparkles className="w-4 h-4" /> },
     { id: 'profesionales', label: 'Profesionales', icon: <UserCheck className="w-4 h-4" /> },
+    { id: 'recursos', label: 'Cabinas & Equipos', icon: <Layers className="w-4 h-4" /> },
     { id: 'caja', label: 'Caja Diaria', icon: <Wallet className="w-4 h-4" /> },
-    { id: 'reportes', label: 'Estadísticas', icon: <BarChart3 className="w-4 h-4" /> },
+    { id: 'giftcards', label: 'Gift Cards & Vouchers', icon: <Gift className="w-4 h-4" /> },
+    { id: 'reportes', label: 'Estadísticas & Comisiones', icon: <BarChart3 className="w-4 h-4" /> },
     { id: 'exportar', label: 'Imprimir / Excel', icon: <Printer className="w-4 h-4" /> },
     { id: 'configuracion', label: 'Ajustes del Negocio', icon: <Settings className="w-4 h-4" /> },
   ];

@@ -18,15 +18,24 @@ export function WhatsAppModal({ appointment, business, onClose }: WhatsAppModalP
   const formattedDate = formatDateSpanishLong(appointment.date);
 
   const getTemplateText = (type: string) => {
+    const branchName =
+      appointment.branchId === 'sucursal_2'
+        ? 'Soham Rioja (Rioja 2954, Rosario)'
+        : 'Soham Montevideo (Montevideo 1420)';
+    const mapsUrl =
+      appointment.branchId === 'sucursal_2'
+        ? 'https://www.google.com/maps/search/?api=1&query=Rioja+2954,+Rosario,+Santa+Fe,+Argentina'
+        : 'https://www.google.com/maps/search/?api=1&query=Soham+Montevideo+1420';
+
     switch (type) {
       case 'confirm':
-        return `Hola ${appointment.clientName}, te confirmamos tu turno para ${appointment.serviceName} el día ${formattedDate} a las ${appointment.time} hs.`;
+        return `Hola ${appointment.clientName}, te confirmamos tu turno para ${appointment.serviceName} el día ${formattedDate} a las ${appointment.time} hs en *${branchName}*.\n📍 *Cómo llegar:* ${mapsUrl}\n¡Te esperamos! ✨`;
 
       case 'reminder':
-        return `🔔 *¡Hola ${appointment.clientName}!* Te recordamos tu turno programado en *${business.name}*:\n\n📅 *Fecha:* ${formattedDate}\n⏰ *Hora:* ${appointment.time} hs\n✂️ *Servicio:* ${appointment.serviceName}\n👤 *Atendido por:* ${appointment.staffName}\n📍 *Lugar:* ${business.address}\n\nPor favor, responde este mensaje para confirmar tu asistencia. ¡Muchas gracias! 💕`;
+        return `🔔 *¡Hola ${appointment.clientName}!* Te recordamos tu turno programado en *${business.name}*:\n\n📅 *Fecha:* ${formattedDate}\n⏰ *Hora:* ${appointment.time} hs\n✂️ *Servicio:* ${appointment.serviceName}\n👤 *Atendido por:* ${appointment.staffName}\n📍 *Sucursal:* ${branchName}\n🗺️ *Ubicación en Google Maps:* ${mapsUrl}\n\nPor favor, responde este mensaje para confirmar tu asistencia. ¡Muchas gracias! 💕`;
 
       case 'deposit':
-        return `👋 *¡Hola ${appointment.clientName}!* Para asegurar y confirmar tu turno en *${business.name}* para el *${formattedDate} a las ${appointment.time} hs*, te solicitamos una seña de *${business.currency} ${appointment.depositAmount || Math.round(appointment.price * 0.3)}*.\n\n🏦 *Datos de transferencia:*\n*Alias:* ${business.mercadoPagoAlias || business.cbuAlias || 'agenda.turnos.mp'}\n*Titular:* ${business.name}\n\nUna vez realizado, por favor envíanos el comprobante por acá. ¡Muchas gracias! ✨`;
+        return `👋 *¡Hola ${appointment.clientName}!* Para asegurar y confirmar tu turno en *${business.name}* (${branchName}) para el *${formattedDate} a las ${appointment.time} hs*, te solicitamos una seña de *${business.currency} ${appointment.depositAmount || Math.round(appointment.price * 0.3)}*.\n\n🏦 *Datos de transferencia:*\n*Alias:* ${business.mercadoPagoAlias || business.cbuAlias || 'agenda.turnos.mp'}\n*Titular:* ${business.name}\n📍 *Sucursal:* ${branchName} (${mapsUrl})\n\nUna vez realizado, por favor envíanos el comprobante por acá. ¡Muchas gracias! ✨`;
 
       case 'reschedule':
         return `👋 *¡Hola ${appointment.clientName}!* Nos comunicamos desde *${business.name}* respecto a tu turno del ${formattedDate}. Quisiéramos coordinar una reprogramación para un horario que te resulte cómodo. ¿En qué días y horarios te vendría bien? Quedamos a tu disposición. 💖`;

@@ -28,6 +28,8 @@ import {
   BranchId,
   Branch,
   BRANCHES,
+  Resource,
+  GiftCard,
 } from '../types';
 import {
   getDefaultBusiness,
@@ -36,8 +38,11 @@ import {
   getDefaultClients,
   getDefaultAppointments,
   getDefaultCashMovements,
+  getDefaultResources,
+  getDefaultGiftCards,
   getTodayDateString,
 } from '../utils/initialData';
+import { getStaffDaySchedule } from '../utils/staffSchedule';
 
 const LOCAL_STORAGE_KEY = 'tu_agenda_lista_data_v3';
 const PREV_LOCAL_STORAGE_KEY = 'tu_agenda_lista_data_v2';
@@ -49,6 +54,8 @@ interface LocalStoredState {
   clients: Client[];
   appointments: Appointment[];
   cashMovements: CashMovement[];
+  giftCards?: GiftCard[];
+  resources?: Resource[];
 }
 
 interface AppContextType {
@@ -63,6 +70,9 @@ interface AppContextType {
   allAppointments: Appointment[];
   cashMovements: CashMovement[];
   allCashMovements: CashMovement[];
+  giftCards: GiftCard[];
+  allGiftCards: GiftCard[];
+  resources: Resource[];
   selectedBranch: BranchId;
   setSelectedBranch: (branch: BranchId) => void;
   branches: Branch[];
@@ -90,6 +100,12 @@ interface AppContextType {
   deleteStaff: (id: string) => Promise<void>;
   createCashMovement: (mov: Omit<CashMovement, 'id' | 'businessId' | 'createdAt'>) => Promise<string>;
   deleteCashMovement: (id: string) => Promise<void>;
+  createGiftCard: (gc: Omit<GiftCard, 'id' | 'businessId' | 'createdAt' | 'updatedAt'>, registerCashMovement?: boolean) => Promise<string>;
+  redeemGiftCard: (code: string, redemptionData: { staffId?: string; staffName?: string; branchId: BranchId; notes?: string }) => Promise<{ success: boolean; giftCard: GiftCard }>;
+  deleteGiftCard: (id: string) => Promise<void>;
+  createResource: (res: Omit<Resource, 'id' | 'businessId' | 'createdAt'>) => Promise<string>;
+  updateResource: (res: Resource) => Promise<void>;
+  deleteResource: (id: string) => Promise<void>;
   resetToSampleData: () => Promise<void>;
   exportAppointmentsToCSV: (dateFilter?: string) => void;
   exportBusinessConfiguration: () => BusinessConfigExport;
@@ -108,6 +124,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [rawAppointments, setRawAppointments] = useState<Appointment[]>([]);
   const [rawCashMovements, setRawCashMovements] = useState<CashMovement[]>([]);
+  const [rawGiftCards, setRawGiftCards] = useState<GiftCard[]>([]);
+  const [resources, setResources] = useState<Resource[]>([]);
   const setAppointments = setRawAppointments;
   const setCashMovements = setRawCashMovements;
 
@@ -134,6 +152,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const cashMovements = useMemo(() => {
     return rawCashMovements.filter((mov) => (mov.branchId || 'sucursal_1') === selectedBranch);
   }, [rawCashMovements, selectedBranch]);
+
+  const giftCards = useMemo(() => {
+    return rawGiftCards.filter((gc) => !gc.branchId || gc.branchId === 'ambas' || gc.branchId === selectedBranch);
+  }, [rawGiftCards, selectedBranch]);
 
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [hasFirestoreError, setHasFirestoreError] = useState<string | null>(null);
@@ -220,7 +242,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
         let validStaff = parsed.staff || [];
         const hasAestheticStaff = validStaff.some((st) =>
-          ['Camila Rossi', 'Valeria Gómez', 'Lucas Medina'].includes(st.name)
+          ['Camila Rossi', 'Valeria Gómez', 'Lucas Medina', 'Iris'].includes(st.name)
         );
         const onlyHasOldSampleStaff = validStaff.length > 0 && validStaff.every((st) =>
           ['Valentina Rivas', 'Lucía Fernández', 'Mateo Benítez'].includes(st.name)
@@ -229,12 +251,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           validStaff = getDefaultStaff('biz_local_active');
         }
 
+        // Guarantee all 7 independent day schedules for every loaded staff member
+        validStaff = validStaff.map((member) => {
+          if (!member.daySchedules || member.daySchedules.length < 7) {
+            return {
+              ...member,
+              daySchedules: [1, 2, 3, 4, 5, 6, 0].map((d) => getStaffDaySchedule(member, d)),
+            };
+          }
+          return member;
+        });
+
         setBusiness(parsed.business || getDefaultBusiness('local_owner', 'Tu Agenda Lista'));
         setServices(validServices);
         setStaff(validStaff);
         setClients(parsed.clients || getDefaultClients('biz_local_active'));
         setAppointments(parsed.appointments && parsed.appointments.length > 0 ? parsed.appointments : getDefaultAppointments('biz_local_active'));
         setCashMovements(parsed.cashMovements && parsed.cashMovements.length > 0 ? parsed.cashMovements : getDefaultCashMovements('biz_local_active'));
+        setRawGiftCards(parsed.giftCards && parsed.giftCards.length > 0 ? parsed.giftCards : getDefaultGiftCards('biz_local_active'));
+        setResources(parsed.resources && parsed.resources.length > 0 ? parsed.resources : getDefaultResources('biz_local_active'));
         setIsDemoMode(false);
         setIsLoadingData(false);
         return;
@@ -252,6 +287,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setClients(getDefaultClients('biz_local_active'));
     setAppointments(getDefaultAppointments('biz_local_active'));
     setCashMovements(getDefaultCashMovements('biz_local_active'));
+    setRawGiftCards(getDefaultGiftCards('biz_local_active'));
+    setResources(getDefaultResources('biz_local_active'));
     setIsLoadingData(false);
   }, [user, authLoading]);
 
@@ -266,12 +303,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         clients,
         appointments: rawAppointments,
         cashMovements: rawCashMovements,
+        giftCards: rawGiftCards,
+        resources,
       };
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(stateToStore));
     } catch (e) {
       console.warn('Error saving to localStorage', e);
     }
-  }, [business, services, staff, clients, rawAppointments, rawCashMovements]);
+  }, [business, services, staff, clients, rawAppointments, rawCashMovements, rawGiftCards, resources]);
 
   // Sync with Firestore when User is signed in
   useEffect(() => {
@@ -369,7 +408,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       staffRef,
       (snapshot) => {
         const list: StaffMember[] = [];
-        snapshot.forEach((d) => list.push(d.data() as StaffMember));
+        snapshot.forEach((d) => {
+          const raw = d.data() as StaffMember;
+          const member: StaffMember = {
+            ...raw,
+            daySchedules: (!raw.daySchedules || raw.daySchedules.length < 7)
+              ? [1, 2, 3, 4, 5, 6, 0].map((dayNum) => getStaffDaySchedule(raw, dayNum))
+              : raw.daySchedules,
+          };
+          list.push(member);
+        });
         if (list.length > 0) setStaff(list);
       },
       (error) => {
@@ -406,6 +454,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     );
     unsubs.push(unsubCash);
+
+    const giftCardsRef = collection(db, `businesses/${currentBusinessId}/giftCards`);
+    const unsubGiftCards = onSnapshot(
+      giftCardsRef,
+      (snapshot) => {
+        const list: GiftCard[] = [];
+        snapshot.forEach((d) => list.push(d.data() as GiftCard));
+        if (list.length > 0) setRawGiftCards(list);
+      },
+      (error) => {
+        handleFirestoreError(error, OperationType.LIST, `businesses/${currentBusinessId}/giftCards`);
+      }
+    );
+    unsubs.push(unsubGiftCards);
+
+    const resourcesRef = collection(db, `businesses/${currentBusinessId}/resources`);
+    const unsubResources = onSnapshot(
+      resourcesRef,
+      (snapshot) => {
+        const list: Resource[] = [];
+        snapshot.forEach((d) => list.push(d.data() as Resource));
+        if (list.length > 0) setResources(list);
+      },
+      (error) => {
+        handleFirestoreError(error, OperationType.LIST, `businesses/${currentBusinessId}/resources`);
+      }
+    );
+    unsubs.push(unsubResources);
 
     return () => {
       unsubs.forEach((unsub) => unsub());
@@ -625,6 +701,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Client actions
   const createClient = useCallback(
     async (cliData: Omit<Client, 'id' | 'businessId' | 'createdAt' | 'updatedAt' | 'totalVisits' | 'totalSpent'>): Promise<string> => {
+      const cleanName = (cliData.name || '').trim();
+      const cleanPhone = (cliData.phone || '').trim();
+      const cleanDigits = cleanPhone.replace(/\D/g, '');
+
+      // Check if client already exists (case-insensitive name or exact digits match)
+      const existing = clients.find((c) => {
+        const cName = (c.name || '').trim().toLowerCase();
+        if (cleanName && cName === cleanName.toLowerCase()) return true;
+        if (cleanDigits && cleanDigits.length >= 6) {
+          const cDigits = (c.phone || '').replace(/\D/g, '');
+          const cWaDigits = ((c as any).whatsapp || '').replace(/\D/g, '');
+          if (cDigits && cDigits === cleanDigits) return true;
+          if (cWaDigits && cWaDigits === cleanDigits) return true;
+        }
+        return false;
+      });
+
+      if (existing) {
+        // Return existing client ID to avoid duplicates
+        return existing.id;
+      }
+
       const id = `cli_${Date.now()}`;
       const today = getTodayDateString();
       const newClient: Client = {
@@ -637,18 +735,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         updatedAt: today,
       };
 
-      setClients((prev) => [newClient, ...prev]);
+      const cleanClient: Client = JSON.parse(JSON.stringify(newClient));
+
+      setClients((prev) => {
+        // Double check inside state updater
+        if (prev.some((c) => c.id === id || (cleanName && c.name.trim().toLowerCase() === cleanName.toLowerCase()))) {
+          return prev;
+        }
+        const nextClients = [cleanClient, ...prev];
+        try {
+          const stored = localStorage.getItem(LOCAL_STORAGE_KEY) || localStorage.getItem(PREV_LOCAL_STORAGE_KEY);
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            parsed.clients = nextClients;
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(parsed));
+          }
+        } catch (e) {
+          console.warn('Sync client create to localStorage failed', e);
+        }
+        return nextClients;
+      });
 
       if (user && currentBusinessId) {
         try {
-          await setDoc(doc(db, `businesses/${currentBusinessId}/clients`, id), newClient);
+          await setDoc(doc(db, `businesses/${currentBusinessId}/clients`, id), cleanClient);
         } catch (err) {
           handleFirestoreError(err, OperationType.CREATE, `businesses/${currentBusinessId}/clients/${id}`);
         }
       }
       return id;
     },
-    [currentBusinessId, user]
+    [currentBusinessId, user, clients]
   );
 
   const updateClient = useCallback(
@@ -657,13 +774,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         ...cli,
         updatedAt: getTodayDateString(),
       };
-      setClients((prev) => prev.map((c) => (c.id === cli.id ? updated : c)));
+      const cleanClient: Client = JSON.parse(JSON.stringify(updated));
+
+      setClients((prev) => {
+        const nextClients = prev.map((c) => (c.id === cleanClient.id ? cleanClient : c));
+        try {
+          const stored = localStorage.getItem(LOCAL_STORAGE_KEY) || localStorage.getItem(PREV_LOCAL_STORAGE_KEY);
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            parsed.clients = nextClients;
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(parsed));
+          }
+        } catch (e) {
+          console.warn('Sync client update to localStorage failed', e);
+        }
+        return nextClients;
+      });
 
       if (user && currentBusinessId) {
         try {
-          await setDoc(doc(db, `businesses/${currentBusinessId}/clients`, cli.id), updated);
+          await setDoc(doc(db, `businesses/${currentBusinessId}/clients`, cleanClient.id), cleanClient);
         } catch (err) {
-          handleFirestoreError(err, OperationType.UPDATE, `businesses/${currentBusinessId}/clients/${cli.id}`);
+          handleFirestoreError(err, OperationType.UPDATE, `businesses/${currentBusinessId}/clients/${cleanClient.id}`);
         }
       }
     },
@@ -672,7 +804,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const deleteClient = useCallback(
     async (id: string) => {
-      setClients((prev) => prev.filter((c) => c.id !== id));
+      setClients((prev) => {
+        const nextClients = prev.filter((c) => c.id !== id);
+        try {
+          const stored = localStorage.getItem(LOCAL_STORAGE_KEY) || localStorage.getItem(PREV_LOCAL_STORAGE_KEY);
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            parsed.clients = nextClients;
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(parsed));
+          }
+        } catch (e) {
+          console.warn('Sync client delete to localStorage failed', e);
+        }
+        return nextClients;
+      });
+
       if (user && currentBusinessId) {
         try {
           await deleteDoc(doc(db, `businesses/${currentBusinessId}/clients`, id));
@@ -751,7 +897,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       };
       const cleanStaff: StaffMember = JSON.parse(JSON.stringify(rawStaff));
 
-      setStaff((prev) => [cleanStaff, ...prev]);
+      setStaff((prev) => {
+        const nextStaff = [cleanStaff, ...prev];
+        try {
+          const stored = localStorage.getItem(LOCAL_STORAGE_KEY) || localStorage.getItem(PREV_LOCAL_STORAGE_KEY);
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            parsed.staff = nextStaff;
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(parsed));
+          }
+        } catch (e) {
+          console.warn('Sync staff create to localStorage failed', e);
+        }
+        return nextStaff;
+      });
 
       if (user && currentBusinessId) {
         try {
@@ -768,7 +927,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const updateStaff = useCallback(
     async (stf: StaffMember) => {
       const cleanStaff: StaffMember = JSON.parse(JSON.stringify(stf));
-      setStaff((prev) => prev.map((s) => (s.id === cleanStaff.id ? cleanStaff : s)));
+      setStaff((prev) => {
+        const nextStaff = prev.map((s) => (s.id === cleanStaff.id ? cleanStaff : s));
+        try {
+          const stored = localStorage.getItem(LOCAL_STORAGE_KEY) || localStorage.getItem(PREV_LOCAL_STORAGE_KEY);
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            parsed.staff = nextStaff;
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(parsed));
+          }
+        } catch (e) {
+          console.warn('Sync staff update to localStorage failed', e);
+        }
+        return nextStaff;
+      });
+
       if (user && currentBusinessId) {
         try {
           await setDoc(doc(db, `businesses/${currentBusinessId}/staff`, cleanStaff.id), cleanStaff);
@@ -782,7 +955,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const deleteStaff = useCallback(
     async (id: string) => {
-      setStaff((prev) => prev.filter((s) => s.id !== id));
+      setStaff((prev) => {
+        const nextStaff = prev.filter((s) => s.id !== id);
+        try {
+          const stored = localStorage.getItem(LOCAL_STORAGE_KEY) || localStorage.getItem(PREV_LOCAL_STORAGE_KEY);
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            parsed.staff = nextStaff;
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(parsed));
+          }
+        } catch (e) {
+          console.warn('Sync staff delete to localStorage failed', e);
+        }
+        return nextStaff;
+      });
+
       if (user && currentBusinessId) {
         try {
           await deleteDoc(doc(db, `businesses/${currentBusinessId}/staff`, id));
@@ -829,6 +1016,180 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           await deleteDoc(doc(db, `businesses/${currentBusinessId}/cashMovements`, id));
         } catch (err) {
           handleFirestoreError(err, OperationType.DELETE, `businesses/${currentBusinessId}/cashMovements/${id}`);
+        }
+      }
+    },
+    [currentBusinessId, user]
+  );
+
+  // Gift Card actions
+  const createGiftCard = useCallback(
+    async (
+      gcData: Omit<GiftCard, 'id' | 'businessId' | 'createdAt' | 'updatedAt'>,
+      registerCashMovement: boolean = true
+    ): Promise<string> => {
+      const id = `gc_${Date.now()}`;
+      const today = getTodayDateString();
+      const randomSuffix = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const code = gcData.code && gcData.code.trim().length > 0 ? gcData.code.trim().toUpperCase() : `SOHAM-${randomSuffix}`;
+
+      const newCard: GiftCard = {
+        ...gcData,
+        id,
+        businessId: currentBusinessId,
+        code,
+        status: gcData.status || 'activa',
+        issueDate: gcData.issueDate || today,
+        createdAt: today,
+        updatedAt: today,
+      };
+
+      setRawGiftCards((prev) => [newCard, ...prev]);
+
+      if (user && currentBusinessId) {
+        try {
+          const sanitized = JSON.parse(JSON.stringify(newCard));
+          await setDoc(doc(db, `businesses/${currentBusinessId}/giftCards`, id), sanitized);
+        } catch (err) {
+          handleFirestoreError(err, OperationType.CREATE, `businesses/${currentBusinessId}/giftCards/${id}`);
+        }
+      }
+
+      // Automatically register cash movement if requested and amount exists
+      if (registerCashMovement && (newCard.amount || 0) > 0) {
+        const branchForCash = newCard.branchId === 'sucursal_2' ? 'sucursal_2' : selectedBranch;
+        await createCashMovement({
+          date: today,
+          branchId: branchForCash,
+          type: 'ingreso',
+          category: 'otro',
+          amount: newCard.amount || 0,
+          paymentMethod: newCard.paymentMethod,
+          description: `Venta Gift Card ${code} (${newCard.recipientName} - De: ${newCard.buyerName})`,
+          giftCardId: id,
+        });
+      }
+
+      return id;
+    },
+    [currentBusinessId, user, selectedBranch, createCashMovement]
+  );
+
+  const redeemGiftCard = useCallback(
+    async (
+      codeToRedeem: string,
+      redemptionData: { staffId?: string; staffName?: string; branchId: BranchId; notes?: string }
+    ): Promise<{ success: boolean; giftCard: GiftCard }> => {
+      const cleanCode = codeToRedeem.trim().toUpperCase();
+      const targetCard = rawGiftCards.find(
+        (c) => c.code.trim().toUpperCase() === cleanCode
+      );
+
+      if (!targetCard) {
+        throw new Error(`No se encontró ningún voucher con el código "${cleanCode}". Verificá que esté bien escrito.`);
+      }
+
+      if (targetCard.status === 'canjeada') {
+        const branchName = targetCard.redeemedBranchId === 'sucursal_2' ? 'Soham Rioja' : 'Soham Montevideo';
+        throw new Error(`¡Este voucher ya fue canjeado! Fecha: ${targetCard.redeemedDate || 'anteriormente'} en ${branchName}. No puede ser utilizado nuevamente.`);
+      }
+
+      if (targetCard.status === 'vencida') {
+        throw new Error(`Este voucher se encuentra marcado como vencido (fecha de vencimiento: ${targetCard.expiryDate || 'N/A'}).`);
+      }
+
+      const today = getTodayDateString();
+      const updatedCard: GiftCard = {
+        ...targetCard,
+        status: 'canjeada',
+        redeemedDate: today,
+        redeemedBranchId: redemptionData.branchId,
+        redeemedStaffId: redemptionData.staffId || '',
+        redeemedStaffName: redemptionData.staffName || '',
+        redeemedNotes: redemptionData.notes || '',
+        updatedAt: today,
+      };
+
+      setRawGiftCards((prev) => prev.map((c) => (c.id === targetCard.id ? updatedCard : c)));
+
+      if (user && currentBusinessId) {
+        try {
+          const sanitized = JSON.parse(JSON.stringify(updatedCard));
+          await setDoc(doc(db, `businesses/${currentBusinessId}/giftCards`, targetCard.id), sanitized);
+        } catch (err) {
+          handleFirestoreError(err, OperationType.UPDATE, `businesses/${currentBusinessId}/giftCards/${targetCard.id}`);
+        }
+      }
+
+      return { success: true, giftCard: updatedCard };
+    },
+    [rawGiftCards, currentBusinessId, user]
+  );
+
+  const deleteGiftCard = useCallback(
+    async (id: string) => {
+      setRawGiftCards((prev) => prev.filter((c) => c.id !== id));
+      if (user && currentBusinessId) {
+        try {
+          await deleteDoc(doc(db, `businesses/${currentBusinessId}/giftCards`, id));
+        } catch (err) {
+          handleFirestoreError(err, OperationType.DELETE, `businesses/${currentBusinessId}/giftCards/${id}`);
+        }
+      }
+    },
+    [currentBusinessId, user]
+  );
+
+  // Resource actions (Cabinas & Equipos)
+  const createResource = useCallback(
+    async (resData: Omit<Resource, 'id' | 'businessId' | 'createdAt'>): Promise<string> => {
+      const id = `res_${Date.now()}`;
+      const today = getTodayDateString();
+      const newResource: Resource = {
+        ...resData,
+        id,
+        businessId: currentBusinessId,
+        createdAt: today,
+      };
+
+      setResources((prev) => [newResource, ...prev]);
+
+      if (user && currentBusinessId) {
+        try {
+          const sanitized = JSON.parse(JSON.stringify(newResource));
+          await setDoc(doc(db, `businesses/${currentBusinessId}/resources`, id), sanitized);
+        } catch (err) {
+          handleFirestoreError(err, OperationType.CREATE, `businesses/${currentBusinessId}/resources/${id}`);
+        }
+      }
+      return id;
+    },
+    [currentBusinessId, user]
+  );
+
+  const updateResource = useCallback(
+    async (res: Resource) => {
+      setResources((prev) => prev.map((r) => (r.id === res.id ? res : r)));
+      if (user && currentBusinessId) {
+        try {
+          const sanitized = JSON.parse(JSON.stringify(res));
+          await setDoc(doc(db, `businesses/${currentBusinessId}/resources`, res.id), sanitized);
+        } catch (err) {
+          handleFirestoreError(err, OperationType.UPDATE, `businesses/${currentBusinessId}/resources/${res.id}`);
+        }
+      }
+    },
+    [currentBusinessId, user]
+  );
+
+  const deleteResource = useCallback(
+    async (id: string) => {
+      setResources((prev) => prev.filter((r) => r.id !== id));
+      if (user && currentBusinessId) {
+        try {
+          await deleteDoc(doc(db, `businesses/${currentBusinessId}/resources`, id));
+        } catch (err) {
+          handleFirestoreError(err, OperationType.DELETE, `businesses/${currentBusinessId}/resources/${id}`);
         }
       }
     },
@@ -1068,6 +1429,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     allAppointments: rawAppointments,
     cashMovements,
     allCashMovements: rawCashMovements,
+    giftCards,
+    allGiftCards: rawGiftCards,
+    resources,
     selectedBranch,
     setSelectedBranch,
     branches: BRANCHES,
@@ -1094,6 +1458,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     deleteStaff,
     createCashMovement,
     deleteCashMovement,
+    createGiftCard,
+    redeemGiftCard,
+    deleteGiftCard,
+    createResource,
+    updateResource,
+    deleteResource,
     resetToSampleData,
     exportAppointmentsToCSV,
     exportBusinessConfiguration,

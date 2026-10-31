@@ -8,6 +8,7 @@ import {
   X,
   Building2,
   ChevronDown,
+  MapPin,
 } from 'lucide-react';
 import { ViewTab, BranchId } from '../types';
 import { useApp } from '../context/AppContext';
@@ -88,6 +89,22 @@ export function Header({
               </select>
               <ChevronDown className="w-3.5 h-3.5 text-[#0F172A] pointer-events-none absolute right-2 stroke-[2.5]" />
             </div>
+
+            {/* Direct Google Maps Link */}
+            <a
+              href={
+                selectedBranch === 'sucursal_2'
+                  ? 'https://www.google.com/maps/search/?api=1&query=Rioja+2954,+Rosario,+Santa+Fe,+Argentina'
+                  : 'https://www.google.com/maps/search/?api=1&query=Soham+Montevideo+1420'
+              }
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-1.5 sm:py-2 sm:px-2.5 rounded-xl border-2 border-slate-300 bg-white hover:bg-slate-100 text-[#0F172A] text-xs font-black flex items-center gap-1 shadow-2xs transition-colors cursor-pointer shrink-0"
+              title={`Ver ubicación de ${selectedBranch === 'sucursal_2' ? 'Soham Rioja' : 'Soham Montevideo'} en Google Maps`}
+            >
+              <MapPin className="w-3.5 h-3.5 text-rose-600 shrink-0 stroke-[2.5]" />
+              <span className="hidden md:inline">Mapa</span>
+            </a>
           </div>
 
           {/* Fecha Actual (Desktop) */}

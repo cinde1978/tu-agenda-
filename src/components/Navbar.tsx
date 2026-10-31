@@ -14,7 +14,9 @@ import {
   FileSpreadsheet,
   Menu,
   X,
-  Sparkles
+  Sparkles,
+  Gift,
+  Layers,
 } from 'lucide-react';
 import { ViewTab } from '../types';
 import { useApp } from '../context/AppContext';
@@ -40,9 +42,11 @@ export function Navbar({ currentTab, onSelectTab, onNewAppointment, onOpenRemind
     { id: 'clientes', label: 'Clientes', icon: <Users className="w-4 h-4" /> },
     { id: 'servicios', label: 'Servicios', icon: <Sparkles className="w-4 h-4" /> },
     { id: 'profesionales', label: 'Profesionales', icon: <UserCheck className="w-4 h-4" /> },
-    { id: 'caja', label: 'Caja Diaria', icon: <Wallet className="w-4 h-4" /> },
+    { id: 'recursos', label: 'Cabinas', icon: <Layers className="w-4 h-4" /> },
+    { id: 'caja', label: 'Caja', icon: <Wallet className="w-4 h-4" /> },
+    { id: 'giftcards', label: 'Gift Cards', icon: <Gift className="w-4 h-4" /> },
     { id: 'reportes', label: 'Estadísticas', icon: <BarChart3 className="w-4 h-4" /> },
-    { id: 'exportar', label: 'Imprimir / Excel', icon: <FileSpreadsheet className="w-4 h-4" /> },
+    { id: 'exportar', label: 'Imprimir', icon: <FileSpreadsheet className="w-4 h-4" /> },
     { id: 'configuracion', label: 'Ajustes', icon: <Settings className="w-4 h-4" /> },
   ];
 

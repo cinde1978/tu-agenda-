@@ -1,4 +1,5 @@
-import { Business, Client, Service, StaffMember, Appointment, CashMovement } from '../types';
+import { Business, Client, Service, StaffMember, Appointment, CashMovement, Resource, GiftCard } from '../types';
+import { getDefaultWeeklySchedules } from './staffSchedule';
 
 export function getTodayDateString(): string {
   const now = new Date();
@@ -104,6 +105,108 @@ export function getDefaultStaff(businessId: string): StaffMember[] {
   const today = getTodayDateString();
   return [
     {
+      id: 'stf_iris',
+      businessId,
+      name: 'Iris',
+      role: 'Especialista Integral',
+      phone: '+54 9 341 555-8899',
+      color: '#0284c7',
+      branchId: 'ambas',
+      commissionPercentage: 50,
+      workingDays: [1, 2, 3, 4, 5, 6],
+      workingHoursStart: '09:00',
+      workingHoursEnd: '20:00',
+      blockedDates: [],
+      active: true,
+      createdAt: today,
+      daySchedules: [
+        {
+          day: 1, // Lunes: Montevideo 09:00 a 13:00, Rioja 14:00 a 20:00
+          active: true,
+          branchId: 'ambas',
+          start: '09:00',
+          end: '20:00',
+          breaks: [],
+          branchShifts: {
+            sucursal_1: { active: true, start: '09:00', end: '13:00', breaks: [] },
+            sucursal_2: { active: true, start: '14:00', end: '20:00', breaks: [] },
+          },
+        },
+        {
+          day: 2, // Martes: Montevideo 09:00 a 13:00, Rioja 14:00 a 20:00
+          active: true,
+          branchId: 'ambas',
+          start: '09:00',
+          end: '20:00',
+          breaks: [],
+          branchShifts: {
+            sucursal_1: { active: true, start: '09:00', end: '13:00', breaks: [] },
+            sucursal_2: { active: true, start: '14:00', end: '20:00', breaks: [] },
+          },
+        },
+        {
+          day: 3, // Miércoles: Montevideo 09:00 a 13:00, Rioja 14:00 a 20:00
+          active: true,
+          branchId: 'ambas',
+          start: '09:00',
+          end: '20:00',
+          breaks: [],
+          branchShifts: {
+            sucursal_1: { active: true, start: '09:00', end: '13:00', breaks: [] },
+            sucursal_2: { active: true, start: '14:00', end: '20:00', breaks: [] },
+          },
+        },
+        {
+          day: 4, // Jueves: Montevideo 09:00 a 13:00, Rioja 14:00 a 20:00
+          active: true,
+          branchId: 'ambas',
+          start: '09:00',
+          end: '20:00',
+          breaks: [],
+          branchShifts: {
+            sucursal_1: { active: true, start: '09:00', end: '13:00', breaks: [] },
+            sucursal_2: { active: true, start: '14:00', end: '20:00', breaks: [] },
+          },
+        },
+        {
+          day: 5, // Viernes: Montevideo 09:00 a 13:00, Rioja 14:00 a 20:00
+          active: true,
+          branchId: 'ambas',
+          start: '09:00',
+          end: '20:00',
+          breaks: [],
+          branchShifts: {
+            sucursal_1: { active: true, start: '09:00', end: '13:00', breaks: [] },
+            sucursal_2: { active: true, start: '14:00', end: '20:00', breaks: [] },
+          },
+        },
+        {
+          day: 6, // Sábado: Montevideo 09:00 a 13:00, Rioja 14:00 a 18:00
+          active: true,
+          branchId: 'ambas',
+          start: '09:00',
+          end: '18:00',
+          breaks: [],
+          branchShifts: {
+            sucursal_1: { active: true, start: '09:00', end: '13:00', breaks: [] },
+            sucursal_2: { active: true, start: '14:00', end: '18:00', breaks: [] },
+          },
+        },
+        {
+          day: 0, // Domingo (Franco / Descanso)
+          active: false,
+          branchId: 'ambas',
+          start: '09:00',
+          end: '20:00',
+          breaks: [],
+          branchShifts: {
+            sucursal_1: { active: false, start: '09:00', end: '13:00', breaks: [] },
+            sucursal_2: { active: false, start: '14:00', end: '20:00', breaks: [] },
+          },
+        },
+      ],
+    },
+    {
       id: 'stf_1',
       businessId,
       name: 'Camila Rossi',
@@ -111,12 +214,14 @@ export function getDefaultStaff(businessId: string): StaffMember[] {
       phone: '+54 9 11 5566-7788',
       color: '#2563eb',
       branchId: 'sucursal_1',
+      commissionPercentage: 40,
       workingDays: [1, 2, 3, 4, 5, 6], // Lun - Sáb
       workingHoursStart: '09:00',
       workingHoursEnd: '19:00',
       blockedDates: [],
       active: true,
       createdAt: today,
+      daySchedules: getDefaultWeeklySchedules('09:00', '19:00', 'sucursal_1'),
     },
     {
       id: 'stf_2',
@@ -126,12 +231,14 @@ export function getDefaultStaff(businessId: string): StaffMember[] {
       phone: '+54 9 11 4433-2211',
       color: '#db2777',
       branchId: 'sucursal_2',
+      commissionPercentage: 35,
       workingDays: [1, 2, 3, 4, 5, 6], // Lun - Sáb
       workingHoursStart: '10:00',
       workingHoursEnd: '20:00',
       blockedDates: [],
       active: true,
       createdAt: today,
+      daySchedules: getDefaultWeeklySchedules('10:00', '20:00', 'sucursal_2'),
     },
     {
       id: 'stf_3',
@@ -141,27 +248,136 @@ export function getDefaultStaff(businessId: string): StaffMember[] {
       phone: '+54 9 11 9988-1122',
       color: '#0d9488',
       branchId: 'ambas',
+      commissionPercentage: 45,
       workingDays: [1, 2, 3, 4, 5, 6], // Lun - Sáb
       workingHoursStart: '10:00',
       workingHoursEnd: '19:30',
       blockedDates: [],
       active: true,
       createdAt: today,
+      daySchedules: getDefaultWeeklySchedules('10:00', '19:30', 'ambas'),
     },
     {
       id: 'stf_4',
       businessId,
-      name: 'Antonella Silveira',
+      name: 'Antonela',
       role: 'Dermatocosmética & Peeling',
       phone: '+54 9 11 3322-1144',
       color: '#7c3aed',
-      branchId: 'sucursal_1',
-      workingDays: [1, 2, 3, 4, 5],
-      workingHoursStart: '08:30',
+      branchId: 'ambas',
+      commissionPercentage: 40,
+      workingDays: [2, 3, 4, 5],
+      workingHoursStart: '09:00',
       workingHoursEnd: '18:00',
       blockedDates: [],
       active: true,
       createdAt: today,
+      daySchedules: [
+        {
+          day: 1, // Lunes: NO TRABAJA
+          active: false,
+          branchId: 'ambas',
+          start: '09:00',
+          end: '18:00',
+          breaks: [],
+          branchShifts: {
+            sucursal_1: { active: false, start: '09:00', end: '18:00', breaks: [] },
+            sucursal_2: { active: false, start: '09:00', end: '18:00', breaks: [] },
+          },
+        },
+        {
+          day: 2, // Martes: Montevideo 09:00 a 18:00, Rioja NO TRABAJA
+          active: true,
+          branchId: 'sucursal_1',
+          start: '09:00',
+          end: '18:00',
+          breaks: [{ id: 'brk_ant_mar', start: '13:00', end: '14:00', description: 'Almuerzo' }],
+          branchShifts: {
+            sucursal_1: {
+              active: true,
+              start: '09:00',
+              end: '18:00',
+              breaks: [{ id: 'brk_ant_mar', start: '13:00', end: '14:00', description: 'Almuerzo' }],
+            },
+            sucursal_2: { active: false, start: '09:00', end: '18:00', breaks: [] },
+          },
+        },
+        {
+          day: 3, // Miércoles: Montevideo 09:00 a 18:00, Rioja NO TRABAJA
+          active: true,
+          branchId: 'sucursal_1',
+          start: '09:00',
+          end: '18:00',
+          breaks: [{ id: 'brk_ant_mie', start: '13:00', end: '14:00', description: 'Almuerzo' }],
+          branchShifts: {
+            sucursal_1: {
+              active: true,
+              start: '09:00',
+              end: '18:00',
+              breaks: [{ id: 'brk_ant_mie', start: '13:00', end: '14:00', description: 'Almuerzo' }],
+            },
+            sucursal_2: { active: false, start: '09:00', end: '18:00', breaks: [] },
+          },
+        },
+        {
+          day: 4, // Jueves: Montevideo NO TRABAJA, Rioja 09:00 a 18:00
+          active: true,
+          branchId: 'sucursal_2',
+          start: '09:00',
+          end: '18:00',
+          breaks: [{ id: 'brk_ant_jue', start: '13:00', end: '14:00', description: 'Almuerzo' }],
+          branchShifts: {
+            sucursal_1: { active: false, start: '09:00', end: '18:00', breaks: [] },
+            sucursal_2: {
+              active: true,
+              start: '09:00',
+              end: '18:00',
+              breaks: [{ id: 'brk_ant_jue', start: '13:00', end: '14:00', description: 'Almuerzo' }],
+            },
+          },
+        },
+        {
+          day: 5, // Viernes: Montevideo NO TRABAJA, Rioja 09:00 a 18:00
+          active: true,
+          branchId: 'sucursal_2',
+          start: '09:00',
+          end: '18:00',
+          breaks: [{ id: 'brk_ant_vie', start: '13:00', end: '14:00', description: 'Almuerzo' }],
+          branchShifts: {
+            sucursal_1: { active: false, start: '09:00', end: '18:00', breaks: [] },
+            sucursal_2: {
+              active: true,
+              start: '09:00',
+              end: '18:00',
+              breaks: [{ id: 'brk_ant_vie', start: '13:00', end: '14:00', description: 'Almuerzo' }],
+            },
+          },
+        },
+        {
+          day: 6, // Sábado: NO TRABAJA
+          active: false,
+          branchId: 'ambas',
+          start: '09:00',
+          end: '18:00',
+          breaks: [],
+          branchShifts: {
+            sucursal_1: { active: false, start: '09:00', end: '18:00', breaks: [] },
+            sucursal_2: { active: false, start: '09:00', end: '18:00', breaks: [] },
+          },
+        },
+        {
+          day: 0, // Domingo: NO TRABAJA
+          active: false,
+          branchId: 'ambas',
+          start: '09:00',
+          end: '18:00',
+          breaks: [],
+          branchShifts: {
+            sucursal_1: { active: false, start: '09:00', end: '18:00', breaks: [] },
+            sucursal_2: { active: false, start: '09:00', end: '18:00', breaks: [] },
+          },
+        },
+      ],
     },
     {
       id: 'stf_5',
@@ -171,12 +387,116 @@ export function getDefaultStaff(businessId: string): StaffMember[] {
       phone: '+54 9 11 6655-4433',
       color: '#ea580c',
       branchId: 'sucursal_2',
+      commissionPercentage: 35,
       workingDays: [2, 3, 4, 5, 6],
       workingHoursStart: '09:00',
       workingHoursEnd: '19:00',
       blockedDates: [],
       active: true,
       createdAt: today,
+      daySchedules: getDefaultWeeklySchedules('09:00', '19:00', 'sucursal_2'),
+    },
+  ];
+}
+
+export function getDefaultResources(businessId: string): Resource[] {
+  const today = getTodayDateString();
+  return [
+    {
+      id: 'res_1',
+      businessId,
+      name: 'Cabina 1 - Facial & Pestañas',
+      type: 'cabina',
+      branchId: 'sucursal_1',
+      description: 'Camilla reclinable, lámpara lupa LED y vaporizador de ozono (Soham Montevideo)',
+      active: true,
+      createdAt: today,
+    },
+    {
+      id: 'res_2',
+      businessId,
+      name: 'Cabina 2 - Masajes & Relax',
+      type: 'cabina',
+      branchId: 'sucursal_1',
+      description: 'Camilla térmica para masajes descontracturantes y aromaterapia (Soham Montevideo)',
+      active: true,
+      createdAt: today,
+    },
+    {
+      id: 'res_3',
+      businessId,
+      name: 'Cabina 3 - Estética & Corporal',
+      type: 'cabina',
+      branchId: 'sucursal_2',
+      description: 'Cabina integral con ducha escocesa y aparatología (Soham Rioja)',
+      active: true,
+      createdAt: today,
+    },
+    {
+      id: 'res_4',
+      businessId,
+      name: 'Equipo VelaSlim / Radiofrecuencia',
+      type: 'equipo',
+      branchId: 'ambas',
+      description: 'Aparato modelador y tensor corporal transferible entre sucursales',
+      active: true,
+      createdAt: today,
+    },
+    {
+      id: 'res_5',
+      businessId,
+      name: 'Equipo Depilación Láser Diodo',
+      type: 'equipo',
+      branchId: 'sucursal_2',
+      description: 'Cabezal de depilación definitiva trilaser (Soham Rioja)',
+      active: true,
+      createdAt: today,
+    },
+  ];
+}
+
+export function getDefaultGiftCards(businessId: string): GiftCard[] {
+  const today = getTodayDateString();
+  return [
+    {
+      id: 'gc_1',
+      businessId,
+      code: 'SOHAM-884912',
+      type: 'monto',
+      amount: 15000,
+      buyerName: 'Carlos Gómez',
+      buyerPhone: '+54 9 341 455-8899',
+      recipientName: 'Valeria Rossi',
+      recipientPhone: '+54 9 341 611-2233',
+      message: '¡Feliz Cumple Vale! Disfrutá una tarde de mimos en Soham.',
+      branchId: 'ambas',
+      status: 'activa',
+      paymentMethod: 'mercadopago',
+      issueDate: today,
+      expiryDate: '2026-12-31',
+      createdAt: today,
+      updatedAt: today,
+    },
+    {
+      id: 'gc_2',
+      businessId,
+      code: 'SOHAM-551029',
+      type: 'tratamiento',
+      serviceId: 'srv_1',
+      serviceName: 'Limpieza Facial Profunda',
+      amount: 14000,
+      buyerName: 'Martín Díaz',
+      buyerPhone: '+54 9 341 788-4455',
+      recipientName: 'Paula Santillán',
+      recipientPhone: '+54 9 341 990-1122',
+      message: 'Un regalo para desconectar y renovar tu piel.',
+      branchId: 'sucursal_1',
+      status: 'activa',
+      paymentMethod: 'transferencia',
+      issueDate: today,
+      expiryDate: '2026-12-31',
+      createdAt: today,
+      updatedAt: today,
     },
   ];
 }
@@ -261,7 +581,7 @@ export function getDefaultAppointments(businessId: string): Appointment[] {
       remainingBalance: 10000,
       status: 'confirmado',
       paymentMethod: 'mercadopago',
-      notes: 'Confirmado por WhatsApp. Sucursal 1.',
+      notes: 'Confirmado por WhatsApp. Soham Montevideo.',
       createdAt: today,
       updatedAt: today,
     },
@@ -284,7 +604,7 @@ export function getDefaultAppointments(businessId: string): Appointment[] {
       remainingBalance: 0,
       status: 'completado',
       paymentMethod: 'transferencia',
-      notes: 'Abonado 100% por transferencia previa. Sucursal 1.',
+      notes: 'Abonado 100% por transferencia previa. Soham Montevideo.',
       createdAt: today,
       updatedAt: today,
     },
@@ -307,7 +627,7 @@ export function getDefaultAppointments(businessId: string): Appointment[] {
       remainingBalance: 15000,
       status: 'confirmado',
       paymentMethod: 'efectivo',
-      notes: 'Paga en efectivo al llegar. Sucursal 1.',
+      notes: 'Paga en efectivo al llegar. Soham Montevideo.',
       createdAt: today,
       updatedAt: today,
     },
@@ -330,7 +650,7 @@ export function getDefaultAppointments(businessId: string): Appointment[] {
       remainingBalance: 7500,
       status: 'pendiente',
       paymentMethod: 'mercadopago',
-      notes: 'Turno en Sucursal 2. Enviar recordatorio.',
+      notes: 'Turno en Soham Rioja. Enviar recordatorio.',
       createdAt: today,
       updatedAt: today,
     },
@@ -353,7 +673,7 @@ export function getDefaultAppointments(businessId: string): Appointment[] {
       remainingBalance: 6500,
       status: 'confirmado',
       paymentMethod: 'transferencia',
-      notes: 'Turno agendado en Sucursal 2.',
+      notes: 'Turno agendado en Soham Rioja.',
       createdAt: today,
       updatedAt: today,
     },
@@ -372,7 +692,7 @@ export function getDefaultCashMovements(businessId: string): CashMovement[] {
       category: 'seña',
       amount: 4000,
       paymentMethod: 'mercadopago',
-      description: '[Sucursal 1] Seña turno Sofía Martínez (Limpieza Facial Profunda)',
+      description: '[Soham Montevideo] Seña turno Sofía Martínez (Limpieza Facial Profunda)',
       appointmentId: 'apt_1',
       createdAt: today,
     },
@@ -385,7 +705,7 @@ export function getDefaultCashMovements(businessId: string): CashMovement[] {
       category: 'turno',
       amount: 18000,
       paymentMethod: 'transferencia',
-      description: '[Sucursal 1] Cobro total Mariana López (Tratamiento Corporal Reductor / Modelador)',
+      description: '[Soham Montevideo] Cobro total Mariana López (Tratamiento Corporal Reductor / Modelador)',
       appointmentId: 'apt_2',
       createdAt: today,
     },
@@ -398,7 +718,7 @@ export function getDefaultCashMovements(businessId: string): CashMovement[] {
       category: 'insumos',
       amount: 4200,
       paymentMethod: 'efectivo',
-      description: '[Sucursal 1] Compra toallas descartables, guantes y cremas modeladoras',
+      description: '[Soham Montevideo] Compra toallas descartables, guantes y cremas modeladoras',
       createdAt: today,
     },
     {
@@ -410,7 +730,7 @@ export function getDefaultCashMovements(businessId: string): CashMovement[] {
       category: 'seña',
       amount: 3500,
       paymentMethod: 'mercadopago',
-      description: '[Sucursal 2] Seña turno Lucía Fernández (Lifting de Pestañas + Tinte)',
+      description: '[Soham Rioja] Seña turno Lucía Fernández (Lifting de Pestañas + Tinte)',
       appointmentId: 'apt_4',
       createdAt: today,
     },
@@ -423,7 +743,7 @@ export function getDefaultCashMovements(businessId: string): CashMovement[] {
       category: 'seña',
       amount: 3000,
       paymentMethod: 'transferencia',
-      description: '[Sucursal 2] Seña Semipermanente con Kapping Sofía Martínez',
+      description: '[Soham Rioja] Seña Semipermanente con Kapping Sofía Martínez',
       appointmentId: 'apt_5',
       createdAt: today,
     },

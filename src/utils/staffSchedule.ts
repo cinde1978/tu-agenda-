@@ -1,4 +1,4 @@
-import { Appointment, BranchId, StaffBreak, StaffBranchShift, StaffDaySchedule, StaffMember } from '../types';
+import { Appointment, BranchId, StaffBranchScope, StaffBreak, StaffBranchShift, StaffDaySchedule, StaffMember } from '../types';
 
 export const BRANCH_NAMES: Record<BranchId, string> = {
   sucursal_1: 'Soham Montevideo',
@@ -58,12 +58,12 @@ export function getDefaultDaySchedule(
       sucursal_1: {
         active: defaultBranch === 'sucursal_1' || defaultBranch === 'ambas',
         start: defaultStart,
-        end: defaultBranch === 'ambas' ? '14:00' : defaultEnd,
+        end: defaultBranch === 'ambas' ? '13:00' : defaultEnd,
         breaks: [],
       },
       sucursal_2: {
         active: defaultBranch === 'sucursal_2' || defaultBranch === 'ambas',
-        start: defaultBranch === 'ambas' ? '15:00' : defaultStart,
+        start: defaultBranch === 'ambas' ? '14:00' : defaultStart,
         end: defaultEnd,
         breaks: [],
       },
@@ -92,35 +92,88 @@ export function getStaffDaySchedule(
   if (member.daySchedules && member.daySchedules.length > 0) {
     const found = member.daySchedules.find((s) => s.day === dayOfWeek);
     if (found) {
-      // Ensure branchId and branchShifts are synchronized
-      const targetBranch: 'sucursal_1' | 'sucursal_2' | 'ambas' =
-        found.branchId || member.branchId || 'ambas';
       const safeStart = found.start || member.workingHoursStart || '09:00';
       const safeEnd = found.end || member.workingHoursEnd || '20:00';
 
-      const s1Active = targetBranch === 'sucursal_1' || (targetBranch === 'ambas' && found.branchShifts?.sucursal_1?.active !== false);
-      const s2Active = targetBranch === 'sucursal_2' || (targetBranch === 'ambas' && found.branchShifts?.sucursal_2?.active !== false);
+      const existingS1 = found.branchShifts?.sucursal_1;
+      const existingS2 = found.branchShifts?.sucursal_2;
+
+      // If the day is explicitly inactive, both branch shifts are inactive
+      const isMasterActive = found.active !== false;
+
+      let s1Active = false;
+      let s2Active = false;
+
+      if (isMasterActive) {
+        if (existingS1 !== undefined) {
+          s1Active = Boolean(existingS1.active);
+        } else {
+          s1Active = found.branchId === 'sucursal_1' || found.branchId === 'ambas' || !found.branchId;
+        }
+
+        if (existingS2 !== undefined) {
+          s2Active = Boolean(existingS2.active);
+        } else {
+          s2Active = found.branchId === 'sucursal_2' || found.branchId === 'ambas' || !found.branchId;
+        }
+      }
+
+      const s1Start = existingS1?.start || safeStart;
+      const s1End = existingS1?.end || safeEnd;
+      const s1Breaks = Array.isArray(existingS1?.breaks)
+        ? existingS1.breaks
+        : (found.branchId === 'sucursal_1' ? (found.breaks || []) : []);
+
+      const s2Start = existingS2?.start || safeStart;
+      const s2End = existingS2?.end || safeEnd;
+      const s2Breaks = Array.isArray(existingS2?.breaks)
+        ? existingS2.breaks
+        : (found.branchId === 'sucursal_2' ? (found.breaks || []) : []);
 
       const s1Shift: StaffBranchShift = {
         active: s1Active,
-        start: found.branchShifts?.sucursal_1?.start || (targetBranch === 'ambas' ? '09:00' : safeStart),
-        end: found.branchShifts?.sucursal_1?.end || (targetBranch === 'ambas' ? '14:00' : safeEnd),
-        breaks: found.branchShifts?.sucursal_1?.breaks || (targetBranch === 'sucursal_1' ? (found.breaks || []) : []),
+        start: s1Start,
+        end: s1End,
+        breaks: s1Breaks,
       };
 
       const s2Shift: StaffBranchShift = {
         active: s2Active,
-        start: found.branchShifts?.sucursal_2?.start || (targetBranch === 'ambas' ? '15:00' : safeStart),
-        end: found.branchShifts?.sucursal_2?.end || (targetBranch === 'ambas' ? '20:00' : safeEnd),
-        breaks: found.branchShifts?.sucursal_2?.breaks || (targetBranch === 'sucursal_2' ? (found.breaks || []) : []),
+        start: s2Start,
+        end: s2End,
+        breaks: s2Breaks,
       };
+
+      // Determine scope
+      let targetBranch: StaffBranchScope = 'ambas';
+      if (s1Active && s2Active) {
+        targetBranch = 'ambas';
+      } else if (s1Active) {
+        targetBranch = 'sucursal_1';
+      } else if (s2Active) {
+        targetBranch = 'sucursal_2';
+      } else {
+        targetBranch = found.branchId || 'ambas';
+      }
+
+      // Day is active only if master is active AND at least one branch is active
+      const dayIsActive = isMasterActive && (s1Active || s2Active);
+
+      // Determine overall start & end
+      let calculatedStart = safeStart;
+      let calculatedEnd = safeEnd;
+      const activeStarts = [s1Active ? s1Start : null, s2Active ? s2Start : null].filter(Boolean) as string[];
+      const activeEnds = [s1Active ? s1End : null, s2Active ? s2End : null].filter(Boolean) as string[];
+      if (activeStarts.length > 0) calculatedStart = [...activeStarts].sort()[0];
+      if (activeEnds.length > 0) calculatedEnd = [...activeEnds].sort().reverse()[0];
 
       return {
         ...found,
+        active: dayIsActive,
         branchId: targetBranch,
-        start: safeStart,
-        end: safeEnd,
-        breaks: found.breaks || [],
+        start: calculatedStart,
+        end: calculatedEnd,
+        breaks: Array.isArray(found.breaks) ? found.breaks : [],
         branchShifts: {
           sucursal_1: s1Shift,
           sucursal_2: s2Shift,
@@ -129,31 +182,37 @@ export function getStaffDaySchedule(
     }
   }
 
-  // Fallback to legacy fields
-  const activeDays = member.workingDays || [1, 2, 3, 4, 5, 6];
-  const isActive = activeDays.includes(dayOfWeek);
-  const targetBranch = member.branchId || 'ambas';
+  // Fallback for unconfigured days: check member.workingDays
+  const isWorking = Array.isArray(member.workingDays)
+    ? member.workingDays.includes(dayOfWeek)
+    : dayOfWeek !== 0;
+
+  const targetBranch: StaffBranchScope = member.branchId || 'ambas';
   const start = member.workingHoursStart?.trim() || '09:00';
   const end = member.workingHoursEnd?.trim() || '20:00';
 
+  const s1Active = isWorking && (targetBranch === 'sucursal_1' || targetBranch === 'ambas');
+  const s2Active = isWorking && (targetBranch === 'sucursal_2' || targetBranch === 'ambas');
+
   return {
     day: dayOfWeek,
-    active: isActive,
+    active: isWorking && (s1Active || s2Active),
+    isUnconfigured: true,
     start,
     end,
     breaks: [],
     branchId: targetBranch,
     branchShifts: {
       sucursal_1: {
-        active: targetBranch === 'sucursal_1' || targetBranch === 'ambas',
+        active: s1Active,
         start: targetBranch === 'ambas' ? '09:00' : start,
-        end: targetBranch === 'ambas' ? '14:00' : end,
+        end: targetBranch === 'ambas' ? '13:00' : end,
         breaks: [],
       },
       sucursal_2: {
-        active: targetBranch === 'sucursal_2' || targetBranch === 'ambas',
-        start: targetBranch === 'ambas' ? '15:00' : start,
-        end: targetBranch === 'ambas' ? '20:00' : end,
+        active: s2Active,
+        start: targetBranch === 'ambas' ? '14:00' : start,
+        end: end,
         breaks: [],
       },
     },
@@ -187,6 +246,18 @@ export function getStaffEffectiveShift(
     };
   }
 
+  // Priority 1: Check branchShifts directly
+  if (schedule.branchShifts && schedule.branchShifts[branchId]) {
+    const shift = schedule.branchShifts[branchId]!;
+    return {
+      active: Boolean(shift.active),
+      start: shift.start || schedule.start || '09:00',
+      end: shift.end || schedule.end || '18:00',
+      breaks: Array.isArray(shift.breaks) ? shift.breaks : [],
+      branchName,
+    };
+  }
+
   const assignedScope = schedule.branchId || 'ambas';
 
   // If assigned solely to the other branch, inactive in this branch
@@ -200,25 +271,12 @@ export function getStaffEffectiveShift(
     };
   }
 
-  // If assigned to 'ambas', check specific branch shift if configured
-  if (assignedScope === 'ambas' && schedule.branchShifts?.[branchId]) {
-    const shift = schedule.branchShifts[branchId]!;
-    return {
-      active: shift.active !== false,
-      start: shift.start || schedule.start || '09:00',
-      end: shift.end || schedule.end || '20:00',
-      breaks: shift.breaks && shift.breaks.length > 0 ? shift.breaks : (schedule.breaks || []),
-      branchName,
-    };
-  }
-
-  // Single branch assignment: use specific shift if present or fallback to day schedule
-  const singleShift = schedule.branchShifts?.[branchId];
+  // Fallback to schedule hours
   return {
     active: true,
-    start: singleShift?.start || schedule.start || '09:00',
-    end: singleShift?.end || schedule.end || '20:00',
-    breaks: (singleShift?.breaks && singleShift.breaks.length > 0) ? singleShift.breaks : (schedule.breaks || []),
+    start: schedule.start || '09:00',
+    end: schedule.end || '20:00',
+    breaks: schedule.breaks || [],
     branchName,
   };
 }
@@ -232,14 +290,17 @@ export interface StaffAvailabilityCheck {
 }
 
 /**
- * Validates if a professional is available on a specific date, start time, duration and branch.
+ * Validates if a professional is available on a specific date, start time, duration and branch,
+ * including checking cross-branch overlapping appointments.
  */
 export function checkStaffAvailability(
   member: StaffMember,
   dateStr: string,
   startTime: string,
   durationMinutes: number,
-  appointmentBranchId?: BranchId
+  appointmentBranchId?: BranchId,
+  existingAppointments?: Appointment[],
+  excludeAppointmentId?: string
 ): StaffAvailabilityCheck {
   // 1. Check blocked dates (vacaciones, francos extraordinarios)
   if (member.blockedDates && member.blockedDates.includes(dateStr)) {
@@ -268,7 +329,35 @@ export function checkStaffAvailability(
     };
   }
 
-  // 4. Check branch match & specific branch shift
+  // 4. Check existing appointments for the SAME professional (cross-branch collision prevention)
+  if (existingAppointments && existingAppointments.length > 0) {
+    const slotStartMin = timeToMinutes(startTime);
+    const slotEndMin = slotStartMin + (durationMinutes || 30);
+
+    const conflictingApt = existingAppointments.find((apt) => {
+      if (excludeAppointmentId && apt.id === excludeAppointmentId) return false;
+      if (apt.date !== dateStr) return false;
+      if (apt.staffId !== member.id) return false;
+      if (apt.status === 'cancelado') return false;
+
+      const aptStart = timeToMinutes(apt.time);
+      const aptEnd = aptStart + (apt.durationMinutes || 30);
+      // Strictly overlapping (consecutive slots do not overlap: e.g. 13:00 to 14:00 and 14:00 to 15:00)
+      return Math.max(slotStartMin, aptStart) < Math.min(slotEndMin, aptEnd);
+    });
+
+    if (conflictingApt) {
+      const conflictBranchName = conflictingApt.branchId === 'sucursal_2' ? 'Soham Rioja' : 'Soham Montevideo';
+      return {
+        available: false,
+        reason: 'outside_hours',
+        message: `${member.name} ya tiene un turno reservado de ${conflictingApt.time} a ${minutesToTime(timeToMinutes(conflictingApt.time) + (conflictingApt.durationMinutes || 30))} hs en ${conflictBranchName} con ${conflictingApt.clientName}. El sistema impide que un mismo profesional tenga turnos superpuestos.`,
+        scheduleDetails: schedule,
+      };
+    }
+  }
+
+  // 5. Check branch match & specific branch shift
   if (appointmentBranchId) {
     const shift = getStaffEffectiveShift(schedule, appointmentBranchId);
     const branchLabel = BRANCH_NAMES[appointmentBranchId];
@@ -283,7 +372,7 @@ export function checkStaffAvailability(
       };
     }
 
-    // 5. Check working hours within this branch's shift
+    // Check working hours within this branch's shift
     const slotStartMin = timeToMinutes(startTime);
     const slotEndMin = slotStartMin + (durationMinutes || 30);
     const shiftStartMin = timeToMinutes(shift.start);
@@ -300,7 +389,7 @@ export function checkStaffAvailability(
       };
     }
 
-    // 6. Check break intervals in this branch
+    // Check break intervals in this branch
     if (shift.breaks && shift.breaks.length > 0) {
       for (const brk of shift.breaks) {
         const brkStartMin = timeToMinutes(brk.start);

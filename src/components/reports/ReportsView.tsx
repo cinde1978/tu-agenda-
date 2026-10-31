@@ -18,8 +18,9 @@ import { formatCurrency } from '../../utils/formatters';
 import { getTodayDateString } from '../../utils/initialData';
 
 export function ReportsView() {
-  const { appointments, clients, services, staff, business } = useApp();
+  const { appointments, clients, services, staff, business, createCashMovement, selectedBranch } = useApp();
   const [period, setPeriod] = useState<'mes' | 'semana' | 'hoy' | 'todo'>('mes');
+  const [liquidationFeedback, setLiquidationFeedback] = useState<string | null>(null);
 
   const todayStr = getTodayDateString();
 
@@ -72,17 +73,45 @@ export function ReportsView() {
     return Object.values(stats).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
   }, [filteredAppointments]);
 
-  // Performance by staff member
+  // Performance and Commissions by staff member
   const staffStats = useMemo(() => {
-    const stats: Record<string, { count: number; revenue: number; name: string; role: string }> = {};
+    const stats: Record<
+      string,
+      {
+        id: string;
+        count: number;
+        revenue: number;
+        name: string;
+        role: string;
+        commissionPercentage: number;
+        commissionEarned: number;
+        salonNet: number;
+      }
+    > = {};
+
     staff.forEach((s) => {
-      stats[s.id] = { count: 0, revenue: 0, name: s.name, role: s.role };
+      const pct = s.commissionPercentage ?? 40;
+      stats[s.id] = {
+        id: s.id,
+        count: 0,
+        revenue: 0,
+        name: s.name,
+        role: s.role,
+        commissionPercentage: pct,
+        commissionEarned: 0,
+        salonNet: 0,
+      };
     });
+
     filteredAppointments.forEach((apt) => {
       if (apt.status === 'cancelado') return;
       if (stats[apt.staffId]) {
         stats[apt.staffId].count += 1;
-        stats[apt.staffId].revenue += apt.price || 0;
+        const rev = apt.price || 0;
+        stats[apt.staffId].revenue += rev;
+        const comm = Math.round((rev * stats[apt.staffId].commissionPercentage) / 100);
+        stats[apt.staffId].commissionEarned += comm;
+        stats[apt.staffId].salonNet += rev - comm;
       }
     });
     return Object.values(stats).sort((a, b) => b.revenue - a.revenue);
@@ -283,43 +312,111 @@ export function ReportsView() {
           )}
         </div>
 
-        {/* Staff Performance */}
-        <div className="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-xs space-y-4">
-          <div>
-            <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
-              <Award className="w-4 h-4 text-purple-600" />
-              Rendimiento por Profesional
-            </h3>
-            <p className="text-xs text-gray-500 mt-0.5">Turnos atendidos y aportes a la facturación</p>
+        {/* Staff Performance & Commissions */}
+        <div className="bg-white p-6 rounded-2xl border-2 border-slate-300 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
+            <div>
+              <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
+                <Award className="w-5 h-5 text-[#1E3A8A]" />
+                Liquidación de Comisiones & Rendimiento
+              </h3>
+              <p className="text-xs text-slate-700 font-bold mt-0.5">
+                Cálculo automático según el % configurado en cada profesional
+              </p>
+            </div>
+            {liquidationFeedback && (
+              <span className="text-xs font-black text-emerald-800 bg-emerald-100 px-3 py-1 rounded-xl border border-emerald-300">
+                {liquidationFeedback}
+              </span>
+            )}
           </div>
 
           {staffStats.length === 0 ? (
-            <p className="text-xs text-gray-400 text-center py-8">No hay profesionales registrados.</p>
+            <p className="text-xs text-slate-500 font-bold text-center py-8">No hay profesionales registrados.</p>
           ) : (
-            <div className="space-y-3 pt-2">
+            <div className="space-y-3.5 pt-1">
               {staffStats.map((st) => (
                 <div
                   key={st.name}
-                  className="p-3.5 bg-gray-50/70 hover:bg-purple-50/30 rounded-xl border border-gray-100 flex items-center justify-between transition-colors"
+                  className="p-4 bg-slate-50 hover:bg-blue-50/40 rounded-xl border-2 border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-purple-700 text-white font-bold text-sm flex items-center justify-center shadow-xs">
+                    <div className="w-10 h-10 rounded-xl bg-[#1E3A8A] text-white font-black text-sm flex items-center justify-center shadow-xs shrink-0">
                       {st.name.charAt(0)}
                     </div>
                     <div>
-                      <h4 className="font-bold text-gray-800 text-sm leading-tight">{st.name}</h4>
-                      <p className="text-xs text-gray-500">{st.role}</p>
+                      <h4 className="font-black text-slate-900 text-sm leading-tight">{st.name}</h4>
+                      <p className="text-xs text-slate-600 font-bold">{st.role}</p>
+                      <span className="text-[11px] font-bold text-blue-900 bg-blue-100 px-2 py-0.5 rounded-md mt-1 inline-block">
+                        Comisión fijada: {st.commissionPercentage}%
+                      </span>
                     </div>
                   </div>
 
-                  <div className="text-right">
-                    <div className="font-extrabold text-gray-900 text-sm">
-                      {formatCurrency(st.revenue, business?.currency)}
+                  {/* Financial Breakdown */}
+                  <div className="grid grid-cols-3 gap-2 text-right shrink-0 bg-white p-2.5 rounded-xl border border-slate-200">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-600 block">Facturación</span>
+                      <span className="font-black text-xs sm:text-sm text-slate-900 block">
+                        {formatCurrency(st.revenue, business?.currency)}
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-semibold block">
+                        {st.count} turnos
+                      </span>
                     </div>
-                    <div className="text-xs text-purple-700 font-semibold">
-                      {st.count} turnos realizados
+
+                    <div className="border-x border-slate-200 px-2">
+                      <span className="text-[10px] font-bold text-emerald-800 block">A Pagar</span>
+                      <span className="font-black text-xs sm:text-sm text-emerald-700 block">
+                        {formatCurrency(st.commissionEarned, business?.currency)}
+                      </span>
+                      <span className="text-[10px] text-emerald-700 font-bold block">
+                        {st.commissionPercentage}%
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-700 block">Neto Soham</span>
+                      <span className="font-black text-xs sm:text-sm text-[#1E3A8A] block">
+                        {formatCurrency(st.salonNet, business?.currency)}
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-semibold block">
+                        Margen
+                      </span>
                     </div>
                   </div>
+
+                  {/* Action: Pay commission to Cash */}
+                  {st.commissionEarned > 0 && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (
+                          confirm(
+                            `¿Registrar pago de comisión de ${formatCurrency(
+                              st.commissionEarned,
+                              business?.currency
+                            )} a ${st.name} en la Caja Diaria?`
+                          )
+                        ) {
+                          await createCashMovement({
+                            date: todayStr,
+                            branchId: selectedBranch,
+                            type: 'gasto',
+                            category: 'comisiones',
+                            amount: st.commissionEarned,
+                            paymentMethod: 'efectivo',
+                            description: `Liquidación de comisión a ${st.name} (${st.commissionPercentage}% de ${formatCurrency(st.revenue, business?.currency)})`,
+                          });
+                          setLiquidationFeedback(`¡Comisión de ${st.name} registrada en Caja Diaria!`);
+                          setTimeout(() => setLiquidationFeedback(null), 4000);
+                        }
+                      }}
+                      className="px-3 py-2 bg-[#1E3A8A] hover:bg-blue-900 active:scale-98 text-white rounded-xl text-xs font-black shrink-0 transition-all cursor-pointer shadow-2xs"
+                    >
+                      Registrar en Caja
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

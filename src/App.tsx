@@ -12,6 +12,8 @@ import { ClientsView } from './components/clients/ClientsView';import { AgendaSt
 import { ServicesView } from './components/services/ServicesView';
 import { StaffView } from './components/staff/StaffView';
 import { CashView } from './components/cash/CashView';
+import { GiftCardsView } from './components/giftcards/GiftCardsView';
+import { ResourcesView } from './components/resources/ResourcesView';
 import { ReportsView } from './components/reports/ReportsView';
 import { ExportView } from './components/export/ExportView';
 import { SettingsView } from './components/SettingsView';
@@ -55,12 +57,14 @@ function MainAppContent() {
   const [appointmentForWhatsApp, setAppointmentForWhatsApp] = useState<Appointment | null>(null);
   const [slotInitialTime, setSlotInitialTime] = useState<string | undefined>(undefined);
   const [slotInitialStaffId, setSlotInitialStaffId] = useState<string | undefined>(undefined);
+  const [slotInitialClientId, setSlotInitialClientId] = useState<string | undefined>(undefined);
 
-  const handleOpenNewAppointment = (date?: string, time?: string, staffId?: string) => {
+  const handleOpenNewAppointment = (date?: string, time?: string, staffId?: string, clientId?: string) => {
     setAppointmentToEdit(null);
     if (date) setCurrentDate(date);
     setSlotInitialTime(time);
     setSlotInitialStaffId(staffId);
+    setSlotInitialClientId(clientId);
     setIsAppointmentModalOpen(true);
   };
 
@@ -203,6 +207,9 @@ function MainAppContent() {
           {currentTab === 'clientes' && (
             <ClientsView
               onSelectAppointment={(apt) => setSelectedAppointmentForDetail(apt)}
+              onNewAppointmentForClient={(cliId) => {
+                handleOpenNewAppointment(undefined, undefined, undefined, cliId);
+              }}
             />
           )}
 
@@ -210,7 +217,11 @@ function MainAppContent() {
 
           {currentTab === 'profesionales' && <StaffView />}
 
+          {currentTab === 'recursos' && <ResourcesView />}
+
           {currentTab === 'caja' && <CashView />}
+
+          {currentTab === 'giftcards' && <GiftCardsView />}
 
           {currentTab === 'reportes' && <ReportsView />}
 
@@ -262,18 +273,21 @@ function MainAppContent() {
           initialDate={currentDate}
           initialTime={slotInitialTime}
           initialStaffId={slotInitialStaffId || (selectedStaffId !== 'todos' ? selectedStaffId : undefined)}
+          initialClientId={slotInitialClientId}
           appointmentToEdit={appointmentToEdit}
           onClose={() => {
             setIsAppointmentModalOpen(false);
             setAppointmentToEdit(null);
             setSlotInitialTime(undefined);
             setSlotInitialStaffId(undefined);
+            setSlotInitialClientId(undefined);
           }}
           onSaved={(savedApt) => {
             setIsAppointmentModalOpen(false);
             setAppointmentToEdit(null);
             setSlotInitialTime(undefined);
             setSlotInitialStaffId(undefined);
+            setSlotInitialClientId(undefined);
             // Open the detail modal for review and WhatsApp OK confirmation
             setSelectedAppointmentForDetail(savedApt);
           }}

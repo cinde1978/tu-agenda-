@@ -24,6 +24,7 @@ interface ClientDetailDrawerProps {
   onClose: () => void;
   onEditClient: (client: Client) => void;
   onSelectAppointment: (appointment: Appointment) => void;
+  onNewAppointmentForClient?: (clientId: string) => void;
 }
 
 export function ClientDetailDrawer({
@@ -31,6 +32,7 @@ export function ClientDetailDrawer({
   onClose,
   onEditClient,
   onSelectAppointment,
+  onNewAppointmentForClient,
 }: ClientDetailDrawerProps) {
   const { business, appointments, deleteClient } = useApp();
   const [selectedWhatsAppApt, setSelectedWhatsAppApt] = useState<Appointment | null>(null);
@@ -194,11 +196,24 @@ export function ClientDetailDrawer({
 
             {/* Appointment History */}
             <div>
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-blue-600" />
                   Historial de Turnos ({clientAppointments.length})
                 </h4>
+                {onNewAppointmentForClient && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onNewAppointmentForClient(client.id);
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-[#1E3A8A] hover:bg-blue-900 text-white text-xs font-black flex items-center gap-1.5 shadow-2xs cursor-pointer transition-all"
+                  >
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>+ Agendar Turno</span>
+                  </button>
+                )}
               </div>
 
               {clientAppointments.length === 0 ? (

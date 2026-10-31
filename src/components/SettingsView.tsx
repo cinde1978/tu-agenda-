@@ -34,6 +34,7 @@ import { THEME_COLOR_OPTIONS, StaffMember, Service } from '../types';
 import { StaffModal } from './staff/StaffModal';
 import { ServiceModal } from './services/ServiceModal';
 import { formatCurrency } from '../utils/formatters';
+import { getStaffDaySchedule, DAY_LABELS } from '../utils/staffSchedule';
 
 const DAY_NAMES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
@@ -545,34 +546,35 @@ export function SettingsView() {
                         )}
 
                         <div className="space-y-2 py-2.5 border-t border-slate-200 text-xs">
-                          <div className="flex items-center justify-between font-bold text-slate-800">
-                            <span className="flex items-center gap-1 text-slate-700">
-                              <Clock className="w-3.5 h-3.5 text-[#1E3A8A]" />
-                              Horario:
-                            </span>
-                            <span className="font-black text-black">
-                              {member.workingHoursStart} - {member.workingHoursEnd} hs
-                            </span>
-                          </div>
-
                           <div>
                             <span className="text-[11px] font-black text-slate-700 block mb-1">
-                              Días de atención:
+                              Horarios y Sucursales:
                             </span>
-                            <div className="flex items-center gap-1 flex-wrap">
+                            <div className="space-y-1">
                               {[1, 2, 3, 4, 5, 6, 0].map((d) => {
-                                const isWorking = member.workingDays.includes(d);
+                                const sched = getStaffDaySchedule(member, d);
+                                const s1 = sched.branchShifts?.sucursal_1;
+                                const s2 = sched.branchShifts?.sucursal_2;
+                                const s1Active = Boolean(s1?.active);
+                                const s2Active = Boolean(s2?.active);
+                                if (!sched.active || (!s1Active && !s2Active)) return null;
+
                                 return (
-                                  <span
-                                    key={d}
-                                    className={`px-1.5 py-0.5 rounded text-[10px] font-black border ${
-                                      isWorking
-                                        ? 'bg-blue-100 border-blue-400 text-blue-950'
-                                        : 'bg-slate-100 border-slate-200 text-slate-400 opacity-50'
-                                    }`}
-                                  >
-                                    {DAY_NAMES[d]}
-                                  </span>
+                                  <div key={d} className="flex items-center justify-between text-[11px] bg-slate-50 px-2 py-1 rounded-lg border border-slate-200">
+                                    <span className="font-black text-slate-800">{DAY_LABELS.find((l) => l.day === d)?.short}:</span>
+                                    <div className="flex items-center gap-1 font-bold">
+                                      {s1Active && (
+                                        <span className="text-[#1E3A8A] bg-blue-50 px-1.5 py-0.5 rounded text-[10px] border border-blue-200">
+                                          Montevideo ({s1?.start}-{s1?.end})
+                                        </span>
+                                      )}
+                                      {s2Active && (
+                                        <span className="text-purple-900 bg-purple-50 px-1.5 py-0.5 rounded text-[10px] border border-purple-200">
+                                          Rioja ({s2?.start}-{s2?.end})
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
                                 );
                               })}
                             </div>

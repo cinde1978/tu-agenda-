@@ -34,6 +34,7 @@ export interface Client {
   businessId: string;
   name: string;
   phone: string;
+  whatsapp?: string;
   email: string;
   notes: string;
   birthday?: string;
@@ -76,6 +77,7 @@ export interface StaffBranchShift {
 export interface StaffDaySchedule {
   day: number; // 0: Dom, 1: Lun, 2: Mar, 3: Mié, 4: Jue, 5: Vie, 6: Sáb
   active: boolean; // ¿Laboral o descanso semanal?
+  isUnconfigured?: boolean; // Si es un horario flexible aún no fijado expresamente por la secretaria
   start: string; // "09:00" (horario habitual / general)
   end: string; // "20:00" (horario habitual / general)
   breaks: StaffBreak[]; // Uno o más descansos
@@ -94,6 +96,7 @@ export interface StaffMember {
   phone: string;
   color: string;
   branchId?: StaffBranchScope; // 'sucursal_1' | 'sucursal_2' | 'ambas'
+  commissionPercentage?: number; // % de comisión por servicio (ej. 40)
   workingDays: number[]; // 0: Dom, 1: Lun, 2: Mar, 3: Mié, 4: Jue, 5: Vie, 6: Sáb
   workingHoursStart: string; // "09:00"
   workingHoursEnd: string; // "20:00"
@@ -106,12 +109,68 @@ export interface StaffMember {
 export interface Branch {
   id: BranchId;
   name: string;
+  address: string;
+  mapsUrl: string;
+  phone?: string;
 }
 
 export const BRANCHES: Branch[] = [
-  { id: 'sucursal_1', name: 'Soham Montevideo' },
-  { id: 'sucursal_2', name: 'Soham Rioja' },
+  {
+    id: 'sucursal_1',
+    name: 'Soham Montevideo',
+    address: 'Montevideo 1420, Rosario',
+    mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Soham+Montevideo+1420',
+    phone: '+54 9 341 555-0101',
+  },
+  {
+    id: 'sucursal_2',
+    name: 'Soham Rioja',
+    address: 'Rioja 2954, Rosario, Santa Fe, Argentina',
+    mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Rioja+2954,+Rosario,+Santa+Fe,+Argentina',
+    phone: '+54 9 341 555-0202',
+  },
 ];
+
+export interface Resource {
+  id: string;
+  businessId: string;
+  name: string;
+  type: 'cabina' | 'equipo' | 'espacio';
+  branchId: StaffBranchScope; // 'sucursal_1' | 'sucursal_2' | 'ambas'
+  description?: string;
+  active: boolean;
+  createdAt: string;
+}
+
+export type GiftCardType = 'monto' | 'tratamiento';
+export type GiftCardStatus = 'activa' | 'canjeada' | 'vencida';
+
+export interface GiftCard {
+  id: string;
+  businessId: string;
+  code: string; // ej. SOHAM-88492
+  type: GiftCardType;
+  amount?: number; // Para tipo 'monto'
+  serviceId?: string; // Para tipo 'tratamiento'
+  serviceName?: string;
+  buyerName: string;
+  buyerPhone?: string;
+  recipientName: string;
+  recipientPhone?: string;
+  message?: string;
+  branchId: StaffBranchScope; // 'sucursal_1' | 'sucursal_2' | 'ambas'
+  status: GiftCardStatus;
+  paymentMethod: PaymentMethod;
+  issueDate: string; // YYYY-MM-DD
+  expiryDate?: string; // YYYY-MM-DD
+  redeemedDate?: string; // YYYY-MM-DD o ISO
+  redeemedBranchId?: BranchId;
+  redeemedStaffId?: string;
+  redeemedStaffName?: string;
+  redeemedNotes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface Appointment {
   id: string;
@@ -124,6 +183,9 @@ export interface Appointment {
   serviceId: string;
   serviceName: string;
   branchId?: BranchId; // 'sucursal_1' | 'sucursal_2'
+  resourceId?: string; // Cabina o equipo asignado
+  resourceName?: string;
+  giftCardCode?: string; // Código de voucher aplicado si corresponde
   date: string; // YYYY-MM-DD
   time: string; // HH:mm
   durationMinutes: number;
@@ -149,10 +211,21 @@ export interface CashMovement {
   paymentMethod: PaymentMethod;
   description: string;
   appointmentId?: string;
+  giftCardId?: string;
   createdAt: string;
 }
 
-export type ViewTab = 'agenda' | 'clientes' | 'servicios' | 'profesionales' | 'caja' | 'reportes' | 'exportar' | 'configuracion';
+export type ViewTab =
+  | 'agenda'
+  | 'clientes'
+  | 'servicios'
+  | 'profesionales'
+  | 'caja'
+  | 'giftcards'
+  | 'recursos'
+  | 'reportes'
+  | 'exportar'
+  | 'configuracion';
 export type AgendaMode = 'dia' | 'semana' | 'mes' | 'staff';
 
 export const APPOINTMENT_COLORS = [
