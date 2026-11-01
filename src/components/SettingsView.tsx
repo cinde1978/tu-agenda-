@@ -60,7 +60,23 @@ const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   pendiente: 'Pendiente',
 };
 
-export function SettingsView() {
+const OWNER_WHATSAPP_DISPLAY = '3413540643';
+const OWNER_WHATSAPP_WA = '5493413540643';
+const SUBSCRIPTION_WHATSAPP_URL = `https://wa.me/${OWNER_WHATSAPP_WA}?text=${encodeURIComponent(
+  'Hola Iris, quiero contratar la suscripción mensual de $45.000 de Tu Agenda Lista.'
+)}`;
+const CONSULTATION_WHATSAPP_URL = `https://wa.me/${OWNER_WHATSAPP_WA}?text=${encodeURIComponent(
+  'Hola Iris, quiero realizar una consulta comercial sobre Tu Agenda Lista.'
+)}`;
+
+export type SettingsSubTab = 'suscripcion' | 'profesionales' | 'servicios' | 'negocio' | 'todos';
+
+interface SettingsViewProps {
+  initialTab?: SettingsSubTab;
+  focusSeq?: number;
+}
+
+export function SettingsView({ initialTab = 'suscripcion', focusSeq }: SettingsViewProps = {}) {
   const {
     business,
     updateBusiness,
@@ -81,7 +97,13 @@ export function SettingsView() {
   } = useApp();
 
   // Navigation tab inside Settings
-  const [activeTab, setActiveTab] = useState<'profesionales' | 'servicios' | 'negocio' | 'todos'>('profesionales');
+  const [activeTab, setActiveTab] = useState<SettingsSubTab>(initialTab);
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab, focusSeq]);
 
   // Quick inline add states for Staff
   const [newStaffName, setNewStaffName] = useState('');
@@ -381,6 +403,19 @@ export function SettingsView() {
       <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl border-2 border-slate-300 overflow-x-auto shadow-2xs">
         <button
           type="button"
+          onClick={() => setActiveTab('suscripcion')}
+          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black border-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+            activeTab === 'suscripcion'
+              ? 'bg-[#1E3A8A] text-white border-[#1E3A8A] shadow-xs'
+              : 'bg-slate-100 text-[#0F172A] border-slate-300 hover:bg-white hover:border-slate-500'
+          }`}
+        >
+          <Award className="w-4 h-4 stroke-[2.5] text-[#D4AF37]" />
+          <span>Suscripción & Plan</span>
+        </button>
+
+        <button
+          type="button"
           onClick={() => setActiveTab('profesionales')}
           className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black border-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
             activeTab === 'profesionales'
@@ -440,6 +475,93 @@ export function SettingsView() {
           <span>Ver Todo</span>
         </button>
       </div>
+
+      {/* ========================================================
+          SECCIÓN COMERCIAL: SUSCRIPCIÓN Y PLAN DE TU AGENDA LISTA
+         ======================================================== */}
+      {(activeTab === 'suscripcion' || activeTab === 'negocio' || activeTab === 'todos') && (
+        <section
+          aria-label="Suscripción comercial de Tu Agenda Lista"
+          className="bg-white rounded-2xl border-2 border-[#D4AF37] p-6 sm:p-8 shadow-sm space-y-6 animate-in fade-in duration-150"
+        >
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-slate-200 pb-6">
+            <div className="space-y-2 max-w-2xl">
+              <div className="flex flex-wrap items-center gap-2 text-xs font-black text-[#0F172A]">
+                <Award className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                <span>Tu Agenda Lista</span>
+                <span aria-hidden="true" className="text-slate-400">·</span>
+                <span>Desarrollado por Iris Quiroz</span>
+              </div>
+
+              <h2 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight">
+                Suscripción Comercial: 7 días de prueba gratuita y luego $45.000 por mes
+              </h2>
+
+              <p className="text-sm font-semibold text-slate-700 leading-relaxed">
+                Probá todas las herramientas de gestión del sistema sin cargo durante 7 días. Al finalizar el período de prueba, el valor del plan mensual es de <strong className="font-black text-[#0F172A]">$45.000 por mes</strong>. La contratación y todas las consultas comerciales se coordinan directamente por el WhatsApp comercial de la propietaria (<strong className="font-black text-[#0F172A]">{OWNER_WHATSAPP_DISPLAY}</strong>).
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0">
+              <a
+                href={SUBSCRIPTION_WHATSAPP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-5 py-3 bg-[#1E3A8A] hover:bg-[#172554] text-white rounded-xl text-xs sm:text-sm font-black shadow-sm transition-colors flex items-center justify-center gap-2.5 cursor-pointer"
+              >
+                <WhatsAppIcon size={18} variant="monochrome" className="text-white" />
+                <span>Contratar Plan ($45.000 / mes)</span>
+                <ExternalLink className="w-3.5 h-3.5 opacity-90 shrink-0" />
+              </a>
+
+              <a
+                href={CONSULTATION_WHATSAPP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-5 py-2.5 bg-white hover:bg-slate-50 text-[#0F172A] border-2 border-slate-300 hover:border-[#0F172A] rounded-xl text-xs sm:text-sm font-black transition-colors flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <WhatsAppIcon size={17} variant="color" />
+                <span>Consultas al {OWNER_WHATSAPP_DISPLAY}</span>
+              </a>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+              <div className="flex items-center gap-2 text-xs font-black text-[#1E3A8A] uppercase tracking-wider">
+                <Clock className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                <span>Período Inicial</span>
+              </div>
+              <p className="text-lg font-black text-[#0F172A]">7 días de prueba gratuita</p>
+              <p className="text-xs font-semibold text-slate-700 leading-relaxed">
+                Acceso completo a agenda, turnos, profesionales, clientes, caja diaria y reportes sin cargo inicial.
+              </p>
+            </div>
+
+            <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+              <div className="flex items-center gap-2 text-xs font-black text-[#1E3A8A] uppercase tracking-wider">
+                <DollarSign className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                <span>Abono Mensual</span>
+              </div>
+              <p className="text-lg font-black text-[#0F172A]">$45.000 por mes</p>
+              <p className="text-xs font-semibold text-slate-700 leading-relaxed">
+                Valor mensual luego de los 7 días de prueba gratuita, sin débitos automáticos ni costos ocultos.
+              </p>
+            </div>
+
+            <div className="p-5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+              <div className="flex items-center gap-2 text-xs font-black text-[#1E3A8A] uppercase tracking-wider">
+                <Phone className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                <span>Contacto Comercial Directo</span>
+              </div>
+              <p className="text-lg font-black text-[#0F172A]">WhatsApp {OWNER_WHATSAPP_DISPLAY}</p>
+              <p className="text-xs font-semibold text-slate-700 leading-relaxed">
+                Contratación, activación de suscripción y consultas directas con la propietaria. Desarrollado por <strong className="font-black text-[#0F172A]">Iris Quiroz</strong>.
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ========================================================
           PANEL 1: GESTIÓN DE PROFESIONALES (AJUSTES)
@@ -1537,9 +1659,18 @@ export function SettingsView() {
 
               {/* Botón Guardar Configuración */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-200">
-                <span className="text-xs font-bold text-slate-600">
-                  Se guardan de forma independiente los datos de Soham Montevideo y Soham Rioja.
-                </span>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-xs font-bold text-slate-600">
+                  <span>Se guardan de forma independiente los datos de Soham Montevideo y Soham Rioja.</span>
+                  <span className="hidden sm:inline text-slate-300">·</span>
+                  <a
+                    href={CONSULTATION_WHATSAPP_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#1E3A8A] hover:underline font-black inline-flex items-center gap-1"
+                  >
+                    <span>Consultas comerciales: WhatsApp {OWNER_WHATSAPP_DISPLAY}</span>
+                  </a>
+                </div>
 
                 <button
                   type="submit"

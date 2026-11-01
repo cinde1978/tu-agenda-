@@ -17,19 +17,23 @@ import { GiftCardsView } from './components/giftcards/GiftCardsView';
 import { ResourcesView } from './components/resources/ResourcesView';
 import { ReportsView } from './components/reports/ReportsView';
 import { ExportView } from './components/export/ExportView';
-import { SettingsView } from './components/SettingsView';
+import { SettingsView, SettingsSubTab } from './components/SettingsView';
 import { AppointmentModal } from './components/AppointmentModal';
 import { AppointmentDetailModal } from './components/AppointmentDetailModal';
 import { WhatsAppModal } from './components/WhatsAppModal';
 import { RemindersModal } from './components/reminders/RemindersModal';
 import { PWAInstallBanner } from './components/PWAInstallBanner';
 import { getTodayDateString } from './utils/initialData';
-import { Sparkles, LogIn, Plus, X } from 'lucide-react';
+import { Sparkles, LogIn, Plus, X, Award } from 'lucide-react';
 
 function MainAppContent() {
   const { user, loginWithGoogle, business, unreadRemindersCount, staff } = useApp();
 
   const [currentTab, setCurrentTab] = useState<ViewTab>('agenda');
+  const [settingsRequest, setSettingsRequest] = useState<{ tab: SettingsSubTab; seq: number }>({
+    tab: 'suscripcion',
+    seq: 0,
+  });
   const [currentDate, setCurrentDate] = useState<string>(getTodayDateString());
   const [agendaMode, setAgendaMode] = useState<AgendaMode>('dia');
   const [staffSubMode, setStaffSubMode] = useState<StaffSubMode>('dia');
@@ -270,7 +274,9 @@ function MainAppContent() {
 
           {currentTab === 'exportar' && <ExportView />}
 
-          {currentTab === 'configuracion' && <SettingsView />}
+          {currentTab === 'configuracion' && (
+            <SettingsView initialTab={settingsRequest.tab} focusSeq={settingsRequest.seq} />
+          )}
         </main>
 
         {/* Footer (Professional Whitelabel SaaS - Fixed & Protected Iris Quiroz Credits) */}
@@ -284,7 +290,19 @@ function MainAppContent() {
                 Desarrollado por <strong className="text-[#0F172A] font-black tracking-tight">Iris Quiroz</strong>
               </span>
             </div>
-            <div className="flex items-center gap-2 text-[#0F172A] justify-center sm:justify-end">
+            <div className="flex items-center gap-2 flex-wrap text-[#0F172A] justify-center sm:justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setSettingsRequest((prev) => ({ tab: 'suscripcion', seq: prev.seq + 1 }));
+                  setCurrentTab('configuracion');
+                }}
+                className="inline-flex items-center gap-1.5 text-[11px] font-black text-[#0F172A] bg-amber-50 hover:bg-amber-100 px-3 py-1 rounded-lg border border-[#D4AF37] transition-colors cursor-pointer"
+                title="Ver suscripción comercial: 7 días de prueba gratuita y luego $45.000 por mes"
+              >
+                <Award className="w-3.5 h-3.5 text-[#9A7B1C] shrink-0" />
+                <span>Suscripción: 7 días gratis · $45.000/mes</span>
+              </button>
               <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#0F172A] bg-white px-3 py-1 rounded-lg border border-slate-200">
                 <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
                 <span>Soham Montevideo · Soham Rioja</span>
