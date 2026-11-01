@@ -1,38 +1,41 @@
 import React, { useMemo } from 'react';
-import { Clock, Plus, User, Sparkles, AlertCircle, CheckCircle } from 'lucide-react';
-import { Appointment, StaffMember } from '../../types';
+import { Plus, User, Sparkles, Building2, Coffee, AlertCircle, Calendar, Users } from 'lucide-react';
+import { Appointment, BranchId } from '../../types';
 import { useApp } from '../../context/AppContext';
-import { formatCurrency, getStatusBadge, openWhatsAppTurno } from '../../utils/formatters';
+import { formatCurrency, formatDateSpanishLong, getStatusBadge, openWhatsAppTurno } from '../../utils/formatters';
 import { WhatsAppIcon } from '../icons/WhatsAppIcon';
+import {
+  BRANCH_NAMES,
+  BRANCH_SHORT_NAMES,
+  SCOPE_NAMES,
+  DAY_LABELS,
+  parseDateDayOfWeek,
+  getStaffDaySchedule,
+  getStaffEffectiveShift,
+  formatShiftRanges,
+  getSlotAvailabilityForStaff,
+  timeToMinutes,
+  minutesToTime,
+} from '../../utils/staffSchedule';
 
 interface AgendaDayViewProps {
   currentDate: string;
   selectedStaffId: string;
   onSelectAppointment: (appointment: Appointment) => void;
-  onSlotClick: (time: string) => void;
+  onSlotClick: (time: string, staffId?: string, branchId?: BranchId) => void;
   onOpenWhatsApp: (appointment: Appointment) => void;
+  onNewAppointment?: () => void;
+  onGoToStaff?: () => void;
 }
 
-const START_HOUR = 8; // 08:00
-const END_HOUR = 21; // 21:00
-const DAY_START_MINUTES = START_HOUR * 60; // 480
+const DEFAULT_START_HOUR = 8; // 08:00
+const DEFAULT_END_HOUR = 21; // 21:00
 const HOUR_HEIGHT = 80; // 80px per 60 minutes
 const SLOT_HEIGHT = 40; // 40px per 30 minutes
 
-// Generate 30-min interval labels
-const SLOTS: string[] = [];
-for (let h = START_HOUR; h < END_HOUR; h++) {
-  const hStr = String(h).padStart(2, '0');
-  SLOTS.push(`${hStr}:00`);
-  SLOTS.push(`${hStr}:30`);
-}
-
 function calculateEndTime(startTime: string, durationMinutes: number): string {
-  const [h, m] = startTime.split(':').map(Number);
-  const total = h * 60 + m + (durationMinutes || 30);
-  const endH = Math.floor(total / 60);
-  const endM = total % 60;
-  return `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+  const total = timeToMinutes(startTime) + (durationMinutes || 30);
+  return minutesToTime(total);
 }
 
 interface LayoutItem {
@@ -46,28 +49,24 @@ interface LayoutItem {
 function computeAppointmentLayout(
   appointments: Appointment[],
   dayStartMinutes: number,
-  hourHeight: number
+  hourHeight: number,
+  leaveRoomForFreeSlots = false
 ): LayoutItem[] {
   if (appointments.length === 0) return [];
 
-  // Sort by start time, then duration descending
   const sorted = [...appointments].sort((a, b) => {
-    const [ah, am] = a.time.split(':').map(Number);
-    const [bh, bm] = b.time.split(':').map(Number);
-    const aStart = ah * 60 + am;
-    const bStart = bh * 60 + bm;
+    const aStart = timeToMinutes(a.time);
+    const bStart = timeToMinutes(b.time);
     if (aStart !== bStart) return aStart - bStart;
     return (b.durationMinutes || 30) - (a.durationMinutes || 30);
   });
 
-  // Group overlapping appointments into clusters
   const clusters: Appointment[][] = [];
   let currentCluster: Appointment[] = [];
   let clusterEnd = -1;
 
   for (const apt of sorted) {
-    const [h, m] = apt.time.split(':').map(Number);
-    const start = h * 60 + m;
+    const start = timeToMinutes(apt.time);
     const duration = apt.durationMinutes || 30;
     const end = start + duration;
 
@@ -87,7 +86,6 @@ function computeAppointmentLayout(
     clusters.push(currentCluster);
   }
 
-  // Layout each cluster into side-by-side columns
   const result: LayoutItem[] = [];
 
   for (const cluster of clusters) {
@@ -95,8 +93,7 @@ function computeAppointmentLayout(
     const positions: Array<{ apt: Appointment; col: number }> = [];
 
     for (const apt of cluster) {
-      const [h, m] = apt.time.split(':').map(Number);
-      const start = h * 60 + m;
+      const start = timeToMinutes(apt.time);
       const duration = apt.durationMinutes || 30;
       const end = start + duration;
 
@@ -111,13 +108,13 @@ function computeAppointmentLayout(
     }
 
     const totalCols = columnEnds.length;
+    const usableTotalWidth = leaveRoomForFreeSlots ? 76 : 100;
     for (const pos of positions) {
-      const [h, m] = pos.apt.time.split(':').map(Number);
-      const start = h * 60 + m;
+      const start = timeToMinutes(pos.apt.time);
       const duration = pos.apt.durationMinutes || 30;
       const top = ((start - dayStartMinutes) / 60) * hourHeight;
       const height = Math.max(38, (duration / 60) * hourHeight - 2);
-      const widthPercent = 100 / totalCols;
+      const widthPercent = usableTotalWidth / totalCols;
       const leftPercent = pos.col * widthPercent;
 
       result.push({
@@ -139,10 +136,77 @@ export function AgendaDayView({
   onSelectAppointment,
   onSlotClick,
   onOpenWhatsApp,
+  onNewAppointment,
+  onGoToStaff,
 }: AgendaDayViewProps) {
-  const { appointments, staff, business } = useApp();
+  const {
+    appointments,
+    allAppointments,
+    staff,
+    selectedBranch,
+    activeSingleBranch,
+    setSelectedBranch,
+    business,
+  } = useApp();
 
-  // Filter appointments for this date and selected staff
+  const sourceAppointments = useMemo(() => {
+    return Array.isArray(allAppointments) ? allAppointments : appointments;
+  }, [allAppointments, appointments]);
+
+  const dayOfWeek = useMemo(() => parseDateDayOfWeek(currentDate), [currentDate]);
+  const dayName = DAY_LABELS.find((l) => l.day === dayOfWeek)?.name || 'este día';
+
+  const activeStaffList = useMemo(() => staff.filter((s) => s.active), [staff]);
+  const focusedStaff = useMemo(
+    () =>
+      selectedStaffId !== 'todos'
+        ? activeStaffList.find((s) => s.id === selectedStaffId) || null
+        : null,
+    [activeStaffList, selectedStaffId]
+  );
+
+  const focusedSchedule = useMemo(
+    () => (focusedStaff ? getStaffDaySchedule(focusedStaff, dayOfWeek) : null),
+    [focusedStaff, dayOfWeek]
+  );
+
+  const focusedEffS1 = useMemo(
+    () => (focusedSchedule ? getStaffEffectiveShift(focusedSchedule, 'sucursal_1') : null),
+    [focusedSchedule]
+  );
+  const focusedEffS2 = useMemo(
+    () => (focusedSchedule ? getStaffEffectiveShift(focusedSchedule, 'sucursal_2') : null),
+    [focusedSchedule]
+  );
+
+  const focusedEffCurrent = useMemo(() => {
+    if (!focusedSchedule || selectedBranch === 'ambas') return null;
+    return getStaffEffectiveShift(focusedSchedule, selectedBranch);
+  }, [focusedSchedule, selectedBranch]);
+
+  const otherBranch: BranchId = selectedBranch === 'sucursal_1' ? 'sucursal_2' : 'sucursal_1';
+  const focusedEffOther = useMemo(() => {
+    if (!focusedSchedule || selectedBranch === 'ambas') return null;
+    return getStaffEffectiveShift(focusedSchedule, otherBranch);
+  }, [focusedSchedule, otherBranch, selectedBranch]);
+
+  // Staff attending today in selectedBranch when viewing "todos"
+  const workingStaffInBranchToday = useMemo(() => {
+    return activeStaffList.filter((s) => {
+      if (s.blockedDates?.includes(currentDate)) return false;
+      const sched = getStaffDaySchedule(s, dayOfWeek);
+      if (!sched.active) return false;
+      if (selectedBranch === 'ambas') {
+        return (
+          getStaffEffectiveShift(sched, 'sucursal_1').active ||
+          getStaffEffectiveShift(sched, 'sucursal_2').active
+        );
+      }
+      return getStaffEffectiveShift(sched, selectedBranch).active;
+    });
+  }, [activeStaffList, currentDate, dayOfWeek, selectedBranch]);
+
+  // Filter appointments for this date, branch, and selected staff
   const dayAppointments = useMemo(() => {
     return appointments.filter((apt) => {
       if (apt.date !== currentDate) return false;
@@ -151,53 +215,364 @@ export function AgendaDayView({
     });
   }, [appointments, currentDate, selectedStaffId]);
 
-  // Compute visual duration layout
-  const layoutItems = useMemo(() => {
-    return computeAppointmentLayout(dayAppointments, DAY_START_MINUTES, HOUR_HEIGHT);
-  }, [dayAppointments]);
+  const activeDayAppointments = useMemo(
+    () => dayAppointments.filter((a) => a.status !== 'cancelado'),
+    [dayAppointments]
+  );
 
-  const totalGridHeight = SLOTS.length * SLOT_HEIGHT;
+  // Dynamically expand grid bounds if any shift or appointment falls outside 08:00-21:00
+  const { slots, dayStartMinutes } = useMemo(() => {
+    let minHour = DEFAULT_START_HOUR;
+    let maxHour = DEFAULT_END_HOUR;
+
+    for (const st of workingStaffInBranchToday) {
+      const sched = getStaffDaySchedule(st, dayOfWeek);
+      const shiftsToInspect =
+        selectedBranch === 'ambas'
+          ? [getStaffEffectiveShift(sched, 'sucursal_1'), getStaffEffectiveShift(sched, 'sucursal_2')]
+          : [getStaffEffectiveShift(sched, selectedBranch)];
+      for (const eff of shiftsToInspect) {
+        if (!eff.active) continue;
+        for (const r of eff.ranges) {
+          const sH = Math.floor(timeToMinutes(r.start) / 60);
+          const eH = Math.ceil(timeToMinutes(r.end) / 60);
+          if (sH < minHour) minHour = Math.max(0, sH);
+          if (eH > maxHour) maxHour = Math.min(24, eH);
+        }
+      }
+    }
+
+    for (const apt of dayAppointments) {
+      const sH = Math.floor(timeToMinutes(apt.time) / 60);
+      const eH = Math.ceil((timeToMinutes(apt.time) + (apt.durationMinutes || 30)) / 60);
+      if (sH < minHour) minHour = Math.max(0, sH);
+      if (eH > maxHour) maxHour = Math.min(24, eH);
+    }
+
+    const generated: string[] = [];
+    for (let h = minHour; h < maxHour; h++) {
+      const hStr = String(h).padStart(2, '0');
+      generated.push(`${hStr}:00`);
+      generated.push(`${hStr}:30`);
+    }
+    return { slots: generated, dayStartMinutes: minHour * 60 };
+  }, [workingStaffInBranchToday, dayOfWeek, selectedBranch, dayAppointments]);
+
+  const layoutItems = useMemo(() => {
+    const leaveRoom = selectedStaffId === 'todos' && workingStaffInBranchToday.length > 1;
+    return computeAppointmentLayout(dayAppointments, dayStartMinutes, HOUR_HEIGHT, leaveRoom);
+  }, [dayAppointments, dayStartMinutes, selectedStaffId, workingStaffInBranchToday.length]);
 
   return (
     <div className="bg-white rounded-2xl border-2 border-slate-300 shadow-xs overflow-hidden">
-      {/* Top Day Overview Bar */}
-      <div className="p-4 bg-slate-100 border-b-2 border-slate-300 flex flex-wrap items-center justify-between gap-2 text-xs">
-        <div className="flex items-center gap-2">
-          <span className="font-black text-[#0F172A] text-sm">
-            {dayAppointments.length === 0
-              ? 'No hay turnos programados para este día'
-              : `${dayAppointments.length} turno(s) agendados`}
-          </span>
-          <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-900 font-bold text-[11px] border border-blue-300">
-            Escala real: 60 min = 1 hora completa
+      {/* Top Day Overview & Real Schedule Status Banner */}
+      <div className="p-4 bg-slate-50 border-b-2 border-slate-200 space-y-2.5 text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#1E3A8A] text-white font-black text-xs">
+              <Building2 className="w-3.5 h-3.5" />
+              <span>{SCOPE_NAMES[selectedBranch]}</span>
+            </span>
+            <span className="font-black text-[#0F172A] text-sm capitalize">
+              {formatDateSpanishLong(currentDate) || currentDate}
+            </span>
+            <span className="px-2 py-0.5 rounded-lg bg-white border border-slate-300 font-black text-[#0F172A] text-xs">
+              {activeDayAppointments.length === 0
+                ? '0 turnos ocupados'
+                : `${activeDayAppointments.length} turno(s) ocupado(s)`}
+            </span>
+          </div>
+
+          <span className="text-slate-700 font-bold text-xs">
+            Grilla horaria cada 30 min · Disponibilidad en tiempo real
           </span>
         </div>
-        <span className="text-slate-600 font-bold text-xs">
-          Haz clic en cualquier horario libre para agendar
-        </span>
+
+        {/* Schedule & Availability Summary for Focused Staff or All Staff */}
+        {focusedStaff ? (
+          focusedStaff.blockedDates?.includes(currentDate) ? (
+            <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-300 text-rose-900 font-bold flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>
+                <strong>{focusedStaff.name}:</strong> No disponible (Fecha bloqueada).
+              </span>
+            </div>
+          ) : !focusedSchedule?.active ? (
+            <div className="p-2.5 rounded-xl bg-slate-200/80 border border-slate-300 text-slate-800 font-bold flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-slate-600 shrink-0" />
+              <span>
+                <strong>{focusedStaff.name}:</strong> No disponible — No trabaja los días{' '}
+                {dayName}.
+              </span>
+            </div>
+          ) : selectedBranch === 'ambas' ? (
+            !focusedEffS1?.active && !focusedEffS2?.active ? (
+              <div className="p-2.5 rounded-xl bg-slate-200/80 border border-slate-300 text-slate-800 font-bold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-slate-600 shrink-0" />
+                <span>
+                  <strong>{focusedStaff.name}:</strong> No tiene horarios activos los días {dayName}.
+                </span>
+              </div>
+            ) : (
+              <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-950 font-bold flex flex-wrap items-center justify-between gap-2">
+                <span>
+                  <strong>{focusedStaff.name}</strong> atiende:{' '}
+                  {[
+                    focusedEffS1?.active
+                      ? `Montevideo (${formatShiftRanges(focusedEffS1.ranges)} hs)`
+                      : null,
+                    focusedEffS2?.active
+                      ? `Rioja (${formatShiftRanges(focusedEffS2.ranges)} hs)`
+                      : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </span>
+              </div>
+            )
+          ) : !focusedEffCurrent?.active ? (
+            <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-950 font-bold flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
+                <span>
+                  <strong>{focusedStaff.name}:</strong> No disponible en{' '}
+                  {BRANCH_NAMES[selectedBranch]} los días {dayName}.
+                </span>
+              </div>
+              {focusedEffOther?.active && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedBranch(otherBranch)}
+                  className="px-3 py-1 rounded-lg bg-[#1E3A8A] text-white text-[11px] font-black cursor-pointer hover:bg-blue-900"
+                >
+                  Ver su agenda en {BRANCH_NAMES[otherBranch]} (
+                  {formatShiftRanges(focusedEffOther.ranges)} hs) →
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-950 font-bold flex flex-wrap items-center justify-between gap-2">
+              <span>
+                <strong>{focusedStaff.name}</strong> atiende en{' '}
+                <strong>{BRANCH_NAMES[selectedBranch]}</strong>:{' '}
+                {formatShiftRanges(focusedEffCurrent.ranges)} hs
+              </span>
+              {focusedEffCurrent.breaks.length > 0 && (
+                <span className="inline-flex items-center gap-1 text-[11px] text-amber-900 bg-amber-100 px-2 py-0.5 rounded-md border border-amber-300">
+                  <Coffee className="w-3 h-3" />
+                  <span>
+                    Pausa:{' '}
+                    {focusedEffCurrent.breaks.map((b) => `${b.start}-${b.end}`).join(', ')}
+                  </span>
+                </span>
+              )}
+            </div>
+          )
+        ) : activeStaffList.length === 0 ? (
+          <div className="p-3 rounded-xl bg-blue-50 border-2 border-blue-200 text-[#0F172A] flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <Calendar className="w-4 h-4 text-[#1E3A8A] shrink-0" />
+              <div>
+                <p className="font-black text-xs text-[#0F172A]">
+                  Agenda vacía — Todavía no hay profesionales ni turnos cargados en {SCOPE_NAMES[selectedBranch]}
+                </p>
+                <p className="text-[11px] font-semibold text-slate-700">
+                  La grilla de horarios está lista. Cargá primero tus profesionales y horarios laborales para habilitar reservas.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {onGoToStaff && (
+                <button
+                  type="button"
+                  onClick={onGoToStaff}
+                  className="px-3 py-1.5 rounded-xl bg-[#1E3A8A] hover:bg-blue-900 text-white text-xs font-black flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Users className="w-3.5 h-3.5" />
+                  <span>Cargar Profesionales</span>
+                </button>
+              )}
+              {onNewAppointment && (
+                <button
+                  type="button"
+                  onClick={onNewAppointment}
+                  className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-[#0F172A] border border-slate-300 text-xs font-black flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Nuevo Turno</span>
+                </button>
+              )}
+            </div>
+          </div>
+        ) : workingStaffInBranchToday.length === 0 ? (
+          <div className="p-2.5 rounded-xl bg-slate-200/80 border border-slate-300 text-slate-800 font-bold flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-slate-600 shrink-0" />
+            <span>
+              Ningún profesional tiene horario laboral activo los días {dayName} en{' '}
+              {SCOPE_NAMES[selectedBranch]}.
+            </span>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="font-black text-slate-700">Disponibles hoy:</span>
+              {workingStaffInBranchToday.map((st) => {
+                const sched = getStaffDaySchedule(st, dayOfWeek);
+                const hoursLabel =
+                  selectedBranch === 'ambas'
+                    ? [
+                        getStaffEffectiveShift(sched, 'sucursal_1').active
+                          ? `Mvd ${formatShiftRanges(getStaffEffectiveShift(sched, 'sucursal_1').ranges)}`
+                          : null,
+                        getStaffEffectiveShift(sched, 'sucursal_2').active
+                          ? `Rioja ${formatShiftRanges(getStaffEffectiveShift(sched, 'sucursal_2').ranges)}`
+                          : null,
+                      ]
+                        .filter(Boolean)
+                        .join(' / ')
+                    : `${formatShiftRanges(getStaffEffectiveShift(sched, selectedBranch).ranges)} hs`;
+                return (
+                  <span
+                    key={st.id}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-white border border-slate-300 text-[#0F172A] font-black text-[11px]"
+                  >
+                    <span
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: st.color || '#1E3A8A' }}
+                    />
+                    <span>
+                      {st.name}: {hoursLabel}
+                    </span>
+                  </span>
+                );
+              })}
+            </div>
+            {activeDayAppointments.length === 0 && (
+              <span className="text-[11px] font-black text-emerald-900 bg-emerald-100 px-2.5 py-0.5 rounded-lg border border-emerald-300">
+                Agenda del día sin turnos — Seleccioná un horario disponible para agendar
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Hourly Timeline with Proportional Visual Duration */}
+      {/* Hourly Timeline in Normal Flow (never collapses or renders blank) */}
       <div className="relative overflow-x-auto">
-        <div
-          className="relative min-w-[650px]"
-          style={{ height: `${totalGridHeight}px` }}
-        >
+        <div className="relative min-w-[650px]">
           {/* Background Grid: 30-min time slot rows */}
-          <div className="absolute inset-0 flex flex-col">
-            {SLOTS.map((slot) => {
+          <div className="relative flex flex-col">
+            {slots.map((slot) => {
               const isHour = slot.endsWith(':00');
+              const slotStartMin = timeToMinutes(slot);
+              const slotEndMin = slotStartMin + 30;
+
+              let isSlotBookable = false;
+              let slotStatusLabel = 'No disponible';
+              let slotBadgeClass = 'text-slate-500';
+              let rowBgClass = isHour
+                ? 'border-slate-300 bg-slate-100/80 cursor-not-allowed'
+                : 'border-slate-200/80 bg-slate-50/70 cursor-not-allowed';
+              let targetStaffIdForClick: string | undefined = undefined;
+              let targetBranchForClick: BranchId = activeSingleBranch;
+
+              if (focusedStaff) {
+                const avail = getSlotAvailabilityForStaff(
+                  focusedStaff,
+                  currentDate,
+                  slotStartMin,
+                  slotEndMin,
+                  selectedBranch,
+                  sourceAppointments
+                );
+
+                if (avail.available) {
+                  isSlotBookable = true;
+                  targetStaffIdForClick = focusedStaff.id;
+                  targetBranchForClick = avail.activeBranchId || activeSingleBranch;
+                  const brSuffix =
+                    selectedBranch === 'ambas' && avail.activeBranchId
+                      ? ` (${BRANCH_SHORT_NAMES[avail.activeBranchId]})`
+                      : '';
+                  slotStatusLabel = `Espacio disponible · Agendar ${slot} hs con ${focusedStaff.name}${brSuffix}`;
+                  slotBadgeClass = 'text-emerald-800 group-hover:text-[#1E3A8A]';
+                  rowBgClass = isHour
+                    ? 'border-slate-300 bg-white hover:bg-emerald-50/70 cursor-pointer'
+                    : 'border-slate-200/80 bg-slate-50/30 hover:bg-emerald-50/70 cursor-pointer';
+                } else if (avail.status === 'occupied') {
+                  slotStatusLabel = 'Turno ocupado';
+                  slotBadgeClass = 'text-blue-900';
+                  rowBgClass = 'border-slate-200 bg-blue-50/20 cursor-default';
+                } else if (avail.status === 'occupied_other_branch') {
+                  slotStatusLabel = avail.label;
+                  slotBadgeClass = 'text-indigo-800';
+                  rowBgClass = 'border-slate-200 bg-indigo-50/50 cursor-not-allowed';
+                } else if (avail.status === 'in_break') {
+                  slotStatusLabel = avail.label;
+                  slotBadgeClass = 'text-amber-800';
+                  rowBgClass = 'border-slate-200 bg-amber-50/70 cursor-not-allowed';
+                } else {
+                  slotStatusLabel = avail.label;
+                }
+              } else if (activeStaffList.length === 0) {
+                slotStatusLabel = 'Agenda vacía · Sin profesionales cargados aún';
+                slotBadgeClass = 'text-slate-500';
+              } else {
+                const evaluations = activeStaffList.map((st) => ({
+                  staff: st,
+                  avail: getSlotAvailabilityForStaff(
+                    st,
+                    currentDate,
+                    slotStartMin,
+                    slotEndMin,
+                    selectedBranch,
+                    sourceAppointments
+                  ),
+                }));
+
+                const freeEvaluations = evaluations.filter((e) => e.avail.available);
+
+                if (freeEvaluations.length > 0) {
+                  isSlotBookable = true;
+                  targetStaffIdForClick = freeEvaluations[0].staff.id;
+                  targetBranchForClick =
+                    freeEvaluations[0].avail.activeBranchId || activeSingleBranch;
+                  const names = freeEvaluations
+                    .map((e) => {
+                      const first = e.staff.name.split(' ')[0];
+                      return selectedBranch === 'ambas' && e.avail.activeBranchId
+                        ? `${first}·${BRANCH_SHORT_NAMES[e.avail.activeBranchId]}`
+                        : first;
+                    })
+                    .join(', ');
+                  slotStatusLabel = `Disponible (${names}) · Agendar ${slot} hs`;
+                  slotBadgeClass = 'text-emerald-800 group-hover:text-[#1E3A8A]';
+                  rowBgClass = isHour
+                    ? 'border-slate-300 bg-white hover:bg-emerald-50/70 cursor-pointer'
+                    : 'border-slate-200/80 bg-slate-50/30 hover:bg-emerald-50/70 cursor-pointer';
+                } else if (evaluations.some((e) => e.avail.status === 'occupied')) {
+                  slotStatusLabel = 'Horario ocupado';
+                  slotBadgeClass = 'text-blue-900';
+                  rowBgClass = 'border-slate-200 bg-blue-50/20 cursor-default';
+                } else if (evaluations.some((e) => e.avail.status === 'in_break')) {
+                  slotStatusLabel = 'Pausa / Descanso';
+                  slotBadgeClass = 'text-amber-800';
+                  rowBgClass = 'border-slate-200 bg-amber-50/70 cursor-not-allowed';
+                } else if (workingStaffInBranchToday.length === 0) {
+                  slotStatusLabel = 'No laborable / Sin atención';
+                } else {
+                  slotStatusLabel = 'Fuera de horario laboral';
+                }
+              }
 
               return (
                 <div
                   key={slot}
                   style={{ height: `${SLOT_HEIGHT}px` }}
-                  className={`flex items-center border-b transition-colors group cursor-pointer ${
-                    isHour
-                      ? 'border-slate-300 bg-white hover:bg-blue-50/70'
-                      : 'border-slate-200/80 bg-slate-50/30 hover:bg-blue-50/70'
-                  }`}
-                  onClick={() => onSlotClick(slot)}
+                  className={`flex items-center border-b transition-colors group ${rowBgClass}`}
+                  onClick={() => {
+                    if (!isSlotBookable) return;
+                    onSlotClick(slot, targetStaffIdForClick, targetBranchForClick);
+                  }}
                 >
                   {/* Time label */}
                   <div
@@ -210,11 +585,13 @@ export function AgendaDayView({
                     <span>{slot}</span>
                   </div>
 
-                  {/* Slot empty hint */}
+                  {/* Slot availability status */}
                   <div className="flex-1 px-4 flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-slate-500 group-hover:text-blue-700 transition-colors flex items-center gap-1">
-                      <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                      <span>Disponible · Agendar {slot} hs</span>
+                    <span
+                      className={`text-[11px] font-bold transition-colors flex items-center gap-1 ${slotBadgeClass}`}
+                    >
+                      {isSlotBookable && <Plus className="w-3.5 h-3.5 stroke-[2.5]" />}
+                      <span>{slotStatusLabel}</span>
                     </span>
                   </div>
                 </div>
@@ -222,7 +599,7 @@ export function AgendaDayView({
             })}
           </div>
 
-          {/* Foreground Appointments Layer: Real Duration Blocks */}
+          {/* Foreground Appointments Layer: Real Duration Occupied Blocks */}
           <div className="absolute top-0 bottom-0 right-0 left-20 pointer-events-none p-1">
             {layoutItems.map((item) => {
               const apt = item.appointment;
@@ -251,17 +628,16 @@ export function AgendaDayView({
                       ? 'bg-slate-100 border-slate-300 opacity-60 line-through'
                       : 'bg-white border-slate-300 hover:border-blue-600'
                   }`}
-                  title={`${apt.clientName} - ${apt.serviceName} (${apt.time} a ${endTime} hs)`}
+                  title={`${apt.clientName} - ${apt.serviceName} (${apt.time} a ${endTime} hs) [${
+                    BRANCH_SHORT_NAMES[apt.branchId || 'sucursal_1']
+                  }]`}
                 >
-                  {/* Left accent color stripe */}
                   <div
                     className="absolute left-0 top-0 bottom-0 w-2.5"
                     style={{ backgroundColor: cardColor }}
                   />
 
-                  {/* Card Content with High-Contrast Typography */}
                   <div className="pl-4 pr-2.5 py-1.5 flex flex-col justify-between h-full">
-                    {/* Header: Client Name, Time Range & Status */}
                     <div className="flex items-start justify-between gap-1.5">
                       <div className="min-w-0 flex items-center gap-1.5">
                         <span
@@ -273,6 +649,9 @@ export function AgendaDayView({
                         </span>
                         <span className="text-[10px] sm:text-[11px] font-black text-blue-900 bg-blue-100 px-1.5 py-0.2 rounded border border-blue-300 shrink-0">
                           {apt.time} - {endTime} ({apt.durationMinutes}m)
+                        </span>
+                        <span className="text-[10px] font-black text-[#0F172A] bg-slate-100 px-1.5 py-0.2 rounded border border-slate-300 shrink-0">
+                          {BRANCH_SHORT_NAMES[apt.branchId || 'sucursal_1']}
                         </span>
                       </div>
 
@@ -299,7 +678,6 @@ export function AgendaDayView({
                       </div>
                     </div>
 
-                    {/* Middle details: Service, Staff & Price */}
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] font-bold text-slate-700 mt-0.5">
                       <span className="flex items-center gap-1 text-[#0F172A] font-extrabold truncate">
                         <Sparkles className="w-3 h-3 text-blue-600 shrink-0" />

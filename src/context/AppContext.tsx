@@ -26,6 +26,7 @@ import {
   CashMovement,
   BusinessConfigExport,
   BranchId,
+  StaffBranchScope,
   Branch,
   BRANCHES,
   Resource,
@@ -33,19 +34,105 @@ import {
 } from '../types';
 import {
   getDefaultBusiness,
-  getDefaultServices,
-  getDefaultStaff,
-  getDefaultClients,
-  getDefaultAppointments,
-  getDefaultCashMovements,
-  getDefaultResources,
-  getDefaultGiftCards,
+  getDefaultBranchSettings,
   getTodayDateString,
 } from '../utils/initialData';
-import { getStaffDaySchedule } from '../utils/staffSchedule';
+import {
+  normalizeStaffMember,
+  checkStaffAvailability,
+  timeToMinutes,
+} from '../utils/staffSchedule';
 
-const LOCAL_STORAGE_KEY = 'tu_agenda_lista_data_v3';
-const PREV_LOCAL_STORAGE_KEY = 'tu_agenda_lista_data_v2';
+const LOCAL_STORAGE_KEY = 'tu_agenda_lista_data_v4_clean';
+const LEGACY_LOCAL_STORAGE_KEYS = ['tu_agenda_lista_data_v3', 'tu_agenda_lista_data_v2'];
+const LOCAL_BACKUP_KEY = 'tu_agenda_backup_pre_clean_v1';
+const CLEAN_START_VERSION = '2026-10-31';
+
+function sanitizeBusinessConfig(biz: Business): Business {
+  const sanitized: Business = { ...biz };
+  if (!sanitized.developerName || sanitized.developerName === '[Tu Nombre]') {
+    sanitized.developerName = 'Iris Quiroz';
+  }
+  if (
+    !sanitized.name ||
+    sanitized.name === 'TU AGENDA LISTA' ||
+    sanitized.name === 'Tu Agenda Lista Pro' ||
+    sanitized.name === '[Tu Nombre o Marca]'
+  ) {
+    sanitized.name = 'Tu Agenda Lista';
+  }
+  if (
+    !sanitized.tagline ||
+    sanitized.tagline === 'Gestión Profesional de Turnos' ||
+    sanitized.tagline === 'Desarrollado por [Tu Nombre]'
+  ) {
+    sanitized.tagline = 'Desarrollado por Iris Quiroz';
+  }
+  if (sanitized.phone === '+54 9 11 4567-8901') {
+    sanitized.phone = '';
+  }
+  if (!sanitized.address || sanitized.address === 'Av. Principal 1234' || sanitized.address.includes('Montevideo 1420')) {
+    sanitized.address = 'Montevideo 397 / Rioja 2954, Rosario';
+  }
+  if (sanitized.cbuAlias === 'agenda.turnos.mp') {
+    sanitized.cbuAlias = '';
+  }
+  if (sanitized.mercadoPagoAlias === 'agenda.turnos.mp') {
+    sanitized.mercadoPagoAlias = '';
+  }
+  if (sanitized.mercadoPagoCvu === '0000003100085492109482') {
+    sanitized.mercadoPagoCvu = '';
+  }
+  if (sanitized.mercadoPagoAccessToken === 'APP_USR-78219401284-102914-tuagenda-prod') {
+    sanitized.mercadoPagoAccessToken = '';
+  }
+
+  const defaultBranches = getDefaultBranchSettings();
+  const sanitizeBranchEntry = (branchId: BranchId) => {
+    const base = defaultBranches[branchId];
+    const raw = sanitized.branchSettings?.[branchId];
+    if (!raw) {
+      if (branchId === 'sucursal_1' && !sanitized.branchSettings) {
+        return {
+          ...base,
+          phone: sanitized.phone || '',
+          whatsapp: sanitized.phone || '',
+          cbuAlias: sanitized.cbuAlias || '',
+          mercadoPagoAlias: sanitized.mercadoPagoAlias || '',
+          mercadoPagoCvu: sanitized.mercadoPagoCvu || '',
+          mercadoPagoAccessToken: sanitized.mercadoPagoAccessToken || '',
+        };
+      }
+      return base;
+    }
+    return {
+      ...base,
+      ...raw,
+      name: raw.name || base.name,
+      address: raw.address || base.address,
+      phone: raw.phone === '+54 9 11 4567-8901' ? '' : (raw.phone ?? ''),
+      whatsapp: raw.whatsapp === '+54 9 11 4567-8901' ? '' : (raw.whatsapp ?? ''),
+      cbuAlias: raw.cbuAlias === 'agenda.turnos.mp' ? '' : (raw.cbuAlias ?? ''),
+      mercadoPagoAlias: raw.mercadoPagoAlias === 'agenda.turnos.mp' ? '' : (raw.mercadoPagoAlias ?? ''),
+      mercadoPagoCvu: raw.mercadoPagoCvu === '0000003100085492109482' ? '' : (raw.mercadoPagoCvu ?? ''),
+      mercadoPagoAccessToken:
+        raw.mercadoPagoAccessToken === 'APP_USR-78219401284-102914-tuagenda-prod'
+          ? ''
+          : (raw.mercadoPagoAccessToken ?? ''),
+      enabledPaymentMethods:
+        Array.isArray(raw.enabledPaymentMethods) && raw.enabledPaymentMethods.length > 0
+          ? raw.enabledPaymentMethods
+          : base.enabledPaymentMethods,
+    };
+  };
+
+  sanitized.branchSettings = {
+    sucursal_1: sanitizeBranchEntry('sucursal_1'),
+    sucursal_2: sanitizeBranchEntry('sucursal_2'),
+  };
+
+  return sanitized;
+}
 
 interface LocalStoredState {
   business: Business;
@@ -73,8 +160,9 @@ interface AppContextType {
   giftCards: GiftCard[];
   allGiftCards: GiftCard[];
   resources: Resource[];
-  selectedBranch: BranchId;
-  setSelectedBranch: (branch: BranchId) => void;
+  selectedBranch: StaffBranchScope;
+  activeSingleBranch: BranchId;
+  setSelectedBranch: (branch: StaffBranchScope) => void;
   branches: Branch[];
   isLoadingData: boolean;
   hasFirestoreError: string | null;
@@ -107,7 +195,7 @@ interface AppContextType {
   updateResource: (res: Resource) => Promise<void>;
   deleteResource: (id: string) => Promise<void>;
   resetToSampleData: () => Promise<void>;
-  exportAppointmentsToCSV: (dateFilter?: string) => void;
+  exportAppointmentsToCSV: (dateFilter?: string, branchFilter?: StaffBranchScope) => void;
   exportBusinessConfiguration: () => BusinessConfigExport;
   importBusinessConfiguration: (imported: BusinessConfigExport) => Promise<{ servicesCount: number; staffCount: number }>;
 }
@@ -129,31 +217,42 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const setAppointments = setRawAppointments;
   const setCashMovements = setRawCashMovements;
 
-  const [selectedBranch, setSelectedBranchState] = useState<BranchId>(() => {
+  const [selectedBranch, setSelectedBranchState] = useState<StaffBranchScope>(() => {
     try {
       const saved = localStorage.getItem('tu_agenda_selected_branch');
-      if (saved === 'sucursal_1' || saved === 'sucursal_2') return saved;
+      if (saved === 'sucursal_1' || saved === 'sucursal_2' || saved === 'ambas') return saved;
     } catch {}
     return 'sucursal_1';
   });
 
-  const setSelectedBranch = useCallback((branch: BranchId) => {
+  const activeSingleBranch: BranchId = selectedBranch === 'sucursal_2' ? 'sucursal_2' : 'sucursal_1';
+
+  const setSelectedBranch = useCallback((branch: StaffBranchScope) => {
     setSelectedBranchState(branch);
     try {
       localStorage.setItem('tu_agenda_selected_branch', branch);
     } catch {}
   }, []);
 
-  // Filter automatically by selected branch
+  const sortedStaff = useMemo(() => {
+    return [...staff].sort((a, b) =>
+      (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' })
+    );
+  }, [staff]);
+
+  // Filter automatically by selected branch (or show combined when 'ambas')
   const appointments = useMemo(() => {
+    if (selectedBranch === 'ambas') return rawAppointments;
     return rawAppointments.filter((apt) => (apt.branchId || 'sucursal_1') === selectedBranch);
   }, [rawAppointments, selectedBranch]);
 
   const cashMovements = useMemo(() => {
+    if (selectedBranch === 'ambas') return rawCashMovements;
     return rawCashMovements.filter((mov) => (mov.branchId || 'sucursal_1') === selectedBranch);
   }, [rawCashMovements, selectedBranch]);
 
   const giftCards = useMemo(() => {
+    if (selectedBranch === 'ambas') return rawGiftCards;
     return rawGiftCards.filter((gc) => !gc.branchId || gc.branchId === 'ambas' || gc.branchId === selectedBranch);
   }, [rawGiftCards, selectedBranch]);
 
@@ -190,86 +289,54 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (authLoading) return;
     if (user) return; // Will sync from Firestore
 
-    // Load local storage
     try {
-      let stored = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (!stored) {
-        stored = localStorage.getItem(PREV_LOCAL_STORAGE_KEY);
+      // Back up and purge any legacy demo/test keys once
+      const legacySnapshots: Record<string, unknown> = {};
+      let foundLegacy = false;
+      for (const legacyKey of LEGACY_LOCAL_STORAGE_KEYS) {
+        const rawLegacy = localStorage.getItem(legacyKey);
+        if (rawLegacy) {
+          foundLegacy = true;
+          try {
+            legacySnapshots[legacyKey] = JSON.parse(rawLegacy);
+          } catch {
+            legacySnapshots[legacyKey] = rawLegacy;
+          }
+          localStorage.removeItem(legacyKey);
+        }
+      }
+      if (foundLegacy && !localStorage.getItem(LOCAL_BACKUP_KEY)) {
+        localStorage.setItem(
+          LOCAL_BACKUP_KEY,
+          JSON.stringify({
+            backedUpAt: new Date().toISOString(),
+            legacyData: legacySnapshots,
+          })
+        );
       }
 
+      const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (stored) {
         const parsed: LocalStoredState = JSON.parse(stored);
-        if (parsed.business) {
-          if (!parsed.business.developerName || parsed.business.developerName === '[Tu Nombre]') {
-            parsed.business.developerName = 'Iris Quiroz';
-          }
-          if (
-            parsed.business.name === 'TU AGENDA LISTA' ||
-            parsed.business.name === 'Tu Agenda Lista Pro' ||
-            parsed.business.name === '[Tu Nombre o Marca]'
-          ) {
-            parsed.business.name = 'Tu Agenda Lista';
-          }
-          if (
-            !parsed.business.tagline ||
-            parsed.business.tagline === 'Gestión Profesional de Turnos' ||
-            parsed.business.tagline === 'Desarrollado por [Tu Nombre]'
-          ) {
-            parsed.business.tagline = 'Desarrollado por Iris Quiroz';
-          }
-        }
-
-        // Filter out any legacy hair salon or barber services
-        const isHairSalon = (name: string, category: string) => {
-          const n = (name || '').toLowerCase();
-          const c = (category || '').toLowerCase();
-          return (
-            c.includes('peluquer') ||
-            c.includes('barber') ||
-            n.includes('corte') ||
-            n.includes('balayage') ||
-            n.includes('peinado') ||
-            n.includes('barba') ||
-            n.includes('coloración') ||
-            n.includes('brushing')
-          );
-        };
-
-        let validServices = (parsed.services || []).filter((s) => !isHairSalon(s.name, s.category));
-        if (validServices.length === 0) {
-          validServices = getDefaultServices('biz_local_active');
-        }
-
-        let validStaff = parsed.staff || [];
-        const hasAestheticStaff = validStaff.some((st) =>
-          ['Camila Rossi', 'Valeria Gómez', 'Lucas Medina', 'Iris'].includes(st.name)
+        const loadedStaff = (Array.isArray(parsed.staff) ? parsed.staff : []).map((member) =>
+          normalizeStaffMember(member)
         );
-        const onlyHasOldSampleStaff = validStaff.length > 0 && validStaff.every((st) =>
-          ['Valentina Rivas', 'Lucía Fernández', 'Mateo Benítez'].includes(st.name)
-        );
-        if (validStaff.length === 0 || (onlyHasOldSampleStaff && !hasAestheticStaff)) {
-          validStaff = getDefaultStaff('biz_local_active');
+
+        const baseBiz = parsed.business
+          ? sanitizeBusinessConfig(parsed.business)
+          : getDefaultBusiness('local_owner', 'Tu Agenda Lista');
+        if (!baseBiz.id) {
+          baseBiz.id = 'biz_local_active';
         }
 
-        // Guarantee all 7 independent day schedules for every loaded staff member
-        validStaff = validStaff.map((member) => {
-          if (!member.daySchedules || member.daySchedules.length < 7) {
-            return {
-              ...member,
-              daySchedules: [1, 2, 3, 4, 5, 6, 0].map((d) => getStaffDaySchedule(member, d)),
-            };
-          }
-          return member;
-        });
-
-        setBusiness(parsed.business || getDefaultBusiness('local_owner', 'Tu Agenda Lista'));
-        setServices(validServices);
-        setStaff(validStaff);
-        setClients(parsed.clients || getDefaultClients('biz_local_active'));
-        setAppointments(parsed.appointments && parsed.appointments.length > 0 ? parsed.appointments : getDefaultAppointments('biz_local_active'));
-        setCashMovements(parsed.cashMovements && parsed.cashMovements.length > 0 ? parsed.cashMovements : getDefaultCashMovements('biz_local_active'));
-        setRawGiftCards(parsed.giftCards && parsed.giftCards.length > 0 ? parsed.giftCards : getDefaultGiftCards('biz_local_active'));
-        setResources(parsed.resources && parsed.resources.length > 0 ? parsed.resources : getDefaultResources('biz_local_active'));
+        setBusiness(baseBiz);
+        setServices(Array.isArray(parsed.services) ? parsed.services : []);
+        setStaff(loadedStaff);
+        setClients(Array.isArray(parsed.clients) ? parsed.clients : []);
+        setAppointments(Array.isArray(parsed.appointments) ? parsed.appointments : []);
+        setCashMovements(Array.isArray(parsed.cashMovements) ? parsed.cashMovements : []);
+        setRawGiftCards(Array.isArray(parsed.giftCards) ? parsed.giftCards : []);
+        setResources(Array.isArray(parsed.resources) ? parsed.resources : []);
         setIsDemoMode(false);
         setIsLoadingData(false);
         return;
@@ -278,17 +345,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       console.warn('Could not read from local storage', e);
     }
 
-    // Default initial seed if nothing stored
+    // Clean initial state if nothing stored (zero sample records)
     const defaultBiz = getDefaultBusiness('local_owner', 'Tu Agenda Lista');
     defaultBiz.id = 'biz_local_active';
     setBusiness(defaultBiz);
-    setServices(getDefaultServices('biz_local_active'));
-    setStaff(getDefaultStaff('biz_local_active'));
-    setClients(getDefaultClients('biz_local_active'));
-    setAppointments(getDefaultAppointments('biz_local_active'));
-    setCashMovements(getDefaultCashMovements('biz_local_active'));
-    setRawGiftCards(getDefaultGiftCards('biz_local_active'));
-    setResources(getDefaultResources('biz_local_active'));
+    setServices([]);
+    setStaff([]);
+    setClients([]);
+    setAppointments([]);
+    setCashMovements([]);
+    setRawGiftCards([]);
+    setResources([]);
+    setIsDemoMode(false);
     setIsLoadingData(false);
   }, [user, authLoading]);
 
@@ -320,171 +388,246 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setHasFirestoreError(null);
 
     const bizDocRef = doc(db, 'businesses', currentBusinessId);
-    const unsubs: (() => void)[] = [];
+    const subcollectionUnsubs: (() => void)[] = [];
+    let subcollectionsAttached = false;
+    let isCancelled = false;
+
+    const attachSubcollections = () => {
+      if (subcollectionsAttached || isCancelled) return;
+      subcollectionsAttached = true;
+
+      const reportListenerError = (err: unknown, op: OperationType, path: string) => {
+        const msg = err instanceof Error ? err.message : String(err);
+        setHasFirestoreError(msg);
+        setIsLoadingData(false);
+        try {
+          handleFirestoreError(err, op, path);
+        } catch {
+          // Logged by handleFirestoreError; prevent uncaught async crash from blanking UI
+        }
+      };
+
+      const clientsRef = collection(db, `businesses/${currentBusinessId}/clients`);
+      subcollectionUnsubs.push(
+        onSnapshot(
+          clientsRef,
+          (snapshot) => {
+            const list: Client[] = [];
+            snapshot.forEach((d) => list.push(d.data() as Client));
+            setClients(list);
+          },
+          (error) => {
+            reportListenerError(error, OperationType.LIST, `businesses/${currentBusinessId}/clients`);
+          }
+        )
+      );
+
+      const servicesRef = collection(db, `businesses/${currentBusinessId}/services`);
+      subcollectionUnsubs.push(
+        onSnapshot(
+          servicesRef,
+          (snapshot) => {
+            const list: Service[] = [];
+            snapshot.forEach((d) => list.push(d.data() as Service));
+            setServices(list);
+          },
+          (error) => {
+            reportListenerError(error, OperationType.LIST, `businesses/${currentBusinessId}/services`);
+          }
+        )
+      );
+
+      const staffRef = collection(db, `businesses/${currentBusinessId}/staff`);
+      subcollectionUnsubs.push(
+        onSnapshot(
+          staffRef,
+          (snapshot) => {
+            const list: StaffMember[] = [];
+            snapshot.forEach((d) => {
+              const raw = d.data() as StaffMember;
+              list.push(normalizeStaffMember(raw));
+            });
+            setStaff(list);
+          },
+          (error) => {
+            reportListenerError(error, OperationType.LIST, `businesses/${currentBusinessId}/staff`);
+          }
+        )
+      );
+
+      const appointmentsRef = collection(db, `businesses/${currentBusinessId}/appointments`);
+      subcollectionUnsubs.push(
+        onSnapshot(
+          appointmentsRef,
+          (snapshot) => {
+            const list: Appointment[] = [];
+            snapshot.forEach((d) => list.push(d.data() as Appointment));
+            setAppointments(list);
+            setIsLoadingData(false);
+          },
+          (error) => {
+            reportListenerError(error, OperationType.LIST, `businesses/${currentBusinessId}/appointments`);
+          }
+        )
+      );
+
+      const cashRef = collection(db, `businesses/${currentBusinessId}/cashMovements`);
+      subcollectionUnsubs.push(
+        onSnapshot(
+          cashRef,
+          (snapshot) => {
+            const list: CashMovement[] = [];
+            snapshot.forEach((d) => list.push(d.data() as CashMovement));
+            setCashMovements(list);
+          },
+          (error) => {
+            reportListenerError(error, OperationType.LIST, `businesses/${currentBusinessId}/cashMovements`);
+          }
+        )
+      );
+
+      const giftCardsRef = collection(db, `businesses/${currentBusinessId}/giftCards`);
+      subcollectionUnsubs.push(
+        onSnapshot(
+          giftCardsRef,
+          (snapshot) => {
+            const list: GiftCard[] = [];
+            snapshot.forEach((d) => list.push(d.data() as GiftCard));
+            setRawGiftCards(list);
+          },
+          (error) => {
+            reportListenerError(error, OperationType.LIST, `businesses/${currentBusinessId}/giftCards`);
+          }
+        )
+      );
+
+      const resourcesRef = collection(db, `businesses/${currentBusinessId}/resources`);
+      subcollectionUnsubs.push(
+        onSnapshot(
+          resourcesRef,
+          (snapshot) => {
+            const list: Resource[] = [];
+            snapshot.forEach((d) => list.push(d.data() as Resource));
+            setResources(list);
+          },
+          (error) => {
+            reportListenerError(error, OperationType.LIST, `businesses/${currentBusinessId}/resources`);
+          }
+        )
+      );
+    };
 
     const unsubBiz = onSnapshot(
       bizDocRef,
       async (snap) => {
         if (snap.exists()) {
-          setBusiness(snap.data() as Business);
+          const remoteBiz = snap.data() as Business;
+          setBusiness(sanitizeBusinessConfig(remoteBiz));
+          attachSubcollections();
         } else {
-          // Initialize business in Firestore using local state or defaults
-          const initialBiz = business || getDefaultBusiness(user.uid, user.displayName ? `Agenda de ${user.displayName}` : 'Tu Agenda Lista');
-          initialBiz.id = currentBusinessId;
-          initialBiz.ownerId = user.uid;
+          // Initialize clean business in Firestore without sample data
+          const baseBiz = business
+            ? sanitizeBusinessConfig(business)
+            : getDefaultBusiness(user.uid, 'Tu Agenda Lista');
+          const initialBiz: Business = JSON.parse(
+            JSON.stringify({
+              ...baseBiz,
+              id: currentBusinessId,
+              ownerId: user.uid,
+              name: (baseBiz.name || 'Tu Agenda Lista').slice(0, 100),
+              cleanStartVersion: CLEAN_START_VERSION,
+            })
+          );
           try {
             await setDoc(bizDocRef, initialBiz);
+            if (isCancelled) return;
             setBusiness(initialBiz);
 
             const batch = writeBatch(db);
-            const srvs = services.length > 0 ? services : getDefaultServices(currentBusinessId);
-            srvs.forEach((srv) => {
-              batch.set(doc(db, `businesses/${currentBusinessId}/services`, srv.id), { ...srv, businessId: currentBusinessId });
+            let opCount = 0;
+
+            services.forEach((srv) => {
+              batch.set(
+                doc(db, `businesses/${currentBusinessId}/services`, srv.id),
+                JSON.parse(JSON.stringify({ ...srv, businessId: currentBusinessId }))
+              );
+              opCount++;
             });
 
-            const stf = staff.length > 0 ? staff : getDefaultStaff(currentBusinessId);
-            stf.forEach((s) => {
-              batch.set(doc(db, `businesses/${currentBusinessId}/staff`, s.id), { ...s, businessId: currentBusinessId });
+            staff.forEach((s) => {
+              batch.set(
+                doc(db, `businesses/${currentBusinessId}/staff`, s.id),
+                JSON.parse(JSON.stringify({ ...s, businessId: currentBusinessId }))
+              );
+              opCount++;
             });
 
-            const cli = clients.length > 0 ? clients : getDefaultClients(currentBusinessId);
-            cli.forEach((c) => {
-              batch.set(doc(db, `businesses/${currentBusinessId}/clients`, c.id), { ...c, businessId: currentBusinessId });
+            clients.forEach((c) => {
+              batch.set(
+                doc(db, `businesses/${currentBusinessId}/clients`, c.id),
+                JSON.parse(JSON.stringify({ ...c, businessId: currentBusinessId }))
+              );
+              opCount++;
             });
 
-            const apt = appointments.length > 0 ? appointments : getDefaultAppointments(currentBusinessId);
-            apt.forEach((a) => {
-              batch.set(doc(db, `businesses/${currentBusinessId}/appointments`, a.id), { ...a, businessId: currentBusinessId });
+            rawAppointments.forEach((a) => {
+              batch.set(
+                doc(db, `businesses/${currentBusinessId}/appointments`, a.id),
+                JSON.parse(JSON.stringify({ ...a, businessId: currentBusinessId }))
+              );
+              opCount++;
             });
 
-            const csh = cashMovements.length > 0 ? cashMovements : getDefaultCashMovements(currentBusinessId);
-            csh.forEach((m) => {
-              batch.set(doc(db, `businesses/${currentBusinessId}/cashMovements`, m.id), { ...m, businessId: currentBusinessId });
+            rawCashMovements.forEach((m) => {
+              batch.set(
+                doc(db, `businesses/${currentBusinessId}/cashMovements`, m.id),
+                JSON.parse(JSON.stringify({ ...m, businessId: currentBusinessId }))
+              );
+              opCount++;
             });
 
-            await batch.commit();
+            rawGiftCards.forEach((gc) => {
+              batch.set(
+                doc(db, `businesses/${currentBusinessId}/giftCards`, gc.id),
+                JSON.parse(JSON.stringify({ ...gc, businessId: currentBusinessId }))
+              );
+              opCount++;
+            });
+
+            resources.forEach((r) => {
+              batch.set(
+                doc(db, `businesses/${currentBusinessId}/resources`, r.id),
+                JSON.parse(JSON.stringify({ ...r, businessId: currentBusinessId }))
+              );
+              opCount++;
+            });
+
+            if (opCount > 0) {
+              await batch.commit();
+            }
+            attachSubcollections();
+            setIsLoadingData(false);
           } catch (err) {
             handleFirestoreError(err, OperationType.WRITE, `businesses/${currentBusinessId}`);
           }
         }
       },
       (error) => {
-        handleFirestoreError(error, OperationType.GET, `businesses/${currentBusinessId}`);
-      }
-    );
-    unsubs.push(unsubBiz);
-
-    // Sync subcollections
-    const clientsRef = collection(db, `businesses/${currentBusinessId}/clients`);
-    const unsubClients = onSnapshot(
-      clientsRef,
-      (snapshot) => {
-        const list: Client[] = [];
-        snapshot.forEach((d) => list.push(d.data() as Client));
-        if (list.length > 0) setClients(list);
-      },
-      (error) => {
-        handleFirestoreError(error, OperationType.LIST, `businesses/${currentBusinessId}/clients`);
-      }
-    );
-    unsubs.push(unsubClients);
-
-    const servicesRef = collection(db, `businesses/${currentBusinessId}/services`);
-    const unsubServices = onSnapshot(
-      servicesRef,
-      (snapshot) => {
-        const list: Service[] = [];
-        snapshot.forEach((d) => list.push(d.data() as Service));
-        if (list.length > 0) setServices(list);
-      },
-      (error) => {
-        handleFirestoreError(error, OperationType.LIST, `businesses/${currentBusinessId}/services`);
-      }
-    );
-    unsubs.push(unsubServices);
-
-    const staffRef = collection(db, `businesses/${currentBusinessId}/staff`);
-    const unsubStaff = onSnapshot(
-      staffRef,
-      (snapshot) => {
-        const list: StaffMember[] = [];
-        snapshot.forEach((d) => {
-          const raw = d.data() as StaffMember;
-          const member: StaffMember = {
-            ...raw,
-            daySchedules: (!raw.daySchedules || raw.daySchedules.length < 7)
-              ? [1, 2, 3, 4, 5, 6, 0].map((dayNum) => getStaffDaySchedule(raw, dayNum))
-              : raw.daySchedules,
-          };
-          list.push(member);
-        });
-        if (list.length > 0) setStaff(list);
-      },
-      (error) => {
-        handleFirestoreError(error, OperationType.LIST, `businesses/${currentBusinessId}/staff`);
-      }
-    );
-    unsubs.push(unsubStaff);
-
-    const appointmentsRef = collection(db, `businesses/${currentBusinessId}/appointments`);
-    const unsubAppointments = onSnapshot(
-      appointmentsRef,
-      (snapshot) => {
-        const list: Appointment[] = [];
-        snapshot.forEach((d) => list.push(d.data() as Appointment));
-        setAppointments(list);
+        const msg = error instanceof Error ? error.message : String(error);
+        setHasFirestoreError(msg);
         setIsLoadingData(false);
-      },
-      (error) => {
-        handleFirestoreError(error, OperationType.LIST, `businesses/${currentBusinessId}/appointments`);
+        try {
+          handleFirestoreError(error, OperationType.GET, `businesses/${currentBusinessId}`);
+        } catch {
+          // Handled safely
+        }
       }
     );
-    unsubs.push(unsubAppointments);
-
-    const cashRef = collection(db, `businesses/${currentBusinessId}/cashMovements`);
-    const unsubCash = onSnapshot(
-      cashRef,
-      (snapshot) => {
-        const list: CashMovement[] = [];
-        snapshot.forEach((d) => list.push(d.data() as CashMovement));
-        setCashMovements(list);
-      },
-      (error) => {
-        handleFirestoreError(error, OperationType.LIST, `businesses/${currentBusinessId}/cashMovements`);
-      }
-    );
-    unsubs.push(unsubCash);
-
-    const giftCardsRef = collection(db, `businesses/${currentBusinessId}/giftCards`);
-    const unsubGiftCards = onSnapshot(
-      giftCardsRef,
-      (snapshot) => {
-        const list: GiftCard[] = [];
-        snapshot.forEach((d) => list.push(d.data() as GiftCard));
-        if (list.length > 0) setRawGiftCards(list);
-      },
-      (error) => {
-        handleFirestoreError(error, OperationType.LIST, `businesses/${currentBusinessId}/giftCards`);
-      }
-    );
-    unsubs.push(unsubGiftCards);
-
-    const resourcesRef = collection(db, `businesses/${currentBusinessId}/resources`);
-    const unsubResources = onSnapshot(
-      resourcesRef,
-      (snapshot) => {
-        const list: Resource[] = [];
-        snapshot.forEach((d) => list.push(d.data() as Resource));
-        if (list.length > 0) setResources(list);
-      },
-      (error) => {
-        handleFirestoreError(error, OperationType.LIST, `businesses/${currentBusinessId}/resources`);
-      }
-    );
-    unsubs.push(unsubResources);
 
     return () => {
-      unsubs.forEach((unsub) => unsub());
+      isCancelled = true;
+      unsubBiz();
+      subcollectionUnsubs.forEach((unsub) => unsub());
     };
   }, [user, currentBusinessId]);
 
@@ -493,7 +636,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const upcomingTodayAppointments = useMemo(() => {
     return appointments
       .filter((a) => a.date === todayStr && a.status !== 'cancelado')
-      .sort((a, b) => a.time.localeCompare(b.time));
+      .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
   }, [appointments, todayStr]);
 
   const unreadRemindersCount = useMemo(() => {
@@ -553,8 +696,49 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     async (aptData: Omit<Appointment, 'id' | 'businessId' | 'createdAt' | 'updatedAt'>): Promise<string> => {
       const id = `apt_${Date.now()}`;
       const today = getTodayDateString();
-      const targetBranch = aptData.branchId || selectedBranch;
-      const newApt: Appointment = {
+      const targetBranch: BranchId = aptData.branchId || activeSingleBranch;
+      const duration = Math.max(5, Number(aptData.durationMinutes || 30));
+      const targetStatus = aptData.status || 'confirmado';
+
+      if (targetStatus !== 'cancelado') {
+        const chosenStaff = staff.find((s) => s.id === aptData.staffId);
+        if (!chosenStaff) {
+          throw new Error('Debes seleccionar un profesional válido y disponible.');
+        }
+
+        const avail = checkStaffAvailability(
+          chosenStaff,
+          aptData.date,
+          aptData.time,
+          duration,
+          targetBranch,
+          rawAppointments
+        );
+
+        if (!avail.available) {
+          throw new Error(avail.message || 'El profesional no está disponible en ese día u horario.');
+        }
+
+        if (aptData.resourceId) {
+          const slotStart = timeToMinutes(aptData.time);
+          const slotEnd = slotStart + duration;
+          const conflictingResourceApt = rawAppointments.find((a) => {
+            if (a.status === 'cancelado') return false;
+            if (a.date !== aptData.date || a.resourceId !== aptData.resourceId) return false;
+            const aStart = timeToMinutes(a.time);
+            const aEnd = aStart + (a.durationMinutes || 30);
+            return Math.max(slotStart, aStart) < Math.min(slotEnd, aEnd);
+          });
+          if (conflictingResourceApt) {
+            const resObj = resources.find((r) => r.id === aptData.resourceId);
+            throw new Error(
+              `Conflicto de cabina/equipo: "${resObj?.name || 'El recurso'}" ya está reservado a las ${conflictingResourceApt.time} hs con ${conflictingResourceApt.clientName}.`
+            );
+          }
+        }
+      }
+
+      const rawApt: Appointment = {
         id,
         businessId: currentBusinessId,
         clientId: aptData.clientId || '',
@@ -565,19 +749,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         staffId: aptData.staffId || '',
         staffName: aptData.staffName || 'Personal',
         branchId: targetBranch,
+        ...(aptData.resourceId ? { resourceId: aptData.resourceId } : {}),
+        ...(aptData.resourceName ? { resourceName: aptData.resourceName } : {}),
+        ...(aptData.giftCardCode ? { giftCardCode: aptData.giftCardCode } : {}),
         date: aptData.date,
         time: aptData.time,
-        durationMinutes: Number(aptData.durationMinutes || 30),
+        durationMinutes: duration,
         price: Number(aptData.price || 0),
         depositAmount: Number(aptData.depositAmount || 0),
         remainingBalance: Math.max(0, Number(aptData.price || 0) - Number(aptData.depositAmount || 0)),
         color: aptData.color || '#2563eb',
-        status: aptData.status || 'confirmado',
+        status: targetStatus,
         paymentMethod: aptData.paymentMethod || 'pendiente',
         notes: aptData.notes || '',
         createdAt: today,
         updatedAt: today,
       };
+      const newApt: Appointment = JSON.parse(JSON.stringify(rawApt));
 
       if (user && currentBusinessId) {
         try {
@@ -592,22 +780,75 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return [newApt, ...prev];
       });
 
-      // Automatically switch active branch to the booked appointment branch so it appears immediately on agenda
-      if (targetBranch !== selectedBranch) {
+      // Switch active branch if viewing a single branch and booked into the other branch
+      if (selectedBranch !== 'ambas' && targetBranch !== selectedBranch) {
         setSelectedBranch(targetBranch);
       }
 
       return id;
     },
-    [currentBusinessId, user, selectedBranch, setSelectedBranch]
+    [currentBusinessId, user, selectedBranch, activeSingleBranch, setSelectedBranch, staff, rawAppointments, resources]
   );
 
   const updateAppointment = useCallback(
     async (apt: Appointment) => {
-      const updated: Appointment = {
-        ...apt,
-        updatedAt: getTodayDateString(),
-      };
+      const existing = rawAppointments.find((a) => a.id === apt.id);
+      const scheduleFieldsChanged =
+        !existing ||
+        existing.date !== apt.date ||
+        existing.time !== apt.time ||
+        existing.staffId !== apt.staffId ||
+        (existing.branchId || 'sucursal_1') !== (apt.branchId || 'sucursal_1') ||
+        Number(existing.durationMinutes || 30) !== Number(apt.durationMinutes || 30) ||
+        (existing.status === 'cancelado' && apt.status !== 'cancelado');
+
+      if (apt.status !== 'cancelado' && scheduleFieldsChanged) {
+        const chosenStaff = staff.find((s) => s.id === apt.staffId);
+        if (!chosenStaff) {
+          throw new Error('Debes seleccionar un profesional válido y disponible.');
+        }
+
+        const duration = Math.max(5, Number(apt.durationMinutes || 30));
+        const targetBranch: BranchId = apt.branchId || activeSingleBranch;
+        const avail = checkStaffAvailability(
+          chosenStaff,
+          apt.date,
+          apt.time,
+          duration,
+          targetBranch,
+          rawAppointments,
+          apt.id
+        );
+
+        if (!avail.available) {
+          throw new Error(avail.message || 'El profesional no está disponible en ese día u horario.');
+        }
+
+        if (apt.resourceId) {
+          const slotStart = timeToMinutes(apt.time);
+          const slotEnd = slotStart + duration;
+          const conflictingResourceApt = rawAppointments.find((a) => {
+            if (a.id === apt.id || a.status === 'cancelado') return false;
+            if (a.date !== apt.date || a.resourceId !== apt.resourceId) return false;
+            const aStart = timeToMinutes(a.time);
+            const aEnd = aStart + (a.durationMinutes || 30);
+            return Math.max(slotStart, aStart) < Math.min(slotEnd, aEnd);
+          });
+          if (conflictingResourceApt) {
+            const resObj = resources.find((r) => r.id === apt.resourceId);
+            throw new Error(
+              `Conflicto de cabina/equipo: "${resObj?.name || 'El recurso'}" ya está reservado a las ${conflictingResourceApt.time} hs con ${conflictingResourceApt.clientName}.`
+            );
+          }
+        }
+      }
+
+      const updated: Appointment = JSON.parse(
+        JSON.stringify({
+          ...apt,
+          updatedAt: getTodayDateString(),
+        })
+      );
       setAppointments((prev) => prev.map((a) => (a.id === apt.id ? updated : a)));
 
       if (user && currentBusinessId) {
@@ -618,7 +859,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       }
     },
-    [currentBusinessId, user]
+    [currentBusinessId, user, rawAppointments, staff, activeSingleBranch, resources]
   );
 
   const deleteAppointment = useCallback(
@@ -652,7 +893,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const mov: CashMovement = {
           id: cashId,
           businessId: currentBusinessId,
-          branchId: apt.branchId || selectedBranch,
+          branchId: apt.branchId || activeSingleBranch,
           date: apt.date,
           type: 'ingreso',
           category: 'saldo',
@@ -695,7 +936,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       }
     },
-    [currentBusinessId, updateAppointment, user, clients]
+    [currentBusinessId, updateAppointment, user, clients, activeSingleBranch]
   );
 
   // Client actions
@@ -744,7 +985,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
         const nextClients = [cleanClient, ...prev];
         try {
-          const stored = localStorage.getItem(LOCAL_STORAGE_KEY) || localStorage.getItem(PREV_LOCAL_STORAGE_KEY);
+          const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
           if (stored) {
             const parsed = JSON.parse(stored);
             parsed.clients = nextClients;
@@ -779,7 +1020,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setClients((prev) => {
         const nextClients = prev.map((c) => (c.id === cleanClient.id ? cleanClient : c));
         try {
-          const stored = localStorage.getItem(LOCAL_STORAGE_KEY) || localStorage.getItem(PREV_LOCAL_STORAGE_KEY);
+          const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
           if (stored) {
             const parsed = JSON.parse(stored);
             parsed.clients = nextClients;
@@ -807,7 +1048,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setClients((prev) => {
         const nextClients = prev.filter((c) => c.id !== id);
         try {
-          const stored = localStorage.getItem(LOCAL_STORAGE_KEY) || localStorage.getItem(PREV_LOCAL_STORAGE_KEY);
+          const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
           if (stored) {
             const parsed = JSON.parse(stored);
             parsed.clients = nextClients;
@@ -889,18 +1130,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     async (stfData: Omit<StaffMember, 'id' | 'businessId' | 'createdAt'>): Promise<string> => {
       const id = `stf_${Date.now()}`;
       const today = getTodayDateString();
-      const rawStaff: StaffMember = {
+      const rawStaff: StaffMember = normalizeStaffMember({
         ...stfData,
         id,
         businessId: currentBusinessId,
         createdAt: today,
-      };
+      });
       const cleanStaff: StaffMember = JSON.parse(JSON.stringify(rawStaff));
 
       setStaff((prev) => {
         const nextStaff = [cleanStaff, ...prev];
         try {
-          const stored = localStorage.getItem(LOCAL_STORAGE_KEY) || localStorage.getItem(PREV_LOCAL_STORAGE_KEY);
+          const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
           if (stored) {
             const parsed = JSON.parse(stored);
             parsed.staff = nextStaff;
@@ -926,11 +1167,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const updateStaff = useCallback(
     async (stf: StaffMember) => {
-      const cleanStaff: StaffMember = JSON.parse(JSON.stringify(stf));
+      const cleanStaff: StaffMember = JSON.parse(JSON.stringify(normalizeStaffMember(stf)));
       setStaff((prev) => {
         const nextStaff = prev.map((s) => (s.id === cleanStaff.id ? cleanStaff : s));
         try {
-          const stored = localStorage.getItem(LOCAL_STORAGE_KEY) || localStorage.getItem(PREV_LOCAL_STORAGE_KEY);
+          const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
           if (stored) {
             const parsed = JSON.parse(stored);
             parsed.staff = nextStaff;
@@ -958,7 +1199,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setStaff((prev) => {
         const nextStaff = prev.filter((s) => s.id !== id);
         try {
-          const stored = localStorage.getItem(LOCAL_STORAGE_KEY) || localStorage.getItem(PREV_LOCAL_STORAGE_KEY);
+          const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
           if (stored) {
             const parsed = JSON.parse(stored);
             parsed.staff = nextStaff;
@@ -986,15 +1227,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     async (movData: Omit<CashMovement, 'id' | 'businessId' | 'createdAt'>): Promise<string> => {
       const id = `csh_${Date.now()}`;
       const today = getTodayDateString();
-      const newMovement: CashMovement = {
-        ...movData,
-        id,
-        businessId: currentBusinessId,
-        branchId: movData.branchId || selectedBranch,
-        createdAt: today,
-      };
+      const targetBranch: BranchId = movData.branchId || activeSingleBranch;
+      const newMovement: CashMovement = JSON.parse(
+        JSON.stringify({
+          ...movData,
+          id,
+          businessId: currentBusinessId,
+          branchId: targetBranch,
+          date: movData.date || today,
+          amount: Number(movData.amount || 0),
+          paymentMethod: movData.paymentMethod || 'efectivo',
+          description: (movData.description || '').trim() || (movData.type === 'gasto' ? 'Gasto registrado' : 'Ingreso registrado'),
+          createdAt: today,
+        })
+      );
 
-      setCashMovements((prev) => [newMovement, ...prev]);
+      setCashMovements((prev) => {
+        if (prev.some((m) => m.id === id)) return prev;
+        return [newMovement, ...prev];
+      });
 
       if (user && currentBusinessId) {
         try {
@@ -1003,9 +1254,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           handleFirestoreError(err, OperationType.CREATE, `businesses/${currentBusinessId}/cashMovements/${id}`);
         }
       }
+
+      if (selectedBranch !== 'ambas' && targetBranch !== selectedBranch) {
+        setSelectedBranch(targetBranch);
+      }
+
       return id;
     },
-    [currentBusinessId, user, selectedBranch]
+    [currentBusinessId, user, selectedBranch, activeSingleBranch, setSelectedBranch]
   );
 
   const deleteCashMovement = useCallback(
@@ -1057,7 +1313,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       // Automatically register cash movement if requested and amount exists
       if (registerCashMovement && (newCard.amount || 0) > 0) {
-        const branchForCash = newCard.branchId === 'sucursal_2' ? 'sucursal_2' : selectedBranch;
+        const branchForCash: BranchId =
+          newCard.branchId === 'sucursal_1' || newCard.branchId === 'sucursal_2'
+            ? newCard.branchId
+            : activeSingleBranch;
         await createCashMovement({
           date: today,
           branchId: branchForCash,
@@ -1072,7 +1331,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       return id;
     },
-    [currentBusinessId, user, selectedBranch, createCashMovement]
+    [currentBusinessId, user, activeSingleBranch, createCashMovement]
   );
 
   const redeemGiftCard = useCallback(
@@ -1096,6 +1355,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       if (targetCard.status === 'vencida') {
         throw new Error(`Este voucher se encuentra marcado como vencido (fecha de vencimiento: ${targetCard.expiryDate || 'N/A'}).`);
+      }
+
+      if (targetCard.branchId !== 'ambas' && targetCard.branchId !== redemptionData.branchId) {
+        const validBranchName =
+          targetCard.branchId === 'sucursal_2' ? 'Soham Rioja' : 'Soham Montevideo';
+        throw new Error(
+          `Este voucher es válido únicamente en ${validBranchName}. Cambiá la sucursal de atención para canjearlo.`
+        );
       }
 
       const today = getTodayDateString();
@@ -1196,76 +1463,91 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [currentBusinessId, user]
   );
 
-  // Reset to default sample data
+  // Reset base business settings without re-injecting sample records
   const resetToSampleData = useCallback(async () => {
-    const demoBiz = getDefaultBusiness(user ? user.uid : 'local_owner', 'Tu Agenda Lista');
-    demoBiz.id = currentBusinessId;
-    const defaultSrvs = getDefaultServices(currentBusinessId);
-    const defaultStf = getDefaultStaff(currentBusinessId);
-    const defaultCli = getDefaultClients(currentBusinessId);
-    const defaultApt = getDefaultAppointments(currentBusinessId);
-    const defaultCsh = getDefaultCashMovements(currentBusinessId);
-
-    setBusiness(demoBiz);
-    setServices(defaultSrvs);
-    setStaff(defaultStf);
-    setClients(defaultCli);
-    setAppointments(defaultApt);
-    setCashMovements(defaultCsh);
+    const cleanBiz = getDefaultBusiness(user ? user.uid : 'local_owner', 'Tu Agenda Lista');
+    cleanBiz.id = currentBusinessId;
+    cleanBiz.cleanStartVersion = CLEAN_START_VERSION;
+    setBusiness(cleanBiz);
 
     if (user && currentBusinessId) {
       try {
-        const batch = writeBatch(db);
-        batch.set(doc(db, 'businesses', currentBusinessId), demoBiz);
-        defaultSrvs.forEach((s) => batch.set(doc(db, `businesses/${currentBusinessId}/services`, s.id), s));
-        defaultStf.forEach((s) => batch.set(doc(db, `businesses/${currentBusinessId}/staff`, s.id), s));
-        defaultCli.forEach((c) => batch.set(doc(db, `businesses/${currentBusinessId}/clients`, c.id), c));
-        defaultApt.forEach((a) => batch.set(doc(db, `businesses/${currentBusinessId}/appointments`, a.id), a));
-        defaultCsh.forEach((m) => batch.set(doc(db, `businesses/${currentBusinessId}/cashMovements`, m.id), m));
-        await batch.commit();
+        await setDoc(doc(db, 'businesses', currentBusinessId), cleanBiz, { merge: true });
       } catch (err) {
-        console.error('Error writing batch to firestore', err);
+        console.error('Error updating business config in firestore', err);
       }
     }
   }, [currentBusinessId, user]);
 
-  // Export to Excel / CSV with UTF-8 BOM
-  const exportAppointmentsToCSV = useCallback((dateFilter?: string) => {
-    let toExport = [...appointments];
-    if (dateFilter) {
-      toExport = toExport.filter((a) => a.date === dateFilter);
-    }
-    toExport.sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+  // Export to Excel / CSV with UTF-8 BOM and branch filter support
+  const exportAppointmentsToCSV = useCallback(
+    (dateFilter?: string, branchFilter?: StaffBranchScope) => {
+      const effectiveBranch = branchFilter || selectedBranch;
+      let toExport =
+        effectiveBranch === 'ambas'
+          ? [...rawAppointments]
+          : rawAppointments.filter((a) => (a.branchId || 'sucursal_1') === effectiveBranch);
+      if (dateFilter) {
+        toExport = toExport.filter((a) => a.date === dateFilter);
+      }
+      toExport.sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
 
-    const headers = ['Fecha', 'Hora', 'Cliente', 'Teléfono', 'Servicio', 'Duración (min)', 'Profesional', 'Precio', 'Seña', 'Saldo Pendiente', 'Estado', 'Medio de Pago', 'Notas'];
+      const headers = [
+        'Fecha',
+        'Hora',
+        'Sucursal',
+        'Cliente',
+        'Teléfono',
+        'Servicio',
+        'Duración (min)',
+        'Profesional',
+        'Precio',
+        'Seña',
+        'Saldo Pendiente',
+        'Estado',
+        'Medio de Pago',
+        'Notas',
+      ];
 
-    const rows = toExport.map((apt) => [
-      `"${apt.date}"`,
-      `"${apt.time}"`,
-      `"${apt.clientName.replace(/"/g, '""')}"`,
-      `"${apt.clientPhone.replace(/"/g, '""')}"`,
-      `"${apt.serviceName.replace(/"/g, '""')}"`,
-      apt.durationMinutes,
-      `"${apt.staffName.replace(/"/g, '""')}"`,
-      apt.price,
-      apt.depositAmount,
-      apt.remainingBalance,
-      `"${apt.status}"`,
-      `"${apt.paymentMethod}"`,
-      `"${(apt.notes || '').replace(/"/g, '""')}"`,
-    ]);
+      const rows = toExport.map((apt) => {
+        const branchLabel = apt.branchId === 'sucursal_2' ? 'Soham Rioja' : 'Soham Montevideo';
+        return [
+          `"${apt.date}"`,
+          `"${apt.time}"`,
+          `"${branchLabel}"`,
+          `"${apt.clientName.replace(/"/g, '""')}"`,
+          `"${apt.clientPhone.replace(/"/g, '""')}"`,
+          `"${apt.serviceName.replace(/"/g, '""')}"`,
+          apt.durationMinutes,
+          `"${apt.staffName.replace(/"/g, '""')}"`,
+          apt.price,
+          apt.depositAmount,
+          apt.remainingBalance,
+          `"${apt.status}"`,
+          `"${apt.paymentMethod}"`,
+          `"${(apt.notes || '').replace(/"/g, '""')}"`,
+        ];
+      });
 
-    const csvContent = '\uFEFF' + [headers.join(';'), ...rows.map((e) => e.join(';'))].join('\r\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `Tu_Agenda_Lista_${dateFilter || 'completa'}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  }, [appointments]);
+      const branchSuffix =
+        effectiveBranch === 'sucursal_1'
+          ? 'Montevideo'
+          : effectiveBranch === 'sucursal_2'
+          ? 'Rioja'
+          : 'Ambas_Sucursales';
+      const csvContent = '\uFEFF' + [headers.join(';'), ...rows.map((e) => e.join(';'))].join('\r\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `Tu_Agenda_Lista_${branchSuffix}_${dateFilter || 'completa'}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    },
+    [rawAppointments, selectedBranch]
+  );
 
   // Export full business configuration (White-Label multi-client JSON)
   const exportBusinessConfiguration = useCallback((): BusinessConfigExport => {
@@ -1284,6 +1566,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         mercadoPagoAccessToken: business?.mercadoPagoAccessToken || '',
         mercadoPagoAlias: business?.mercadoPagoAlias || '',
         mercadoPagoCvu: business?.mercadoPagoCvu || '',
+        branchSettings: business?.branchSettings,
         defaultDepositPercentage: business?.defaultDepositPercentage || 30,
         defaultSlotMinutes: business?.defaultSlotMinutes || 30,
         openingHour: business?.openingHour || '08:00',
@@ -1313,15 +1596,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         color: s.color,
         active: s.active,
       })),
-      staff: staff.map((st) => ({
+      staff: sortedStaff.map((st) => ({
         id: st.id,
         name: st.name,
         role: st.role,
         phone: st.phone,
         color: st.color,
+        branchId: st.branchId,
+        commissionPercentage: st.commissionPercentage,
         workingDays: st.workingDays,
         workingHoursStart: st.workingHoursStart,
         workingHoursEnd: st.workingHoursEnd,
+        daySchedules: st.daySchedules,
         blockedDates: st.blockedDates,
         active: st.active,
       })),
@@ -1332,7 +1618,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         protected: true,
       },
     };
-  }, [business, services, staff]);
+  }, [business, services, sortedStaff]);
 
   // Import full business configuration (White-Label multi-client JSON)
   const importBusinessConfiguration = useCallback(
@@ -1378,20 +1664,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         createdAt: today,
       }));
 
-      const newStaff: StaffMember[] = (imported.staff || []).map((st, idx) => ({
-        id: st.id || `stf_${Date.now()}_${idx}`,
-        businessId: currentBusinessId,
-        name: st.name,
-        role: st.role || 'Especialista',
-        phone: st.phone || '',
-        color: st.color || '#0284c7',
-        workingDays: Array.isArray(st.workingDays) ? st.workingDays : [1, 2, 3, 4, 5, 6],
-        workingHoursStart: st.workingHoursStart || '08:00',
-        workingHoursEnd: st.workingHoursEnd || '20:00',
-        blockedDates: Array.isArray(st.blockedDates) ? st.blockedDates : [],
-        active: st.active !== false,
-        createdAt: today,
-      }));
+      const newStaff: StaffMember[] = (imported.staff || []).map((st, idx) =>
+        normalizeStaffMember({
+          id: st.id || `stf_${Date.now()}_${idx}`,
+          businessId: currentBusinessId,
+          name: st.name,
+          role: st.role || 'Especialista',
+          phone: st.phone || '',
+          color: st.color || '#0284c7',
+          branchId: st.branchId || 'ambas',
+          commissionPercentage: st.commissionPercentage,
+          workingDays: Array.isArray(st.workingDays) ? st.workingDays : [],
+          workingHoursStart: st.workingHoursStart || '',
+          workingHoursEnd: st.workingHoursEnd || '',
+          daySchedules: st.daySchedules,
+          blockedDates: Array.isArray(st.blockedDates) ? st.blockedDates : [],
+          active: st.active !== false,
+          createdAt: today,
+        })
+      );
 
       setBusiness(updatedBusiness);
       if (newServices.length > 0) setServices(newServices);
@@ -1424,7 +1715,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     business,
     clients,
     services,
-    staff,
+    staff: sortedStaff,
     appointments,
     allAppointments: rawAppointments,
     cashMovements,
@@ -1433,6 +1724,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     allGiftCards: rawGiftCards,
     resources,
     selectedBranch,
+    activeSingleBranch,
     setSelectedBranch,
     branches: BRANCHES,
     isLoadingData,

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Gift,
   Plus,
@@ -19,26 +19,42 @@ import {
 } from 'lucide-react';
 import { GiftCard, BranchId } from '../../types';
 import { useApp } from '../../context/AppContext';
-import { formatCurrency, formatDateSpanish } from '../../utils/formatters';
+import { formatCurrency, formatDateSpanish, openExternalUrlSafely } from '../../utils/formatters';
+import { SCOPE_NAMES } from '../../utils/staffSchedule';
 import { GiftCardModal } from './GiftCardModal';
 
 export function GiftCardsView() {
-  const { allGiftCards, redeemGiftCard, deleteGiftCard, staff, selectedBranch, business } = useApp();
+  const {
+    giftCards,
+    allGiftCards,
+    redeemGiftCard,
+    deleteGiftCard,
+    staff,
+    selectedBranch,
+    activeSingleBranch,
+    setSelectedBranch,
+    business,
+  } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'todas' | 'activa' | 'canjeada' | 'vencida'>('todas');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Fast redemption box state
   const [redemptionCode, setRedemptionCode] = useState('');
   const [selectedStaffForRedeem, setSelectedStaffForRedeem] = useState<string>(staff[0]?.id || '');
-  const [selectedBranchForRedeem, setSelectedBranchForRedeem] = useState<BranchId>(selectedBranch);
+  const [selectedBranchForRedeem, setSelectedBranchForRedeem] = useState<BranchId>(activeSingleBranch);
   const [redemptionNotes, setRedemptionNotes] = useState('');
   const [redemptionFeedback, setRedemptionFeedback] = useState<{
     type: 'success' | 'error';
     message: string;
   } | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSelectedBranchForRedeem(activeSingleBranch);
+  }, [activeSingleBranch]);
 
   // Quick lookup of the voucher being entered in fast redemption box
   const lookupCard = useMemo(() => {
@@ -83,9 +99,9 @@ export function GiftCardsView() {
     }
   };
 
-  // Filtered gift cards
+  // Filtered gift cards respecting selectedBranch
   const filteredCards = useMemo(() => {
-    return allGiftCards.filter((card) => {
+    return giftCards.filter((card) => {
       // Status filter
       if (statusFilter !== 'todas' && card.status !== statusFilter) {
         return false;
@@ -103,13 +119,13 @@ export function GiftCardsView() {
       }
       return true;
     });
-  }, [allGiftCards, statusFilter, searchQuery]);
+  }, [giftCards, statusFilter, searchQuery]);
 
   // Metrics
-  const totalCount = allGiftCards.length;
-  const activeCards = allGiftCards.filter((c) => c.status === 'activa');
+  const totalCount = giftCards.length;
+  const activeCards = giftCards.filter((c) => c.status === 'activa');
   const activeCount = activeCards.length;
-  const redeemedCount = allGiftCards.filter((c) => c.status === 'canjeada').length;
+  const redeemedCount = giftCards.filter((c) => c.status === 'canjeada').length;
   const totalActiveAmount = activeCards.reduce((sum, c) => sum + (c.amount || 0), 0);
 
   // Generate WhatsApp Share Message
@@ -119,7 +135,7 @@ export function GiftCardsView() {
         ? 'Soham Montevideo o Soham Rioja'
         : card.branchId === 'sucursal_2'
         ? 'Soham Rioja (Rioja 2954, Rosario)'
-        : 'Soham Montevideo (Montevideo 1420)';
+        : 'Soham Montevideo (Montevideo 397, Rosario)';
 
     const giftDetail =
       card.type === 'tratamiento'
@@ -144,7 +160,7 @@ export function GiftCardsView() {
     const text = encodeURIComponent(getWhatsAppShareText(card));
     const phone = (card.recipientPhone || card.buyerPhone || '').replace(/\D/g, '');
     const url = phone ? `https://wa.me/${phone}?text=${text}` : `https://api.whatsapp.com/send?text=${text}`;
-    window.open(url, '_blank');
+    openExternalUrlSafely(url);
   };
 
   const handleCopyCode = (code: string) => {
@@ -163,12 +179,33 @@ export function GiftCardsView() {
               <Gift className="w-6 h-6 stroke-[2.5]" />
             </span>
             <div>
-              <h2 className="text-xl font-black text-[#0F172A] tracking-tight">
-                Gift Cards & Vouchers de Regalo
-              </h2>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-xl font-black text-[#0F172A] tracking-tight">
+                  Gift Cards & Vouchers de Regalo
+                </h2>
+                <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-blue-50 text-[#1E3A8A] border border-blue-200">
+                  {SCOPE_NAMES[selectedBranch]}
+                </span>
+              </div>
               <p className="text-xs text-slate-700 font-bold">
                 Gestión, emisión y canje protegido para Soham Montevideo y Soham Rioja
               </p>
+              <div className="flex items-center gap-1.5 flex-wrap mt-2">
+                {(['sucursal_1', 'sucursal_2', 'ambas'] as const).map((scope) => (
+                  <button
+                    key={scope}
+                    type="button"
+                    onClick={() => setSelectedBranch(scope)}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-black border transition-all cursor-pointer ${
+                      selectedBranch === scope
+                        ? 'bg-[#1E3A8A] text-white border-[#1E3A8A]'
+                        : 'bg-white text-[#0F172A] border-slate-300 hover:bg-slate-100'
+                    }`}
+                  >
+                    {SCOPE_NAMES[scope]}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -255,6 +292,7 @@ export function GiftCardsView() {
                 onChange={(e) => setSelectedStaffForRedeem(e.target.value)}
                 className="w-full p-2.5 rounded-xl border-2 border-slate-300 bg-white font-bold text-xs text-[#0F172A] focus:border-[#1E3A8A] outline-none cursor-pointer"
               >
+                <option value="">-- Recepción / Sin profesional asignado --</option>
                 {staff.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name} ({s.role})
@@ -558,19 +596,38 @@ export function GiftCardsView() {
                       </button>
                     )}
 
-                    {/* Delete */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (confirm(`¿Eliminar la Gift Card ${card.code}?`)) {
-                          deleteGiftCard(card.id);
-                        }
-                      }}
-                      className="p-2 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-xl transition-colors cursor-pointer"
-                      title="Eliminar voucher"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {/* Delete with iframe-safe internal confirmation */}
+                    {confirmDeleteId === card.id ? (
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await deleteGiftCard(card.id);
+                            setConfirmDeleteId(null);
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-rose-700 hover:bg-rose-800 text-white border border-rose-800 text-xs font-black cursor-pointer"
+                        >
+                          Confirmar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-[#0F172A] border-2 border-slate-300 text-xs font-black cursor-pointer"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDeleteId(card.id)}
+                        className="px-2.5 py-2 bg-white hover:bg-rose-50 border border-rose-300 text-rose-700 rounded-xl text-xs font-black flex items-center gap-1 transition-colors cursor-pointer"
+                        title="Eliminar voucher"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Eliminar</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

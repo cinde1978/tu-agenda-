@@ -34,11 +34,14 @@ export function ClientDetailDrawer({
   onSelectAppointment,
   onNewAppointmentForClient,
 }: ClientDetailDrawerProps) {
-  const { business, appointments, deleteClient } = useApp();
+  const { business, allAppointments, deleteClient } = useApp();
   const [selectedWhatsAppApt, setSelectedWhatsAppApt] = useState<Appointment | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
-  // Filter client appointments
-  const clientAppointments = appointments.filter((a) => a.clientId === client.id || a.clientName.toLowerCase() === client.name.toLowerCase());
+  // Filter client appointments across both branches
+  const clientAppointments = allAppointments.filter(
+    (a) => a.clientId === client.id || a.clientName.toLowerCase() === client.name.toLowerCase()
+  );
   // Sort descending by date
   clientAppointments.sort((a, b) => b.date.localeCompare(a.date) || b.time.localeCompare(a.time));
 
@@ -47,42 +50,42 @@ export function ClientDetailDrawer({
   const calculatedTotalSpent = completedAppointments.reduce((acc, curr) => acc + (curr.price || 0), 0);
   const totalVisitsCount = completedAppointments.length || client.totalVisits || 0;
   const displayTotalSpent = calculatedTotalSpent || client.totalSpent || 0;
+  const hasLinkedHistory = clientAppointments.length > 0 || Boolean(client.notes?.trim());
 
-  const handleDelete = async () => {
-    if (confirm(`¿Estás seguro de eliminar el cliente "${client.name}"?`)) {
-      await deleteClient(client.id);
-      onClose();
-    }
+  const handleConfirmDelete = async () => {
+    await deleteClient(client.id);
+    setConfirmingDelete(false);
+    onClose();
   };
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-end bg-slate-900/40 backdrop-blur-xs">
-        <div className="bg-white h-full w-full max-w-xl shadow-2xl flex flex-col border-l border-slate-200 animate-in slide-in-from-right duration-200">
+      <div className="fixed inset-0 z-50 flex items-center justify-end bg-slate-900/45 backdrop-blur-xs">
+        <div className="bg-white h-full w-full max-w-xl shadow-2xl flex flex-col border-l border-slate-200 animate-in slide-in-from-right duration-200 text-[#0F172A]">
           {/* Header */}
-          <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+          <div className="p-6 border-b border-slate-200 flex items-center justify-between bg-white">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+              <div className="w-12 h-12 rounded-full bg-[#1E3A8A] text-white flex items-center justify-center font-black text-lg shadow-sm">
                 {client.name.charAt(0).toUpperCase()}
               </div>
               <div>
-                <h3 className="font-bold text-xl text-slate-900">{client.name}</h3>
-                <p className="text-xs text-slate-500">Cliente registrado</p>
+                <h3 className="font-black text-xl text-[#0F172A]">{client.name}</h3>
+                <p className="text-xs text-slate-600 font-semibold">Cliente registrado</p>
               </div>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => onEditClient(client)}
-                className="p-2 hover:bg-slate-200/60 rounded-xl text-slate-600 transition-colors"
+                className="p-2 hover:bg-slate-100 rounded-xl text-[#0F172A] border border-slate-200 transition-colors cursor-pointer"
                 title="Editar cliente"
               >
                 <Edit2 className="w-4 h-4" />
               </button>
               <button
                 type="button"
-                onClick={handleDelete}
-                className="p-2 hover:bg-rose-50 rounded-xl text-slate-400 hover:text-rose-600 transition-colors"
+                onClick={() => setConfirmingDelete((prev) => !prev)}
+                className="p-2 hover:bg-rose-50 rounded-xl text-rose-700 border border-rose-200 transition-colors cursor-pointer"
                 title="Eliminar cliente"
               >
                 <Trash2 className="w-4 h-4" />
@@ -90,12 +93,54 @@ export function ClientDetailDrawer({
               <button
                 type="button"
                 onClick={onClose}
-                className="p-2 hover:bg-slate-200/60 rounded-xl text-slate-400 hover:text-slate-800 transition-colors"
+                className="p-2 hover:bg-slate-100 rounded-xl text-[#0F172A] transition-colors cursor-pointer"
+                title="Cerrar ficha"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
           </div>
+
+          {confirmingDelete && (
+            <div className="mx-6 mt-4 p-4 rounded-xl bg-rose-50 border-2 border-rose-300 space-y-3">
+              <div className="flex items-start gap-2.5">
+                <AlertCircle className="w-5 h-5 text-rose-700 shrink-0 mt-0.5" />
+                <div className="text-xs text-[#0F172A] space-y-1">
+                  <p className="font-black text-sm text-rose-950">
+                    ¿Eliminar la ficha de "{client.name}"?
+                  </p>
+                  {hasLinkedHistory ? (
+                    <p className="font-semibold text-rose-900">
+                      Atención: este cliente registra{' '}
+                      <strong>{clientAppointments.length} turno(s)</strong> en el historial
+                      {client.notes?.trim() ? ' y notas técnicas guardadas' : ''}. Si lo eliminás,
+                      los turnos existentes conservarán su nombre pero se borrará su ficha de contacto.
+                    </p>
+                  ) : (
+                    <p className="font-semibold text-slate-700">
+                      Este cliente no tiene turnos ni notas técnicas vinculadas.
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setConfirmingDelete(false)}
+                  className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-100 text-[#0F172A] border-2 border-slate-300 text-xs font-black cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmDelete}
+                  className="px-4 py-2 rounded-xl bg-rose-700 hover:bg-rose-800 text-white border-2 border-rose-800 text-xs font-black cursor-pointer"
+                >
+                  Confirmar eliminación
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Scrollable content */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -242,10 +287,14 @@ export function ClientDetailDrawer({
                               {status.label}
                             </span>
                           </div>
-                          <div className="text-xs text-slate-500 flex items-center gap-2">
+                          <div className="text-xs text-slate-600 font-semibold flex items-center gap-2 flex-wrap">
                             <span>{formatDateSpanishLong(apt.date)} a las {apt.time} hs</span>
                             <span>•</span>
                             <span>Con {apt.staffName}</span>
+                            <span>•</span>
+                            <span className="text-[#1E3A8A] font-bold">
+                              {apt.branchId === 'sucursal_2' ? 'Soham Rioja' : 'Soham Montevideo'}
+                            </span>
                           </div>
                         </div>
 

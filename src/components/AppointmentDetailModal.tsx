@@ -23,6 +23,7 @@ import {
 import { Appointment, PaymentMethod, BRANCHES } from '../types';
 import { useApp } from '../context/AppContext';
 import { formatCurrency, formatDateSpanishLong, getStatusBadge, openWhatsAppTurno } from '../utils/formatters';
+import { getBranchBusinessConfig } from '../utils/initialData';
 import { WhatsAppModal } from './WhatsAppModal';
 import { MercadoPagoModal } from './mercadopago/MercadoPagoModal';
 import { WhatsAppIcon, MercadoPagoIcon } from './icons';
@@ -39,12 +40,19 @@ export function AppointmentDetailModal({
   onEdit,
 }: AppointmentDetailModalProps) {
   const { business, deleteAppointment, markAppointmentCompleted, updateAppointment } = useApp();
+  const aptBranchId = appointment.branchId || 'sucursal_1';
+  const branchConfig = getBranchBusinessConfig(business, aptBranchId);
+  const enabledPaymentMethods = branchConfig.enabledPaymentMethods;
+
   const [showWhatsApp, setShowWhatsApp] = useState(false);
   const [showMercadoPagoModal, setShowMercadoPagoModal] = useState(false);
   const [showCompletePrompt, setShowCompletePrompt] = useState(false);
   const [collectedAmount, setCollectedAmount] = useState(appointment.remainingBalance);
-  const [completePaymentMethod, setCompletePaymentMethod] = useState<PaymentMethod>('efectivo');
+  const [completePaymentMethod, setCompletePaymentMethod] = useState<PaymentMethod>(
+    enabledPaymentMethods[0] || 'efectivo'
+  );
   const [isDeleting, setIsDeleting] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<'delete' | 'cancel' | null>(null);
   const [completeSuccess, setCompleteSuccess] = useState('');
 
   const statusInfo = getStatusBadge(appointment.status);
@@ -58,22 +66,20 @@ export function AppointmentDetailModal({
     }, 700);
   };
 
-  const handleCancelTurn = async () => {
-    if (confirm('¿Estás seguro de cancelar este turno?')) {
-      await updateAppointment({
-        ...appointment,
-        status: 'cancelado',
-      });
-      onClose();
-    }
+  const executeCancelTurn = async () => {
+    await updateAppointment({
+      ...appointment,
+      status: 'cancelado',
+    });
+    setConfirmAction(null);
+    onClose();
   };
 
-  const handleDeleteTurn = async () => {
-    if (confirm('¿Deseas eliminar permanentemente este turno de la agenda?')) {
-      setIsDeleting(true);
-      await deleteAppointment(appointment.id);
-      onClose();
-    }
+  const executeDeleteTurn = async () => {
+    setIsDeleting(true);
+    await deleteAppointment(appointment.id);
+    setConfirmAction(null);
+    onClose();
   };
 
   return (
@@ -95,14 +101,12 @@ export function AppointmentDetailModal({
                 <span>{appointment.branchId === 'sucursal_2' ? 'Soham Rioja' : 'Soham Montevideo'}</span>
               </span>
               <a
-                href={
-                  appointment.branchId === 'sucursal_2'
-                    ? 'https://www.google.com/maps/search/?api=1&query=Rioja+2954,+Rosario,+Santa+Fe,+Argentina'
-                    : 'https://www.google.com/maps/search/?api=1&query=Soham+Montevideo+1420'
-                }
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                  branchConfig.address || (aptBranchId === 'sucursal_2' ? 'Rioja 2954, Rosario' : 'Montevideo 397, Rosario')
+                )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[11px] font-black text-blue-700 hover:text-blue-900 bg-white border border-slate-300 px-2 py-0.5 rounded-md flex items-center gap-1 hover:shadow-2xs transition-all"
+                className="text-[11px] font-black text-[#1E3A8A] hover:text-blue-900 bg-white border border-slate-300 px-2 py-0.5 rounded-md flex items-center gap-1 hover:shadow-2xs transition-all"
                 title="Abrir ubicación en Google Maps"
               >
                 <MapPin className="w-3 h-3 text-rose-600" />
@@ -303,10 +307,17 @@ export function AppointmentDetailModal({
                       onChange={(e) => setCompletePaymentMethod(e.target.value as PaymentMethod)}
                       className="w-full p-2 border-2 border-slate-300 rounded-lg bg-white text-[#0F172A] font-black outline-none focus:border-[#1E3A8A]"
                     >
-                      <option value="efectivo" className="text-[#0F172A] font-bold bg-white">Efectivo</option>
-                      <option value="transferencia" className="text-[#0F172A] font-bold bg-white">Transferencia</option>
-                      <option value="mercadopago" className="text-[#0F172A] font-bold bg-white">Mercado Pago</option>
-                      <option value="tarjeta" className="text-[#0F172A] font-bold bg-white">Tarjeta</option>
+                      {enabledPaymentMethods.map((m) => (
+                        <option key={m} value={m} className="text-[#0F172A] font-bold bg-white">
+                          {m === 'efectivo'
+                            ? 'Efectivo'
+                            : m === 'transferencia'
+                            ? 'Transferencia'
+                            : m === 'mercadopago'
+                            ? 'Mercado Pago'
+                            : 'Tarjeta'}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -314,15 +325,43 @@ export function AppointmentDetailModal({
                 <button
                   type="button"
                   onClick={handleCompleteTurn}
-                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md transition-colors"
+                  className="w-full py-2.5 bg-[#1E3A8A] hover:bg-blue-900 text-white font-black text-xs rounded-xl shadow-md transition-colors cursor-pointer"
                 >
                   Confirmar y Registrar en Caja Diaria
                 </button>
               </div>
             ) : null}
 
+            {/* Inline confirmation banner for cancel / delete */}
+            {confirmAction && (
+              <div className="p-3.5 bg-rose-50 border-2 border-rose-400 rounded-xl space-y-2.5 animate-in fade-in">
+                <p className="text-xs font-black text-[#0F172A]">
+                  {confirmAction === 'delete'
+                    ? '¿Deseás eliminar permanentemente este turno de la agenda?'
+                    : '¿Deseás marcar este turno como cancelado?'}
+                </p>
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setConfirmAction(null)}
+                    className="px-3.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 border-2 border-slate-400 text-[#0F172A] text-xs font-black cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isDeleting}
+                    onClick={confirmAction === 'delete' ? executeDeleteTurn : executeCancelTurn}
+                    className="px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-black cursor-pointer disabled:opacity-50"
+                  >
+                    {confirmAction === 'delete' ? 'Confirmar eliminación' : 'Confirmar cancelación'}
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Action buttons inside body */}
-            {!showCompletePrompt && (
+            {!showCompletePrompt && !confirmAction && (
               <div className="grid grid-cols-2 gap-2 pt-2">
                 {appointment.status !== 'completado' && (
                   <button
@@ -340,7 +379,7 @@ export function AppointmentDetailModal({
 
                 <button
                   type="button"
-                  onClick={handleDeleteTurn}
+                  onClick={() => setConfirmAction('delete')}
                   disabled={isDeleting}
                   className="p-2.5 bg-white border-2 border-slate-300 hover:bg-rose-50 hover:border-rose-400 text-slate-700 hover:text-rose-700 font-black text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
                 >
@@ -369,7 +408,7 @@ export function AppointmentDetailModal({
               {appointment.status !== 'cancelado' && (
                 <button
                   type="button"
-                  onClick={handleCancelTurn}
+                  onClick={() => setConfirmAction('cancel')}
                   className="px-2.5 py-2 bg-white hover:bg-rose-50 border border-rose-300 text-rose-800 rounded-xl text-xs font-bold transition-colors cursor-pointer"
                   title="Cancelar turno"
                 >

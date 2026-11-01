@@ -172,7 +172,7 @@ export function ClientModal({ clientToEdit, onClose, onSaved }: ClientModalProps
               <input
                 type="text"
                 required
-                placeholder="Ej. Sofía Martínez"
+                placeholder="Nombre y apellido del cliente"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full text-sm font-bold pl-9 pr-3 py-2.5 rounded-xl border-2 border-slate-300 bg-white text-[#0F172A] placeholder-slate-400 focus:border-[#1E3A8A] outline-none shadow-2xs"
@@ -190,7 +190,7 @@ export function ClientModal({ clientToEdit, onClose, onSaved }: ClientModalProps
                 <Phone className="w-4 h-4 text-slate-500 absolute left-3 top-3.5" />
                 <input
                   type="tel"
-                  placeholder="Ej. 341 555-1234"
+                  placeholder="Teléfono (opcional)"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className="w-full text-sm font-bold pl-9 pr-3 py-2.5 rounded-xl border-2 border-slate-300 bg-white text-[#0F172A] placeholder-slate-400 focus:border-[#1E3A8A] outline-none shadow-2xs"
@@ -220,7 +220,7 @@ export function ClientModal({ clientToEdit, onClose, onSaved }: ClientModalProps
                 <MessageCircle className="w-4 h-4 text-emerald-600 absolute left-3 top-3.5" />
                 <input
                   type="tel"
-                  placeholder="Ej. +54 9 341 555-1234"
+                  placeholder="WhatsApp (opcional)"
                   value={whatsapp}
                   onChange={(e) => setWhatsapp(e.target.value)}
                   className="w-full text-sm font-bold pl-9 pr-3 py-2.5 rounded-xl border-2 border-slate-300 bg-white text-[#0F172A] placeholder-slate-400 focus:border-[#1E3A8A] outline-none shadow-2xs"
@@ -239,7 +239,7 @@ export function ClientModal({ clientToEdit, onClose, onSaved }: ClientModalProps
                 <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-3.5" />
                 <input
                   type="email"
-                  placeholder="cliente@ejemplo.com"
+                  placeholder="Correo electrónico (opcional)"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full text-sm font-bold pl-9 pr-3 py-2.5 rounded-xl border-2 border-slate-300 bg-white text-[#0F172A] placeholder-slate-400 focus:border-[#1E3A8A] outline-none shadow-2xs"

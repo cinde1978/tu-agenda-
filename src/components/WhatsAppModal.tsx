@@ -1,7 +1,12 @@
 import { useState } from 'react';
-import { X, Send, Copy, Check, MessageCircle, Sparkles } from 'lucide-react';
+import { X, Copy, Check, AlertCircle } from 'lucide-react';
 import { Appointment, Business } from '../types';
-import { cleanPhoneForWhatsApp, formatDateSpanishLong } from '../utils/formatters';
+import {
+  cleanPhoneForWhatsApp,
+  formatDateSpanishLong,
+  openExternalUrlSafely,
+} from '../utils/formatters';
+import { getBranchBusinessConfig } from '../utils/initialData';
 import { WhatsAppIcon } from './icons/WhatsAppIcon';
 
 interface WhatsAppModalProps {
@@ -12,20 +17,21 @@ interface WhatsAppModalProps {
 
 export function WhatsAppModal({ appointment, business, onClose }: WhatsAppModalProps) {
   const [copied, setCopied] = useState(false);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
   const [templateType, setTemplateType] = useState<'confirm' | 'reminder' | 'deposit' | 'reschedule'>('confirm');
 
   const cleanPhone = cleanPhoneForWhatsApp(appointment.clientPhone, business.phoneCountryPrefix || '+54');
   const formattedDate = formatDateSpanishLong(appointment.date);
 
   const getTemplateText = (type: string) => {
-    const branchName =
-      appointment.branchId === 'sucursal_2'
-        ? 'Soham Rioja (Rioja 2954, Rosario)'
-        : 'Soham Montevideo (Montevideo 1420)';
-    const mapsUrl =
-      appointment.branchId === 'sucursal_2'
-        ? 'https://www.google.com/maps/search/?api=1&query=Rioja+2954,+Rosario,+Santa+Fe,+Argentina'
-        : 'https://www.google.com/maps/search/?api=1&query=Soham+Montevideo+1420';
+    const targetBranch = appointment.branchId || 'sucursal_1';
+    const branchCfg = getBranchBusinessConfig(business, targetBranch);
+    const branchName = `${branchCfg.name} (${branchCfg.address})`;
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      branchCfg.address + ', Argentina'
+    )}`;
+    const configuredAlias =
+      branchCfg.mercadoPagoAlias || branchCfg.cbuAlias || 'Consultar datos de transferencia en recepción';
 
     switch (type) {
       case 'confirm':
@@ -35,7 +41,7 @@ export function WhatsAppModal({ appointment, business, onClose }: WhatsAppModalP
         return `🔔 *¡Hola ${appointment.clientName}!* Te recordamos tu turno programado en *${business.name}*:\n\n📅 *Fecha:* ${formattedDate}\n⏰ *Hora:* ${appointment.time} hs\n✂️ *Servicio:* ${appointment.serviceName}\n👤 *Atendido por:* ${appointment.staffName}\n📍 *Sucursal:* ${branchName}\n🗺️ *Ubicación en Google Maps:* ${mapsUrl}\n\nPor favor, responde este mensaje para confirmar tu asistencia. ¡Muchas gracias! 💕`;
 
       case 'deposit':
-        return `👋 *¡Hola ${appointment.clientName}!* Para asegurar y confirmar tu turno en *${business.name}* (${branchName}) para el *${formattedDate} a las ${appointment.time} hs*, te solicitamos una seña de *${business.currency} ${appointment.depositAmount || Math.round(appointment.price * 0.3)}*.\n\n🏦 *Datos de transferencia:*\n*Alias:* ${business.mercadoPagoAlias || business.cbuAlias || 'agenda.turnos.mp'}\n*Titular:* ${business.name}\n📍 *Sucursal:* ${branchName} (${mapsUrl})\n\nUna vez realizado, por favor envíanos el comprobante por acá. ¡Muchas gracias! ✨`;
+        return `👋 *¡Hola ${appointment.clientName}!* Para asegurar y confirmar tu turno en *${business.name}* (${branchName}) para el *${formattedDate} a las ${appointment.time} hs*, te solicitamos una seña de *${business.currency} ${appointment.depositAmount || Math.round(appointment.price * 0.3)}*.\n\n🏦 *Datos de transferencia:*\n*Alias / CBU:* ${configuredAlias}\n*Titular:* ${business.name}\n📍 *Sucursal:* ${branchName} (${mapsUrl})\n\nUna vez realizado, por favor envíanos el comprobante por acá. ¡Muchas gracias! ✨`;
 
       case 'reschedule':
         return `👋 *¡Hola ${appointment.clientName}!* Nos comunicamos desde *${business.name}* respecto a tu turno del ${formattedDate}. Quisiéramos coordinar una reprogramación para un horario que te resulte cómodo. ¿En qué días y horarios te vendría bien? Quedamos a tu disposición. 💖`;
@@ -53,13 +59,14 @@ export function WhatsAppModal({ appointment, business, onClose }: WhatsAppModalP
   };
 
   const handleSendWhatsApp = () => {
+    setPhoneError(null);
     if (!cleanPhone) {
-      alert('El cliente no tiene un teléfono válido registrado.');
+      setPhoneError('El cliente no tiene un teléfono válido registrado.');
       return;
     }
     const encoded = encodeURIComponent(message);
     const url = `https://wa.me/${cleanPhone}?text=${encoded}`;
-    window.open(url, '_blank');
+    openExternalUrlSafely(url);
   };
 
   const handleCopy = () => {
@@ -163,9 +170,16 @@ export function WhatsAppModal({ appointment, business, onClose }: WhatsAppModalP
             />
           </div>
 
+          {phoneError && (
+            <div className="p-3 bg-rose-50 border-2 border-rose-300 rounded-xl text-rose-950 font-bold text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-rose-700 shrink-0" />
+              <span>{phoneError}</span>
+            </div>
+          )}
+
           {!cleanPhone && (
             <div className="p-3 bg-amber-50 border-2 border-amber-300 rounded-xl text-amber-950 font-bold text-xs flex items-center gap-2">
-              ⚠️ Este cliente no tiene número de teléfono guardado. Puedes copiar el texto manualmente.
+              ⚠️ Este cliente no tiene número de teléfono guardado. Podés copiar el texto manualmente.
             </div>
           )}
 

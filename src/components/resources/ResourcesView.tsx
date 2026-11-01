@@ -16,10 +16,11 @@ import { ResourceModal } from './ResourceModal';
 import { getTodayDateString } from '../../utils/initialData';
 
 export function ResourcesView() {
-  const { resources, deleteResource, appointments, selectedBranch } = useApp();
+  const { resources, deleteResource, allAppointments } = useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [resourceToEdit, setResourceToEdit] = useState<Resource | null>(null);
   const [filterBranch, setFilterBranch] = useState<'todas' | BranchId>('todas');
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const todayStr = getTodayDateString();
 
@@ -100,12 +101,39 @@ export function ResourcesView() {
       </div>
 
       {/* Grid of Resources */}
+      {filteredResources.length === 0 ? (
+        <div className="bg-white rounded-2xl border-2 border-dashed border-slate-300 p-10 text-center space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#1E3A8A] border border-blue-200 flex items-center justify-center mx-auto">
+            <Layers className="w-6 h-6 stroke-[2.5]" />
+          </div>
+          <h3 className="font-black text-base text-[#0F172A]">
+            No hay cabinas ni equipos cargados
+          </h3>
+          <p className="text-xs text-slate-600 font-semibold max-w-md mx-auto">
+            Registrá las cabinas, boxes o equipos de aparatología de Soham Montevideo y Soham Rioja para controlar su disponibilidad al agendar turnos.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setResourceToEdit(null);
+              setIsModalOpen(true);
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#1E3A8A] hover:bg-blue-900 text-white rounded-xl text-xs font-black shadow-xs transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4 stroke-[3]" />
+            <span>+ Nueva Cabina / Equipo</span>
+          </button>
+        </div>
+      ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredResources.map((res) => {
-          // Today's appointments utilizing this resource
-          const todayAppointmentsForResource = appointments.filter(
+          // Today's appointments utilizing this resource across branches
+          const todayAppointmentsForResource = allAppointments.filter(
             (a) => a.resourceId === res.id && a.date === todayStr && a.status !== 'cancelado'
           );
+          const totalLinkedAppointments = allAppointments.filter(
+            (a) => a.resourceId === res.id && a.status !== 'cancelado'
+          ).length;
 
           return (
             <div
@@ -115,8 +143,8 @@ export function ResourcesView() {
               <div>
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 block">
-                      {res.type === 'cabina' ? 'Cabina / Box' : res.type === 'equipo' ? 'Aparatología' : 'Espacio'}
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 block">
+                      {res.type === 'cabina' ? 'Cabina / Box' : res.type === 'equipo' ? 'Aparato / Equipo' : 'Espacio / Sillón'}
                     </span>
                     <h3 className="font-black text-base text-[#0F172A]">{res.name}</h3>
                   </div>
@@ -128,25 +156,58 @@ export function ResourcesView() {
                         setResourceToEdit(res);
                         setIsModalOpen(true);
                       }}
-                      className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-black cursor-pointer"
+                      className="p-1.5 hover:bg-slate-100 rounded-lg text-[#0F172A] border border-slate-200 cursor-pointer"
                       title="Editar"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        if (confirm(`¿Eliminar ${res.name}?`)) {
-                          deleteResource(res.id);
-                        }
-                      }}
-                      className="p-1.5 hover:bg-rose-50 rounded-lg text-slate-400 hover:text-rose-600 cursor-pointer"
+                      onClick={() =>
+                        setConfirmDeleteId((prev) => (prev === res.id ? null : res.id))
+                      }
+                      className="p-1.5 hover:bg-rose-50 rounded-lg text-rose-700 border border-rose-200 cursor-pointer"
                       title="Eliminar"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
+
+                {confirmDeleteId === res.id && (
+                  <div className="mt-3 p-3 rounded-xl bg-rose-50 border-2 border-rose-300 space-y-2 text-xs text-[#0F172A]">
+                    <p className="font-black text-rose-950">
+                      ¿Eliminar "{res.name}"?
+                    </p>
+                    {totalLinkedAppointments > 0 && (
+                      <p className="font-semibold text-rose-900 flex items-start gap-1.5">
+                        <AlertTriangle className="w-4 h-4 text-rose-700 shrink-0 mt-0.5" />
+                        <span>
+                          Hay <strong>{totalLinkedAppointments} turno(s)</strong> asignados a este recurso.
+                        </span>
+                      </p>
+                    )}
+                    <div className="flex items-center justify-end gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDeleteId(null)}
+                        className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-[#0F172A] border-2 border-slate-300 font-black cursor-pointer"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await deleteResource(res.id);
+                          setConfirmDeleteId(null);
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-rose-700 hover:bg-rose-800 text-white border border-rose-800 font-black cursor-pointer"
+                      >
+                        Confirmar
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex items-center gap-2 mt-2">
                   <span className="text-xs font-bold text-[#0F172A] bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200 flex items-center gap-1">
@@ -210,6 +271,7 @@ export function ResourcesView() {
           );
         })}
       </div>
+      )}
 
       {isModalOpen && (
         <ResourceModal

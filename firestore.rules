@@ -22,7 +22,7 @@ service cloud.firestore {
     }
 
     match /businesses/{businessId} {
-      allow get: if isSignedIn() && isValidId(businessId) && (resource.data.ownerId == request.auth.uid);
+      allow get: if isSignedIn() && isValidId(businessId) && (resource == null || resource.data.ownerId == request.auth.uid);
       allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid);
       allow create: if isSignedIn() && isValidId(businessId) &&
         request.resource.data.ownerId == request.auth.uid &&
@@ -58,6 +58,16 @@ service cloud.firestore {
       match /cashMovements/{movementId} {
         allow get, list: if isBusinessOwner(businessId);
         allow create, update, delete: if isBusinessOwner(businessId) && isValidId(movementId);
+      }
+
+      match /giftCards/{giftCardId} {
+        allow get, list: if isBusinessOwner(businessId);
+        allow create, update, delete: if isBusinessOwner(businessId) && isValidId(giftCardId);
+      }
+
+      match /resources/{resourceId} {
+        allow get, list: if isBusinessOwner(businessId);
+        allow create, update, delete: if isBusinessOwner(businessId) && isValidId(resourceId);
       }
     }
   }

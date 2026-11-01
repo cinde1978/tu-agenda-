@@ -1,0 +1,634 @@
+{
+  "backupMetadata": {
+    "createdAt": "2026-10-31T18:05:30Z",
+    "application": "Tu Agenda Lista",
+    "repository": "cinde1978/tu-agenda-",
+    "purpose": "Copia de seguridad íntegra previa a la limpieza definitiva de datos de prueba para inicio desde cero en Soham Montevideo y Soham Rioja.",
+    "preservedBranchesAfterCleanup": [
+      {
+        "id": "sucursal_1",
+        "name": "Soham Montevideo",
+        "address": "Montevideo 397, Rosario"
+      },
+      {
+        "id": "sucursal_2",
+        "name": "Soham Rioja",
+        "address": "Rioja 2954, Rosario"
+      }
+    ]
+  },
+  "previousBranchesConfig": [
+    {
+      "id": "sucursal_1",
+      "name": "Soham Montevideo",
+      "address": "Montevideo 1420, Rosario",
+      "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Soham+Montevideo+1420",
+      "phone": "+54 9 341 555-0101"
+    },
+    {
+      "id": "sucursal_2",
+      "name": "Soham Rioja",
+      "address": "Rioja 2954, Rosario, Santa Fe, Argentina",
+      "mapsUrl": "https://www.google.com/maps/search/?api=1&query=Rioja+2954,+Rosario,+Santa+Fe,+Argentina",
+      "phone": "+54 9 341 555-0202"
+    }
+  ],
+  "previousDefaultBusiness": {
+    "id": "biz_local_active",
+    "ownerId": "local_owner",
+    "name": "Tu Agenda Lista",
+    "category": "Centro de Estética & Salud Integral",
+    "phone": "+54 9 11 4567-8901",
+    "address": "Av. Principal 1234",
+    "currency": "$",
+    "cbuAlias": "agenda.turnos.mp",
+    "phoneCountryPrefix": "+54",
+    "mercadoPagoAlias": "agenda.turnos.mp",
+    "mercadoPagoCvu": "0000003100085492109482",
+    "mercadoPagoAccessToken": "APP_USR-78219401284-102914-tuagenda-prod",
+    "defaultDepositPercentage": 30,
+    "defaultSlotMinutes": 30,
+    "themeColor": "#D4AF37",
+    "themeName": "Oro Metálico & Obsidian (Oficial)",
+    "developerName": "Iris Quiroz",
+    "tagline": "Desarrollado por Iris Quiroz"
+  },
+  "removedTestRecords": {
+    "services": [
+      {
+        "id": "srv_1",
+        "name": "Limpieza Facial Profunda",
+        "category": "Estética Facial",
+        "durationMinutes": 60,
+        "price": 14000,
+        "description": "Higiene cutánea profunda, extracción de impurezas, espátula ultrasónica y máscara descongestiva e hidratante.",
+        "color": "#0284c7",
+        "active": true
+      },
+      {
+        "id": "srv_2",
+        "name": "Lifting de Pestañas + Tinte",
+        "category": "Manicuría & Pestañas",
+        "durationMinutes": 50,
+        "price": 11000,
+        "description": "Curvatura natural y realce de pestañas con tinte intensificador y baño de nutrición de keratina.",
+        "color": "#8b5cf6",
+        "active": true
+      },
+      {
+        "id": "srv_3",
+        "name": "Semipermanente con Kapping",
+        "category": "Manicuría & Pestañas",
+        "durationMinutes": 60,
+        "price": 9500,
+        "description": "Capa protectora de gel o acrílico fortalecedor sobre uña natural y esmaltado semipermanente de larga duración.",
+        "color": "#ec4899",
+        "active": true
+      },
+      {
+        "id": "srv_4",
+        "name": "Masaje Descontracturante / Relajante",
+        "category": "Masajes",
+        "durationMinutes": 60,
+        "price": 15000,
+        "description": "Terapia manual profunda para alivio de tensiones musculares, contracturas y armonización corporal.",
+        "color": "#0d9488",
+        "active": true
+      },
+      {
+        "id": "srv_5",
+        "name": "Tratamiento Corporal Reductor / Modelador",
+        "category": "Estética Corporal",
+        "durationMinutes": 60,
+        "price": 18000,
+        "description": "Aparatología combinada de radiofrecuencia, drenaje y modelación localizada para adiposidad y celulitis.",
+        "color": "#1E3A8A",
+        "active": true
+      }
+    ],
+    "staff": [
+      {
+        "id": "stf_iris",
+        "name": "Iris",
+        "role": "Especialista Integral",
+        "phone": "+54 9 341 555-8899",
+        "color": "#0284c7",
+        "branchId": "ambas",
+        "commissionPercentage": 50,
+        "workingDays": [1, 2, 3, 4, 5, 6],
+        "workingHoursStart": "09:00",
+        "workingHoursEnd": "20:00",
+        "blockedDates": [],
+        "active": true,
+        "daySchedules": [
+          {
+            "day": 1,
+            "active": true,
+            "branchId": "ambas",
+            "start": "09:00",
+            "end": "20:00",
+            "breaks": [],
+            "branchShifts": {
+              "sucursal_1": { "active": true, "start": "09:00", "end": "13:00", "breaks": [] },
+              "sucursal_2": { "active": true, "start": "14:00", "end": "20:00", "breaks": [] }
+            }
+          },
+          {
+            "day": 2,
+            "active": true,
+            "branchId": "ambas",
+            "start": "09:00",
+            "end": "20:00",
+            "breaks": [],
+            "branchShifts": {
+              "sucursal_1": { "active": true, "start": "09:00", "end": "13:00", "breaks": [] },
+              "sucursal_2": { "active": true, "start": "14:00", "end": "20:00", "breaks": [] }
+            }
+          },
+          {
+            "day": 3,
+            "active": true,
+            "branchId": "ambas",
+            "start": "09:00",
+            "end": "20:00",
+            "breaks": [],
+            "branchShifts": {
+              "sucursal_1": { "active": true, "start": "09:00", "end": "13:00", "breaks": [] },
+              "sucursal_2": { "active": true, "start": "14:00", "end": "20:00", "breaks": [] }
+            }
+          },
+          {
+            "day": 4,
+            "active": true,
+            "branchId": "ambas",
+            "start": "09:00",
+            "end": "20:00",
+            "breaks": [],
+            "branchShifts": {
+              "sucursal_1": { "active": true, "start": "09:00", "end": "13:00", "breaks": [] },
+              "sucursal_2": { "active": true, "start": "14:00", "end": "20:00", "breaks": [] }
+            }
+          },
+          {
+            "day": 5,
+            "active": true,
+            "branchId": "ambas",
+            "start": "09:00",
+            "end": "20:00",
+            "breaks": [],
+            "branchShifts": {
+              "sucursal_1": { "active": true, "start": "09:00", "end": "13:00", "breaks": [] },
+              "sucursal_2": { "active": true, "start": "14:00", "end": "20:00", "breaks": [] }
+            }
+          },
+          {
+            "day": 6,
+            "active": true,
+            "branchId": "ambas",
+            "start": "09:00",
+            "end": "18:00",
+            "breaks": [],
+            "branchShifts": {
+              "sucursal_1": { "active": true, "start": "09:00", "end": "13:00", "breaks": [] },
+              "sucursal_2": { "active": true, "start": "14:00", "end": "18:00", "breaks": [] }
+            }
+          },
+          {
+            "day": 0,
+            "active": false,
+            "branchId": "ambas",
+            "start": "09:00",
+            "end": "20:00",
+            "breaks": [],
+            "branchShifts": {
+              "sucursal_1": { "active": false, "start": "09:00", "end": "13:00", "breaks": [] },
+              "sucursal_2": { "active": false, "start": "14:00", "end": "20:00", "breaks": [] }
+            }
+          }
+        ]
+      },
+      {
+        "id": "stf_1",
+        "name": "Camila Rossi",
+        "role": "Cosmiatra & Especialista Facial",
+        "phone": "+54 9 11 5566-7788",
+        "color": "#2563eb",
+        "branchId": "sucursal_1",
+        "commissionPercentage": 40,
+        "workingDays": [1, 2, 3, 4, 5, 6],
+        "workingHoursStart": "09:00",
+        "workingHoursEnd": "19:00",
+        "blockedDates": [],
+        "active": true
+      },
+      {
+        "id": "stf_2",
+        "name": "Valeria Gómez",
+        "role": "Especialista en Uñas y Pestañas",
+        "phone": "+54 9 11 4433-2211",
+        "color": "#db2777",
+        "branchId": "sucursal_2",
+        "commissionPercentage": 35,
+        "workingDays": [1, 2, 3, 4, 5, 6],
+        "workingHoursStart": "10:00",
+        "workingHoursEnd": "20:00",
+        "blockedDates": [],
+        "active": true
+      },
+      {
+        "id": "stf_3",
+        "name": "Lucas Medina",
+        "role": "Masajista & Estética Corporal",
+        "phone": "+54 9 11 9988-1122",
+        "color": "#0d9488",
+        "branchId": "ambas",
+        "commissionPercentage": 45,
+        "workingDays": [1, 2, 3, 4, 5, 6],
+        "workingHoursStart": "10:00",
+        "workingHoursEnd": "19:30",
+        "blockedDates": [],
+        "active": true
+      },
+      {
+        "id": "stf_4",
+        "name": "Antonela",
+        "role": "Dermatocosmética & Peeling",
+        "phone": "+54 9 11 3322-1144",
+        "color": "#7c3aed",
+        "branchId": "ambas",
+        "commissionPercentage": 40,
+        "workingDays": [2, 3, 4, 5],
+        "workingHoursStart": "09:00",
+        "workingHoursEnd": "18:00",
+        "blockedDates": [],
+        "active": true,
+        "daySchedules": [
+          {
+            "day": 1,
+            "active": false,
+            "branchId": "ambas",
+            "start": "09:00",
+            "end": "18:00",
+            "breaks": [],
+            "branchShifts": {
+              "sucursal_1": { "active": false, "start": "09:00", "end": "18:00", "breaks": [] },
+              "sucursal_2": { "active": false, "start": "09:00", "end": "18:00", "breaks": [] }
+            }
+          },
+          {
+            "day": 2,
+            "active": true,
+            "branchId": "sucursal_1",
+            "start": "09:00",
+            "end": "18:00",
+            "breaks": [{ "id": "brk_ant_mar", "start": "13:00", "end": "14:00", "description": "Almuerzo" }],
+            "branchShifts": {
+              "sucursal_1": { "active": true, "start": "09:00", "end": "18:00", "breaks": [{ "id": "brk_ant_mar", "start": "13:00", "end": "14:00", "description": "Almuerzo" }] },
+              "sucursal_2": { "active": false, "start": "09:00", "end": "18:00", "breaks": [] }
+            }
+          },
+          {
+            "day": 3,
+            "active": true,
+            "branchId": "sucursal_1",
+            "start": "09:00",
+            "end": "18:00",
+            "breaks": [{ "id": "brk_ant_mie", "start": "13:00", "end": "14:00", "description": "Almuerzo" }],
+            "branchShifts": {
+              "sucursal_1": { "active": true, "start": "09:00", "end": "18:00", "breaks": [{ "id": "brk_ant_mie", "start": "13:00", "end": "14:00", "description": "Almuerzo" }] },
+              "sucursal_2": { "active": false, "start": "09:00", "end": "18:00", "breaks": [] }
+            }
+          },
+          {
+            "day": 4,
+            "active": true,
+            "branchId": "sucursal_2",
+            "start": "09:00",
+            "end": "18:00",
+            "breaks": [{ "id": "brk_ant_jue", "start": "13:00", "end": "14:00", "description": "Almuerzo" }],
+            "branchShifts": {
+              "sucursal_1": { "active": false, "start": "09:00", "end": "18:00", "breaks": [] },
+              "sucursal_2": { "active": true, "start": "09:00", "end": "18:00", "breaks": [{ "id": "brk_ant_jue", "start": "13:00", "end": "14:00", "description": "Almuerzo" }] }
+            }
+          },
+          {
+            "day": 5,
+            "active": true,
+            "branchId": "sucursal_2",
+            "start": "09:00",
+            "end": "18:00",
+            "breaks": [{ "id": "brk_ant_vie", "start": "13:00", "end": "14:00", "description": "Almuerzo" }],
+            "branchShifts": {
+              "sucursal_1": { "active": false, "start": "09:00", "end": "18:00", "breaks": [] },
+              "sucursal_2": { "active": true, "start": "09:00", "end": "18:00", "breaks": [{ "id": "brk_ant_vie", "start": "13:00", "end": "14:00", "description": "Almuerzo" }] }
+            }
+          },
+          {
+            "day": 6,
+            "active": false,
+            "branchId": "ambas",
+            "start": "09:00",
+            "end": "18:00",
+            "breaks": [],
+            "branchShifts": {
+              "sucursal_1": { "active": false, "start": "09:00", "end": "18:00", "breaks": [] },
+              "sucursal_2": { "active": false, "start": "09:00", "end": "18:00", "breaks": [] }
+            }
+          },
+          {
+            "day": 0,
+            "active": false,
+            "branchId": "ambas",
+            "start": "09:00",
+            "end": "18:00",
+            "breaks": [],
+            "branchShifts": {
+              "sucursal_1": { "active": false, "start": "09:00", "end": "18:00", "breaks": [] },
+              "sucursal_2": { "active": false, "start": "09:00", "end": "18:00", "breaks": [] }
+            }
+          }
+        ]
+      },
+      {
+        "id": "stf_5",
+        "name": "Sofía Álvarez",
+        "role": "Masoterapeuta & Drenaje Linfático",
+        "phone": "+54 9 11 6655-4433",
+        "color": "#ea580c",
+        "branchId": "sucursal_2",
+        "commissionPercentage": 35,
+        "workingDays": [2, 3, 4, 5, 6],
+        "workingHoursStart": "09:00",
+        "workingHoursEnd": "19:00",
+        "blockedDates": [],
+        "active": true
+      }
+    ],
+    "clients": [
+      {
+        "id": "cli_1",
+        "name": "Sofía Martínez",
+        "phone": "+5491133445566",
+        "email": "sofia.martinez@ejemplo.com",
+        "notes": "Piel reactiva sensible. Prefiere productos sin perfume.",
+        "birthday": "1994-05-14",
+        "totalVisits": 5,
+        "totalSpent": 42500
+      },
+      {
+        "id": "cli_2",
+        "name": "Mariana López",
+        "phone": "+5491177889900",
+        "email": "mariana.lopez@ejemplo.com",
+        "notes": "Tratamiento corporal y masajes descontracturantes de espalda.",
+        "birthday": "1998-11-20",
+        "totalVisits": 3,
+        "totalSpent": 28500
+      },
+      {
+        "id": "cli_3",
+        "name": "Federico Benítez",
+        "phone": "+5491122334455",
+        "email": "fede.benitez@ejemplo.com",
+        "notes": "Sesión de kinesiología y masajes deportivos.",
+        "birthday": "1991-03-08",
+        "totalVisits": 4,
+        "totalSpent": 30000
+      },
+      {
+        "id": "cli_4",
+        "name": "Lucía Gómez",
+        "phone": "+5491188991122",
+        "email": "lucia.g@ejemplo.com",
+        "notes": "Limpieza facial periódica cada 4 semanas.",
+        "birthday": "1996-08-30",
+        "totalVisits": 2,
+        "totalSpent": 22000
+      }
+    ],
+    "appointments": [
+      {
+        "id": "apt_1",
+        "branchId": "sucursal_1",
+        "clientId": "cli_1",
+        "clientName": "Sofía Martínez",
+        "clientPhone": "+5491133445566",
+        "staffId": "stf_1",
+        "staffName": "Camila Rossi",
+        "serviceId": "srv_1",
+        "serviceName": "Limpieza Facial Profunda",
+        "time": "10:00",
+        "durationMinutes": 60,
+        "price": 14000,
+        "depositAmount": 4000,
+        "remainingBalance": 10000,
+        "status": "confirmado",
+        "paymentMethod": "mercadopago",
+        "notes": "Confirmado por WhatsApp. Soham Montevideo."
+      },
+      {
+        "id": "apt_2",
+        "branchId": "sucursal_1",
+        "clientId": "cli_2",
+        "clientName": "Mariana López",
+        "clientPhone": "+5491177889900",
+        "staffId": "stf_3",
+        "staffName": "Lucas Medina",
+        "serviceId": "srv_5",
+        "serviceName": "Tratamiento Corporal Reductor / Modelador",
+        "time": "11:30",
+        "durationMinutes": 60,
+        "price": 18000,
+        "depositAmount": 18000,
+        "remainingBalance": 0,
+        "status": "completado",
+        "paymentMethod": "transferencia",
+        "notes": "Abonado 100% por transferencia previa. Soham Montevideo."
+      },
+      {
+        "id": "apt_3",
+        "branchId": "sucursal_1",
+        "clientId": "cli_3",
+        "clientName": "Federico Benítez",
+        "clientPhone": "+5491122334455",
+        "staffId": "stf_3",
+        "staffName": "Lucas Medina",
+        "serviceId": "srv_4",
+        "serviceName": "Masaje Descontracturante / Relajante",
+        "time": "14:00",
+        "durationMinutes": 60,
+        "price": 15000,
+        "depositAmount": 0,
+        "remainingBalance": 15000,
+        "status": "confirmado",
+        "paymentMethod": "efectivo",
+        "notes": "Paga en efectivo al llegar. Soham Montevideo."
+      },
+      {
+        "id": "apt_4",
+        "branchId": "sucursal_2",
+        "clientId": "cli_4",
+        "clientName": "Lucía Fernández",
+        "clientPhone": "+5491188991122",
+        "staffId": "stf_2",
+        "staffName": "Valeria Gómez",
+        "serviceId": "srv_2",
+        "serviceName": "Lifting de Pestañas + Tinte",
+        "time": "15:30",
+        "durationMinutes": 50,
+        "price": 11000,
+        "depositAmount": 3500,
+        "remainingBalance": 7500,
+        "status": "pendiente",
+        "paymentMethod": "mercadopago",
+        "notes": "Turno en Soham Rioja. Enviar recordatorio."
+      },
+      {
+        "id": "apt_5",
+        "branchId": "sucursal_2",
+        "clientId": "cli_1",
+        "clientName": "Sofía Martínez",
+        "clientPhone": "+5491133445566",
+        "staffId": "stf_2",
+        "staffName": "Valeria Gómez",
+        "serviceId": "srv_3",
+        "serviceName": "Semipermanente con Kapping",
+        "time": "17:00",
+        "durationMinutes": 60,
+        "price": 9500,
+        "depositAmount": 3000,
+        "remainingBalance": 6500,
+        "status": "confirmado",
+        "paymentMethod": "transferencia",
+        "notes": "Turno agendado en Soham Rioja."
+      }
+    ],
+    "cashMovements": [
+      {
+        "id": "csh_1",
+        "branchId": "sucursal_1",
+        "type": "ingreso",
+        "category": "seña",
+        "amount": 4000,
+        "paymentMethod": "mercadopago",
+        "description": "[Soham Montevideo] Seña turno Sofía Martínez (Limpieza Facial Profunda)",
+        "appointmentId": "apt_1"
+      },
+      {
+        "id": "csh_2",
+        "branchId": "sucursal_1",
+        "type": "ingreso",
+        "category": "turno",
+        "amount": 18000,
+        "paymentMethod": "transferencia",
+        "description": "[Soham Montevideo] Cobro total Mariana López (Tratamiento Corporal Reductor / Modelador)",
+        "appointmentId": "apt_2"
+      },
+      {
+        "id": "csh_3",
+        "branchId": "sucursal_1",
+        "type": "gasto",
+        "category": "insumos",
+        "amount": 4200,
+        "paymentMethod": "efectivo",
+        "description": "[Soham Montevideo] Compra toallas descartables, guantes y cremas modeladoras"
+      },
+      {
+        "id": "csh_4",
+        "branchId": "sucursal_2",
+        "type": "ingreso",
+        "category": "seña",
+        "amount": 3500,
+        "paymentMethod": "mercadopago",
+        "description": "[Soham Rioja] Seña turno Lucía Fernández (Lifting de Pestañas + Tinte)",
+        "appointmentId": "apt_4"
+      },
+      {
+        "id": "csh_5",
+        "branchId": "sucursal_2",
+        "type": "ingreso",
+        "category": "seña",
+        "amount": 3000,
+        "paymentMethod": "transferencia",
+        "description": "[Soham Rioja] Seña Semipermanente con Kapping Sofía Martínez",
+        "appointmentId": "apt_5"
+      }
+    ],
+    "giftCards": [
+      {
+        "id": "gc_1",
+        "code": "SOHAM-884912",
+        "type": "monto",
+        "amount": 15000,
+        "buyerName": "Carlos Gómez",
+        "buyerPhone": "+54 9 341 455-8899",
+        "recipientName": "Valeria Rossi",
+        "recipientPhone": "+54 9 341 611-2233",
+        "message": "¡Feliz Cumple Vale! Disfrutá una tarde de mimos en Soham.",
+        "branchId": "ambas",
+        "status": "activa",
+        "paymentMethod": "mercadopago",
+        "expiryDate": "2026-12-31"
+      },
+      {
+        "id": "gc_2",
+        "code": "SOHAM-551029",
+        "type": "tratamiento",
+        "serviceId": "srv_1",
+        "serviceName": "Limpieza Facial Profunda",
+        "amount": 14000,
+        "buyerName": "Martín Díaz",
+        "buyerPhone": "+54 9 341 788-4455",
+        "recipientName": "Paula Santillán",
+        "recipientPhone": "+54 9 341 990-1122",
+        "message": "Un regalo para desconectar y renovar tu piel.",
+        "branchId": "sucursal_1",
+        "status": "activa",
+        "paymentMethod": "transferencia",
+        "expiryDate": "2026-12-31"
+      }
+    ],
+    "resources": [
+      {
+        "id": "res_1",
+        "name": "Cabina 1 - Facial & Pestañas",
+        "type": "cabina",
+        "branchId": "sucursal_1",
+        "description": "Camilla reclinable, lámpara lupa LED y vaporizador de ozono (Soham Montevideo)",
+        "active": true
+      },
+      {
+        "id": "res_2",
+        "name": "Cabina 2 - Masajes & Relax",
+        "type": "cabina",
+        "branchId": "sucursal_1",
+        "description": "Camilla térmica para masajes descontracturantes y aromaterapia (Soham Montevideo)",
+        "active": true
+      },
+      {
+        "id": "res_3",
+        "name": "Cabina 3 - Estética & Corporal",
+        "type": "cabina",
+        "branchId": "sucursal_2",
+        "description": "Cabina integral con ducha escocesa y aparatología (Soham Rioja)",
+        "active": true
+      },
+      {
+        "id": "res_4",
+        "name": "Equipo VelaSlim / Radiofrecuencia",
+        "type": "equipo",
+        "branchId": "ambas",
+        "description": "Aparato modelador y tensor corporal transferible entre sucursales",
+        "active": true
+      },
+      {
+        "id": "res_5",
+        "name": "Equipo Depilación Láser Diodo",
+        "type": "equipo",
+        "branchId": "sucursal_2",
+        "description": "Cabezal de depilación definitiva trilaser (Soham Rioja)",
+        "active": true
+      }
+    ]
+  }
+}

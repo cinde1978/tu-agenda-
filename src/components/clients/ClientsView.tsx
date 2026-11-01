@@ -14,6 +14,7 @@ import {
   Trash2,
   Building2,
   Users,
+  AlertTriangle,
 } from 'lucide-react';
 import { Client, Appointment } from '../../types';
 import { useApp } from '../../context/AppContext';
@@ -27,11 +28,12 @@ interface ClientsViewProps {
 }
 
 export function ClientsView({ onSelectAppointment, onNewAppointmentForClient }: ClientsViewProps) {
-  const { clients, deleteClient, business } = useApp();
+  const { clients, allAppointments, deleteClient, business } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [clientToEdit, setClientToEdit] = useState<Client | null>(null);
   const [selectedClientForDrawer, setSelectedClientForDrawer] = useState<Client | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const filteredClients = clients.filter((c) => {
     const term = searchTerm.toLowerCase();
@@ -45,9 +47,8 @@ export function ClientsView({ onSelectAppointment, onNewAppointmentForClient }: 
   });
 
   const handleDeleteClient = async (client: Client) => {
-    if (confirm(`¿Estás seguro de eliminar al cliente "${client.name}"? Los turnos existentes se mantendrán registrados.`)) {
-      await deleteClient(client.id);
-    }
+    await deleteClient(client.id);
+    setConfirmDeleteId(null);
   };
 
   return (
@@ -126,6 +127,21 @@ export function ClientsView({ onSelectAppointment, onNewAppointmentForClient }: 
           {filteredClients.map((client) => {
             const rawWa = client.whatsapp || client.phone || '';
             const cleanWa = cleanPhoneForWhatsApp(rawWa);
+            const linkedAppointments = (allAppointments || []).filter(
+              (a) =>
+                a.clientId === client.id ||
+                a.clientName.trim().toLowerCase() === client.name.trim().toLowerCase()
+            );
+            const completedClientTurns = linkedAppointments.filter(
+              (a) => a.status === 'completado'
+            );
+            const computedVisits = completedClientTurns.length || client.totalVisits || 0;
+            const computedSpent =
+              completedClientTurns.reduce((sum, a) => sum + (a.price || 0), 0) ||
+              client.totalSpent ||
+              0;
+            const hasHistoryOrNotes =
+              linkedAppointments.length > 0 || Boolean(client.notes?.trim());
 
             return (
               <div
@@ -179,14 +195,51 @@ export function ClientsView({ onSelectAppointment, onNewAppointmentForClient }: 
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleDeleteClient(client)}
-                        className="p-1.5 hover:bg-rose-50 rounded-lg text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                        onClick={() =>
+                          setConfirmDeleteId(confirmDeleteId === client.id ? null : client.id)
+                        }
+                        className="p-1.5 hover:bg-rose-50 rounded-lg text-slate-500 hover:text-rose-700 transition-colors cursor-pointer"
                         title="Eliminar cliente"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
+
+                  {confirmDeleteId === client.id && (
+                    <div className="mb-3 p-3 bg-rose-50 border-2 border-rose-400 rounded-xl space-y-2 animate-in fade-in">
+                      <div className="flex items-start gap-2 text-xs text-[#0F172A]">
+                        <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-black">
+                            ¿Confirmás eliminar la ficha de {client.name}?
+                          </p>
+                          {hasHistoryOrNotes && (
+                            <p className="text-[11px] font-bold text-rose-900 mt-0.5">
+                              Atención: registra {linkedAppointments.length} turno(s) en agenda
+                              {client.notes?.trim() ? ' y notas técnicas guardadas' : ''}.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="px-3 py-1 rounded-lg bg-white hover:bg-slate-100 border-2 border-slate-400 text-[#0F172A] text-xs font-black cursor-pointer"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteClient(client)}
+                          className="px-3 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-black cursor-pointer"
+                        >
+                          Confirmar
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Contact info: Email */}
                   {client.email && (
@@ -210,13 +263,13 @@ export function ClientsView({ onSelectAppointment, onNewAppointmentForClient }: 
                     <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
                       <span className="text-slate-500 block text-[10px] font-bold uppercase">Visitas</span>
                       <span className="font-black text-[#0F172A] text-sm">
-                        {client.totalVisits || 0} turnos
+                        {computedVisits} turnos
                       </span>
                     </div>
                     <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
                       <span className="text-slate-500 block text-[10px] font-bold uppercase">Facturado</span>
                       <span className="font-black text-[#1E3A8A] text-sm">
-                        {formatCurrency(client.totalSpent || 0, business?.currency)}
+                        {formatCurrency(computedSpent, business?.currency)}
                       </span>
                     </div>
                   </div>

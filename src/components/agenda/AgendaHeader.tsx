@@ -1,15 +1,24 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus, Users } from 'lucide-react';
-import { AgendaMode } from '../../types';
+import { AgendaMode, StaffSubMode } from '../../types';
 import { useApp } from '../../context/AppContext';
 import { formatDateSpanishLong, formatDateSpanish } from '../../utils/formatters';
 import { getTodayDateString } from '../../utils/initialData';
+import {
+  BRANCH_SHORT_NAMES,
+  parseDateDayOfWeek,
+  getStaffDaySchedule,
+  getStaffEffectiveShift,
+  formatShiftRanges,
+} from '../../utils/staffSchedule';
 
 export interface AgendaHeaderProps {
   currentDate: string;
   onDateChange: (date: string) => void;
   agendaMode: AgendaMode;
   onModeChange: (mode: AgendaMode) => void;
+  staffSubMode?: StaffSubMode;
+  onStaffSubModeChange?: (subMode: StaffSubMode) => void;
   selectedStaffId: string;
   onStaffChange: (staffId: string) => void;
   onNewAppointment?: () => void;
@@ -21,12 +30,13 @@ export const AgendaHeader: React.FC<AgendaHeaderProps> = ({
   onDateChange,
   agendaMode,
   onModeChange,
+  staffSubMode = 'dia',
   selectedStaffId,
   onStaffChange,
   onNewAppointment,
   onNavigate,
 }) => {
-  const { staff } = useApp();
+  const { staff, selectedBranch } = useApp();
 
   const handleNavigate = (direction: 'prev' | 'next' | 'today') => {
     if (onNavigate) {
@@ -38,15 +48,30 @@ export const AgendaHeader: React.FC<AgendaHeaderProps> = ({
       return;
     }
 
-    const [y, m, d] = currentDate.split('-').map(Number);
-    const dateObj = new Date(y, m - 1, d);
+    const safeBase = /^\d{4}-\d{2}-\d{2}$/.test(currentDate)
+      ? currentDate
+      : getTodayDateString();
+    const [y, m, d] = safeBase.split('-').map(Number);
+    const effectiveSpan = agendaMode === 'staff' ? staffSubMode : agendaMode;
 
-    if (agendaMode === 'dia' || agendaMode === 'staff') {
+    if (effectiveSpan === 'mes') {
+      const delta = direction === 'next' ? 1 : -1;
+      const targetMonthIndex = m - 1 + delta;
+      const maxDayInTarget = new Date(y, targetMonthIndex + 1, 0).getDate();
+      const clampedDay = Math.min(d, maxDayInTarget);
+      const nextObj = new Date(y, targetMonthIndex, clampedDay);
+      const nextY = nextObj.getFullYear();
+      const nextM = String(nextObj.getMonth() + 1).padStart(2, '0');
+      const nextD = String(nextObj.getDate()).padStart(2, '0');
+      onDateChange(`${nextY}-${nextM}-${nextD}`);
+      return;
+    }
+
+    const dateObj = new Date(y, m - 1, d);
+    if (effectiveSpan === 'dia') {
       dateObj.setDate(dateObj.getDate() + (direction === 'next' ? 1 : -1));
-    } else if (agendaMode === 'semana') {
+    } else if (effectiveSpan === 'semana') {
       dateObj.setDate(dateObj.getDate() + (direction === 'next' ? 7 : -7));
-    } else if (agendaMode === 'mes') {
-      dateObj.setMonth(dateObj.getMonth() + (direction === 'next' ? 1 : -1));
     }
 
     const nextY = dateObj.getFullYear();
@@ -56,6 +81,50 @@ export const AgendaHeader: React.FC<AgendaHeaderProps> = ({
   };
 
   const isToday = currentDate === getTodayDateString();
+  const dayOfWeek = parseDateDayOfWeek(currentDate);
+  const activeStaffOptions = (staff || []).filter((s) => s.active);
+
+  const getStaffOptionLabel = (s: (typeof staff)[number]) => {
+    if (agendaMode === 'dia') {
+      if (s.blockedDates?.includes(currentDate)) {
+        return `${s.name} — No disponible (Fecha bloqueada)`;
+      }
+      const sched = getStaffDaySchedule(s, dayOfWeek);
+      if (!sched.active) {
+        return `${s.name} — No disponible (No trabaja)`;
+      }
+      if (selectedBranch === 'ambas') {
+        const effS1 = getStaffEffectiveShift(sched, 'sucursal_1');
+        const effS2 = getStaffEffectiveShift(sched, 'sucursal_2');
+        if (!effS1.active && !effS2.active) {
+          return `${s.name} — No disponible`;
+        }
+        const parts = [
+          effS1.active ? `Mvd: ${formatShiftRanges(effS1.ranges)}` : null,
+          effS2.active ? `Rioja: ${formatShiftRanges(effS2.ranges)}` : null,
+        ].filter(Boolean);
+        return `${s.name} · ${parts.join(' | ')}`;
+      }
+      const eff = getStaffEffectiveShift(sched, selectedBranch);
+      if (!eff.active) {
+        const otherBranch = selectedBranch === 'sucursal_1' ? 'sucursal_2' : 'sucursal_1';
+        const otherEff = getStaffEffectiveShift(sched, otherBranch);
+        if (otherEff.active) {
+          return `${s.name} — No atiende en ${BRANCH_SHORT_NAMES[selectedBranch]} (${BRANCH_SHORT_NAMES[otherBranch]}: ${formatShiftRanges(otherEff.ranges)})`;
+        }
+        return `${s.name} — No disponible`;
+      }
+      return `${s.name} · ${BRANCH_SHORT_NAMES[selectedBranch]}: ${formatShiftRanges(eff.ranges)}`;
+    }
+
+    const branchDesc =
+      s.branchId === 'ambas'
+        ? 'Ambas Sucursales'
+        : s.branchId === 'sucursal_2'
+        ? 'Soham Rioja'
+        : 'Soham Montevideo';
+    return `${s.name} (${s.role}) · ${branchDesc}`;
+  };
 
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-2xl border-2 border-slate-300 shadow-xs">
@@ -67,6 +136,7 @@ export const AgendaHeader: React.FC<AgendaHeaderProps> = ({
             onClick={() => handleNavigate('prev')}
             className="p-1.5 hover:bg-slate-200 rounded-lg text-[#0F172A] transition-colors cursor-pointer"
             title="Anterior"
+            aria-label="Anterior"
           >
             <ChevronLeft className="w-4 h-4 stroke-[3]" />
           </button>
@@ -88,6 +158,7 @@ export const AgendaHeader: React.FC<AgendaHeaderProps> = ({
             onClick={() => handleNavigate('next')}
             className="p-1.5 hover:bg-slate-200 rounded-lg text-[#0F172A] transition-colors cursor-pointer"
             title="Siguiente"
+            aria-label="Siguiente"
           >
             <ChevronRight className="w-4 h-4 stroke-[3]" />
           </button>
@@ -99,33 +170,48 @@ export const AgendaHeader: React.FC<AgendaHeaderProps> = ({
             <input
               type="date"
               value={currentDate}
+              onClick={(e) => {
+                try {
+                  (e.currentTarget as HTMLInputElement).showPicker?.();
+                } catch {}
+              }}
               onChange={(e) => e.target.value && onDateChange(e.target.value)}
-              className="sr-only"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+              aria-label="Seleccionar fecha"
             />
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-2 border-slate-300 bg-white group-hover:border-blue-600 text-[#0F172A] text-xs font-extrabold transition-all shadow-2xs">
               <CalendarIcon className="w-3.5 h-3.5 text-blue-700" />
-              <span className="capitalize">{formatDateSpanishLong(currentDate) || formatDateSpanish(currentDate)}</span>
+              <span className="capitalize">
+                {formatDateSpanishLong(currentDate) || formatDateSpanish(currentDate) || currentDate}
+              </span>
             </div>
           </label>
         </div>
 
         {/* Professional Filter */}
-        {agendaMode !== 'staff' && staff && staff.length > 0 && (
+        {agendaMode !== 'staff' && (
           <div className="flex items-center gap-1.5">
             <div className="relative">
               <select
                 value={selectedStaffId}
                 onChange={(e) => onStaffChange(e.target.value)}
-                className="pl-7 pr-4 py-1.5 text-xs font-black rounded-xl border-2 border-slate-300 bg-white hover:border-[#1E3A8A] focus:border-[#1E3A8A] text-[#0F172A] focus:outline-none appearance-none cursor-pointer"
+                aria-label="Filtrar por profesional"
+                className="pl-7 pr-4 py-1.5 text-xs font-black rounded-xl border-2 border-slate-300 bg-white hover:border-[#1E3A8A] focus:border-[#1E3A8A] text-[#0F172A] focus:outline-none appearance-none cursor-pointer max-w-[320px] truncate"
               >
-                <option value="todos" className="text-[#0F172A] font-bold bg-white">Todos los profesionales</option>
-                {staff
-                  .filter((s) => s.active)
-                  .map((s) => (
-                    <option key={s.id} value={s.id} className="text-[#0F172A] font-bold bg-white">
-                      {s.name} ({s.role}) · {s.branchId === 'ambas' ? 'Ambas Sucursales' : s.branchId === 'sucursal_2' ? 'Soham Rioja' : 'Soham Montevideo'}
-                    </option>
-                  ))}
+                <option value="todos" className="text-[#0F172A] font-bold bg-white">
+                  {activeStaffOptions.length === 0
+                    ? 'Todos los profesionales (0 cargados)'
+                    : 'Todos los profesionales'}
+                </option>
+                {activeStaffOptions.map((s) => (
+                  <option
+                    key={s.id}
+                    value={s.id}
+                    className="text-[#0F172A] font-bold bg-white"
+                  >
+                    {getStaffOptionLabel(s)}
+                  </option>
+                ))}
               </select>
               <Users className="w-3.5 h-3.5 text-[#1E3A8A] absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none stroke-[2.5]" />
             </div>

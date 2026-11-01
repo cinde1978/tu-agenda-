@@ -6,9 +6,12 @@ export function formatCurrency(amount: number, currency = '$'): string {
 }
 
 export function formatDateSpanish(dateStr: string): string {
-  if (!dateStr) return '';
-  const [year, month, day] = dateStr.split('-');
-  const date = new Date(Number(year), Number(month) - 1, Number(day));
+  if (!dateStr || typeof dateStr !== 'string') return '';
+  const parts = dateStr.split('-').map(Number);
+  if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return dateStr;
+  const [year, month, day] = parts;
+  const date = new Date(year, month - 1, day);
+  if (Number.isNaN(date.getTime())) return dateStr;
   return new Intl.DateTimeFormat('es-AR', {
     weekday: 'short',
     day: 'numeric',
@@ -18,9 +21,12 @@ export function formatDateSpanish(dateStr: string): string {
 }
 
 export function formatDateSpanishLong(dateStr: string): string {
-  if (!dateStr) return '';
-  const [year, month, day] = dateStr.split('-');
-  const date = new Date(Number(year), Number(month) - 1, Number(day));
+  if (!dateStr || typeof dateStr !== 'string') return '';
+  const parts = dateStr.split('-').map(Number);
+  if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return dateStr;
+  const [year, month, day] = parts;
+  const date = new Date(year, month - 1, day);
+  if (Number.isNaN(date.getTime())) return dateStr;
   return new Intl.DateTimeFormat('es-AR', {
     weekday: 'long',
     day: 'numeric',
@@ -71,6 +77,21 @@ export function buildWhatsAppTurnoMessage(
   return `Hola ${appointment.clientName}, te confirmamos tu turno para ${appointment.serviceName} el día ${formattedDate} a las ${appointment.time} hs.`;
 }
 
+export function openExternalUrlSafely(url: string): void {
+  if (!url || typeof document === 'undefined') return;
+  try {
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (e) {
+    console.error('Error opening external URL:', e);
+  }
+}
+
 export function openWhatsAppTurno(
   appointment: { clientName: string; clientPhone: string; serviceName: string; date: string; time: string },
   countryPrefix = '+54',
@@ -82,12 +103,8 @@ export function openWhatsAppTurno(
   }
   const message = customMessage || buildWhatsAppTurnoMessage(appointment);
   const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
-  
-  try {
-    window.open(url, '_blank', 'noopener,noreferrer');
-  } catch (e) {
-    console.error('Error opening WhatsApp URL:', e);
-  }
+
+  openExternalUrlSafely(url);
 
   return { success: true, url, phone: cleanPhone };
 }

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
-import { ViewTab, AgendaMode, Appointment } from './types';
+import { ViewTab, AgendaMode, StaffSubMode, BranchId, Appointment } from './types';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { UpcomingTodayWidget } from './components/UpcomingTodayWidget';
@@ -8,7 +8,8 @@ import { AgendaHeader } from './components/agenda/AgendaHeader';
 import { AgendaDayView } from './components/agenda/AgendaDayView';
 import { AgendaWeekView } from './components/agenda/AgendaWeekView';
 import { AgendaMonthView } from './components/agenda/AgendaMonthView';
-import { ClientsView } from './components/clients/ClientsView';import { AgendaStaffView } from './components/agenda/AgendaStaffView';
+import { ClientsView } from './components/clients/ClientsView';
+import { AgendaStaffView } from './components/agenda/AgendaStaffView';
 import { ServicesView } from './components/services/ServicesView';
 import { StaffView } from './components/staff/StaffView';
 import { CashView } from './components/cash/CashView';
@@ -31,7 +32,18 @@ function MainAppContent() {
   const [currentTab, setCurrentTab] = useState<ViewTab>('agenda');
   const [currentDate, setCurrentDate] = useState<string>(getTodayDateString());
   const [agendaMode, setAgendaMode] = useState<AgendaMode>('dia');
+  const [staffSubMode, setStaffSubMode] = useState<StaffSubMode>('dia');
   const [selectedStaffId, setSelectedStaffId] = useState<string>('todos');
+
+  const safeCurrentDate = /^\d{4}-\d{2}-\d{2}$/.test(currentDate)
+    ? currentDate
+    : getTodayDateString();
+
+  const handleSafeDateChange = (nextDate: string) => {
+    if (nextDate && /^\d{4}-\d{2}-\d{2}$/.test(nextDate)) {
+      setCurrentDate(nextDate);
+    }
+  };
 
   // Reset staff filter if deleted
   React.useEffect(() => {
@@ -58,13 +70,23 @@ function MainAppContent() {
   const [slotInitialTime, setSlotInitialTime] = useState<string | undefined>(undefined);
   const [slotInitialStaffId, setSlotInitialStaffId] = useState<string | undefined>(undefined);
   const [slotInitialClientId, setSlotInitialClientId] = useState<string | undefined>(undefined);
+  const [slotInitialBranchId, setSlotInitialBranchId] = useState<BranchId | undefined>(undefined);
 
-  const handleOpenNewAppointment = (date?: string, time?: string, staffId?: string, clientId?: string) => {
+  const handleOpenNewAppointment = (
+    date?: string,
+    time?: string,
+    staffId?: string,
+    clientId?: string,
+    branchId?: BranchId
+  ) => {
     setAppointmentToEdit(null);
-    if (date) setCurrentDate(date);
+    if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      setCurrentDate(date);
+    }
     setSlotInitialTime(time);
     setSlotInitialStaffId(staffId);
     setSlotInitialClientId(clientId);
+    setSlotInitialBranchId(branchId);
     setIsAppointmentModalOpen(true);
   };
 
@@ -75,7 +97,7 @@ function MainAppContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#e6edf5] flex text-slate-900 font-sans antialiased">
+    <div className="min-h-screen bg-white flex text-[#0F172A] font-sans antialiased">
       {/* Desktop Sidebar */}
       <Sidebar
         currentTab={currentTab}
@@ -147,10 +169,12 @@ function MainAppContent() {
 
               {/* Agenda Navigation Bar */}
               <AgendaHeader
-                currentDate={currentDate}
-                onDateChange={setCurrentDate}
+                currentDate={safeCurrentDate}
+                onDateChange={handleSafeDateChange}
                 agendaMode={agendaMode}
                 onModeChange={setAgendaMode}
+                staffSubMode={staffSubMode}
+                onStaffSubModeChange={setStaffSubMode}
                 selectedStaffId={selectedStaffId}
                 onStaffChange={setSelectedStaffId}
                 onNewAppointment={() => handleOpenNewAppointment()}
@@ -159,46 +183,65 @@ function MainAppContent() {
               {/* Views */}
               {agendaMode === 'dia' && (
                 <AgendaDayView
-                  currentDate={currentDate}
+                  currentDate={safeCurrentDate}
                   selectedStaffId={selectedStaffId}
                   onSelectAppointment={(apt) => setSelectedAppointmentForDetail(apt)}
-                  onSlotClick={(time) => handleOpenNewAppointment(currentDate, time)}
+                  onSlotClick={(time, staffIdFromSlot, branchIdFromSlot) =>
+                    handleOpenNewAppointment(safeCurrentDate, time, staffIdFromSlot, undefined, branchIdFromSlot)
+                  }
                   onOpenWhatsApp={(apt) => setAppointmentForWhatsApp(apt)}
+                  onNewAppointment={() => handleOpenNewAppointment(safeCurrentDate)}
+                  onGoToStaff={() => setCurrentTab('profesionales')}
                 />
               )}
 
               {agendaMode === 'semana' && (
                 <AgendaWeekView
-                  currentDate={currentDate}
+                  currentDate={safeCurrentDate}
                   selectedStaffId={selectedStaffId}
                   onSelectAppointment={(apt) => setSelectedAppointmentForDetail(apt)}
                   onDayClick={(dayDate) => {
-                    setCurrentDate(dayDate);
+                    handleSafeDateChange(dayDate);
                     setAgendaMode('dia');
                   }}
+                  onNewAppointment={(dayDate) => handleOpenNewAppointment(dayDate || safeCurrentDate)}
+                  onGoToStaff={() => setCurrentTab('profesionales')}
                 />
               )}
 
               {agendaMode === 'mes' && (
                 <AgendaMonthView
-                  currentDate={currentDate}
+                  currentDate={safeCurrentDate}
                   selectedStaffId={selectedStaffId}
                   onSelectDay={(dayDate) => {
-                    setCurrentDate(dayDate);
+                    handleSafeDateChange(dayDate);
                     setAgendaMode('dia');
                   }}
                   onSelectAppointment={(apt) => setSelectedAppointmentForDetail(apt)}
+                  onNewAppointment={(dayDate) => handleOpenNewAppointment(dayDate || safeCurrentDate)}
+                  onGoToStaff={() => setCurrentTab('profesionales')}
                 />
-              )}  
+              )}
+
               {agendaMode === 'staff' && (
                 <AgendaStaffView
-                  currentDate={currentDate}
+                  currentDate={safeCurrentDate}
+                  staffSubMode={staffSubMode}
+                  onStaffSubModeChange={setStaffSubMode}
+                  onDateChange={handleSafeDateChange}
                   onSelectAppointment={(apt) => {
                     setSelectedAppointmentForDetail(apt);
                   }}
-                  onSelectSlot={(staffId, time) => {
-                    handleOpenNewAppointment(currentDate, time, staffId);
+                  onSelectSlot={(staffId, time, slotDate, slotBranch) => {
+                    handleOpenNewAppointment(
+                      slotDate || safeCurrentDate,
+                      time,
+                      staffId,
+                      undefined,
+                      slotBranch
+                    );
                   }}
+                  onNewAppointment={() => handleOpenNewAppointment(safeCurrentDate)}
                 />
               )}
             </div>
@@ -231,22 +274,21 @@ function MainAppContent() {
         </main>
 
         {/* Footer (Professional Whitelabel SaaS - Fixed & Protected Iris Quiroz Credits) */}
-        <footer className="no-print mt-auto border-t-2 border-slate-300 bg-[#e2e8f0] py-4 px-6 text-center text-xs text-slate-700">
+        <footer className="no-print mt-auto border-t border-slate-200 bg-white py-4 px-6 text-center text-xs text-[#0F172A]">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-start">
-              <strong className="text-slate-900 font-extrabold">{business?.name || 'Tu Agenda Lista'}</strong>
-              <span className="text-slate-400">© {new Date().getFullYear()}</span>
+              <strong className="text-[#0F172A] font-extrabold">{business?.name || 'Tu Agenda Lista'}</strong>
+              <span className="text-slate-500 font-semibold">© {new Date().getFullYear()}</span>
               <span className="text-slate-300 hidden sm:inline">·</span>
-              <span className="text-slate-700 font-bold">
-                Desarrollado por <strong className="text-slate-950 font-black tracking-tight">Iris Quiroz</strong>
+              <span className="text-[#0F172A] font-bold">
+                Desarrollado por <strong className="text-[#0F172A] font-black tracking-tight">Iris Quiroz</strong>
               </span>
             </div>
-            <div className="flex items-center gap-2 text-slate-700 justify-center sm:justify-end">
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-black text-amber-900 bg-amber-100 px-3 py-1 rounded-full border border-amber-300 shadow-2xs">
-                <span className="w-2 h-2 rounded-full bg-amber-600 animate-pulse" />
-                <span>Período de Prueba Activo (7 Días Gratis) · $45.000 / mes</span>
+            <div className="flex items-center gap-2 text-[#0F172A] justify-center sm:justify-end">
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#0F172A] bg-white px-3 py-1 rounded-lg border border-slate-200">
+                <span className="w-2 h-2 rounded-full bg-[#D4AF37]" />
+                <span>Soham Montevideo · Soham Rioja</span>
               </span>
-              <span className="hidden md:inline text-[11px] text-slate-700 font-bold">Web & Celular</span>
             </div>
           </div>
         </footer>
@@ -270,10 +312,11 @@ function MainAppContent() {
       {/* Modals */}
       {isAppointmentModalOpen && (
         <AppointmentModal
-          initialDate={currentDate}
+          initialDate={safeCurrentDate}
           initialTime={slotInitialTime}
           initialStaffId={slotInitialStaffId || (selectedStaffId !== 'todos' ? selectedStaffId : undefined)}
           initialClientId={slotInitialClientId}
+          initialBranchId={slotInitialBranchId}
           appointmentToEdit={appointmentToEdit}
           onClose={() => {
             setIsAppointmentModalOpen(false);
@@ -281,6 +324,7 @@ function MainAppContent() {
             setSlotInitialTime(undefined);
             setSlotInitialStaffId(undefined);
             setSlotInitialClientId(undefined);
+            setSlotInitialBranchId(undefined);
           }}
           onSaved={(savedApt) => {
             setIsAppointmentModalOpen(false);
@@ -288,6 +332,13 @@ function MainAppContent() {
             setSlotInitialTime(undefined);
             setSlotInitialStaffId(undefined);
             setSlotInitialClientId(undefined);
+            setSlotInitialBranchId(undefined);
+            if (savedApt.date) {
+              handleSafeDateChange(savedApt.date);
+            }
+            if (selectedStaffId !== 'todos' && savedApt.staffId && selectedStaffId !== savedApt.staffId) {
+              setSelectedStaffId('todos');
+            }
             // Open the detail modal for review and WhatsApp OK confirmation
             setSelectedAppointmentForDetail(savedApt);
           }}
@@ -321,47 +372,47 @@ function MainAppContent() {
   );
 }
 
-export default function App() {
-  return (
-    <AppProvider>
-      <MainAppContent />
-    </AppProvider>
-  );
+class AppErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; errorMessage: string }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, errorMessage: '' };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, errorMessage: error?.message || 'Error inesperado de renderizado' };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-white flex items-center justify-center p-6">
+          <div className="bg-white rounded-2xl border-2 border-slate-300 p-6 max-w-md w-full space-y-4 text-center shadow-lg">
+            <h2 className="text-lg font-black text-[#0F172A]">Se recuperó la vista automáticamente</h2>
+            <p className="text-xs text-slate-600 font-semibold">{this.state.errorMessage}</p>
+            <button
+              type="button"
+              onClick={() => this.setState({ hasError: false, errorMessage: '' })}
+              className="px-4 py-2.5 bg-[#1E3A8A] text-white rounded-xl text-xs font-black cursor-pointer"
+            >
+              Reintentar
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
 
-
-  
-         
-            
-       
-        
-        
-    
-
-
-
-
-
-          
-    
-
-        
-
-     
-  
- 
-           
-
-      
-
-
-                  
-       
-    
-         
-           
-         
-    
-
-
-  
+export default function App() {
+  return (
+    <AppErrorBoundary>
+      <AppProvider>
+        <MainAppContent />
+      </AppProvider>
+    </AppErrorBoundary>
+  );
+}

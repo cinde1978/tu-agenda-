@@ -12,6 +12,10 @@
         "phone": { "type": "string", "maxLength": 30 },
         "address": { "type": "string", "maxLength": 200 },
         "currency": { "type": "string", "maxLength": 10 },
+        "branchSettings": {
+          "type": "object",
+          "description": "Independent address, phone, WhatsApp, payment methods and Mercado Pago settings per branch."
+        },
         "createdAt": { "type": "string" },
         "updatedAt": { "type": "string" }
       },
@@ -120,6 +124,49 @@
         "createdAt": { "type": "string" }
       },
       "required": ["businessId", "date", "type", "amount"]
+    },
+    "GiftCard": {
+      "title": "GiftCard",
+      "description": "Gift card or treatment voucher issued for a business.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "businessId": { "type": "string" },
+        "code": { "type": "string", "maxLength": 50 },
+        "type": { "type": "string", "maxLength": 20 },
+        "amount": { "type": "number" },
+        "serviceId": { "type": "string" },
+        "serviceName": { "type": "string", "maxLength": 100 },
+        "buyerName": { "type": "string", "maxLength": 100 },
+        "buyerPhone": { "type": "string", "maxLength": 30 },
+        "recipientName": { "type": "string", "maxLength": 100 },
+        "recipientPhone": { "type": "string", "maxLength": 30 },
+        "message": { "type": "string", "maxLength": 500 },
+        "branchId": { "type": "string", "maxLength": 20 },
+        "status": { "type": "string", "maxLength": 20 },
+        "paymentMethod": { "type": "string", "maxLength": 30 },
+        "issueDate": { "type": "string", "maxLength": 15 },
+        "expiryDate": { "type": "string", "maxLength": 15 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["businessId", "code", "type", "buyerName", "recipientName", "status"]
+    },
+    "Resource": {
+      "title": "Resource",
+      "description": "Cabin, equipment, or shared space belonging to a business.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "businessId": { "type": "string" },
+        "name": { "type": "string", "maxLength": 100 },
+        "type": { "type": "string", "maxLength": 20 },
+        "branchId": { "type": "string", "maxLength": 20 },
+        "description": { "type": "string", "maxLength": 300 },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["businessId", "name", "type"]
     }
   },
   "firestore": {
@@ -146,6 +193,14 @@
     "/businesses/{businessId}/cashMovements/{movementId}": {
       "schema": "CashMovement",
       "description": "Daily cash flow entries (income & expenses) for this business."
+    },
+    "/businesses/{businessId}/giftCards/{giftCardId}": {
+      "schema": "GiftCard",
+      "description": "Gift cards and vouchers issued for this business."
+    },
+    "/businesses/{businessId}/resources/{resourceId}": {
+      "schema": "Resource",
+      "description": "Cabins, equipment, and spaces for this business."
     }
   }
 }

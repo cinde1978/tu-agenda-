@@ -3,6 +3,34 @@ export type PaymentMethod = 'efectivo' | 'transferencia' | 'tarjeta' | 'mercadop
 export type CashMovementType = 'ingreso' | 'gasto';
 export type CashMovementCategory = 'turno' | 'seña' | 'saldo' | 'insumos' | 'alquiler' | 'servicios' | 'comisiones' | 'otro';
 
+export const SERVICE_CATEGORY_PRESETS = [
+  'Estética Facial',
+  'Estética Corporal',
+  'Cosmetología',
+  'Masajes',
+  'Manicuría & Pestañas',
+  'General',
+] as const;
+
+export const ENABLED_PAYMENT_METHOD_OPTIONS: PaymentMethod[] = [
+  'efectivo',
+  'transferencia',
+  'mercadopago',
+  'tarjeta',
+];
+
+export interface BranchBusinessConfig {
+  name: string;
+  address: string;
+  phone: string;
+  whatsapp: string;
+  cbuAlias: string;
+  mercadoPagoAlias: string;
+  mercadoPagoCvu: string;
+  mercadoPagoAccessToken: string;
+  enabledPaymentMethods: PaymentMethod[];
+}
+
 export interface Business {
   id: string;
   ownerId: string;
@@ -15,8 +43,9 @@ export interface Business {
   phoneCountryPrefix?: string; // e.g. "+54" (Argentina), "+34" (España), etc.
   mercadoPagoAccessToken?: string; // Production or Test Access Token (APP_USR-...)
   mercadoPagoPublicKey?: string; // Public Key (APP_USR-...)
-  mercadoPagoAlias?: string; // e.g. "agenda.turnos.mp"
+  mercadoPagoAlias?: string; // e.g. ""
   mercadoPagoCvu?: string; // 22-digit CVU
+  branchSettings?: Partial<Record<BranchId, BranchBusinessConfig>>;
   defaultDepositPercentage?: number; // e.g. 30 or 50%
   defaultSlotMinutes: number;
   openingHour?: string; // e.g. "08:00"
@@ -25,6 +54,7 @@ export interface Business {
   themeName?: string; // e.g. "Oro & Obsidian Luxury"
   developerName?: string; // Strictly fixed: "Iris Quiroz"
   tagline?: string;
+  cleanStartVersion?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -60,6 +90,12 @@ export interface Service {
 export type BranchId = 'sucursal_1' | 'sucursal_2';
 export type StaffBranchScope = BranchId | 'ambas';
 
+export interface StaffTimeRange {
+  id: string;
+  start: string; // e.g. "09:00"
+  end: string; // e.g. "13:00"
+}
+
 export interface StaffBreak {
   id: string;
   start: string; // e.g. "13:00"
@@ -71,6 +107,7 @@ export interface StaffBranchShift {
   active: boolean; // ¿Atiende en esta sucursal en este día?
   start: string; // "09:00"
   end: string; // "14:00"
+  ranges?: StaffTimeRange[]; // Una o más franjas horarias en el mismo día
   breaks?: StaffBreak[];
 }
 
@@ -118,16 +155,16 @@ export const BRANCHES: Branch[] = [
   {
     id: 'sucursal_1',
     name: 'Soham Montevideo',
-    address: 'Montevideo 1420, Rosario',
-    mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Soham+Montevideo+1420',
-    phone: '+54 9 341 555-0101',
+    address: 'Montevideo 397, Rosario',
+    mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Montevideo+397,+Rosario,+Santa+Fe,+Argentina',
+    phone: '',
   },
   {
     id: 'sucursal_2',
     name: 'Soham Rioja',
-    address: 'Rioja 2954, Rosario, Santa Fe, Argentina',
+    address: 'Rioja 2954, Rosario',
     mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Rioja+2954,+Rosario,+Santa+Fe,+Argentina',
-    phone: '+54 9 341 555-0202',
+    phone: '',
   },
 ];
 
@@ -227,6 +264,7 @@ export type ViewTab =
   | 'exportar'
   | 'configuracion';
 export type AgendaMode = 'dia' | 'semana' | 'mes' | 'staff';
+export type StaffSubMode = 'dia' | 'semana' | 'mes';
 
 export const APPOINTMENT_COLORS = [
   { label: 'Azul Real', hex: '#2563eb' },
@@ -270,6 +308,7 @@ export interface BusinessConfigExport {
     mercadoPagoAccessToken?: string;
     mercadoPagoAlias?: string;
     mercadoPagoCvu?: string;
+    branchSettings?: Partial<Record<BranchId, BranchBusinessConfig>>;
     defaultDepositPercentage?: number;
     defaultSlotMinutes: number;
     openingHour?: string;

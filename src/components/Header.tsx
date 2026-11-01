@@ -10,10 +10,10 @@ import {
   ChevronDown,
   MapPin,
 } from 'lucide-react';
-import { ViewTab, BranchId } from '../types';
+import { ViewTab, StaffBranchScope } from '../types';
 import { useApp } from '../context/AppContext';
 import { formatDateSpanishLong } from '../utils/formatters';
-import { getTodayDateString } from '../utils/initialData';
+import { getTodayDateString, getBranchBusinessConfig } from '../utils/initialData';
 import { AppLogo } from './AppLogo';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 
@@ -49,83 +49,142 @@ export function Header({
   return (
     <>
       {/* Top Clean SaaS Header Bar */}
-      <header
-        className="no-print bg-white/95 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-20 px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3 select-none shadow-xs"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          justifyContent: 'space-between',
-        }}
-      >
-        {/* Left: Logo a la izquierda con letra 'A' dorada y texto 'Tu Agenda Lista' */}
-        <div
-          onClick={() => onSelectTab('agenda')}
-          className="cursor-pointer group min-w-0 shrink flex items-center"
-          title="Ir a Agenda"
-        >
-          <AppLogo />
-        </div>
+      <header className="no-print bg-white/95 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-20 select-none shadow-xs">
+        <div className="px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3 flex items-center justify-between gap-3">
+          {/* Left: Logo a la izquierda con letra 'A' dorada y texto 'Tu Agenda Lista' */}
+          <div
+            onClick={() => onSelectTab('agenda')}
+            className="cursor-pointer group min-w-0 shrink flex items-center"
+            title="Ir a Agenda"
+          >
+            <AppLogo />
+          </div>
 
-        {/* Center / Right Controls: Multisucursal Selector, Date & Install */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          {/* Selector Desplegable Multisucursal (2 Locales) */}
-          <div className="flex items-center gap-1.5 shrink-0">
-            <div className="relative flex items-center bg-white border-2 border-slate-300 hover:border-[#1E3A8A] focus-within:border-[#1E3A8A] rounded-xl px-2.5 sm:px-3 py-1 sm:py-1.5 shadow-2xs transition-all">
-              <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#1E3A8A] shrink-0 mr-1.5 stroke-[2.5]" />
-              <label htmlFor="branch-selector" className="sr-only">Seleccionar Sucursal</label>
-              <select
-                id="branch-selector"
-                value={selectedBranch}
-                onChange={(e) => setSelectedBranch(e.target.value as BranchId)}
-                className="bg-white font-black text-xs sm:text-sm text-[#0F172A] focus:outline-none cursor-pointer pr-5 appearance-none"
-                title="Cambiar sucursal (Filtra automáticamente la agenda y la caja diaria)"
-              >
-                {branches.map((b) => (
-                  <option key={b.id} value={b.id} className="text-[#0F172A] font-black bg-white">
-                    {b.name}
+          {/* Center / Right Controls: Multisucursal Selector, Date & Install */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Selector Desplegable Multisucursal (Montevideo / Rioja / Ambas) */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <div className="relative flex items-center bg-white border-2 border-slate-300 hover:border-[#1E3A8A] focus-within:border-[#1E3A8A] rounded-xl px-2.5 sm:px-3 py-1 sm:py-1.5 shadow-2xs transition-all">
+                <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#1E3A8A] shrink-0 mr-1.5 stroke-[2.5]" />
+                <label htmlFor="branch-selector" className="sr-only">Seleccionar Sucursal</label>
+                <select
+                  id="branch-selector"
+                  value={selectedBranch}
+                  onChange={(e) => setSelectedBranch(e.target.value as StaffBranchScope)}
+                  className="bg-white font-black text-xs sm:text-sm text-[#0F172A] focus:outline-none cursor-pointer pr-5 appearance-none"
+                  title="Cambiar sucursal (Soham Montevideo, Soham Rioja o Ambas Sucursales)"
+                >
+                  {branches.map((b) => (
+                    <option key={b.id} value={b.id} className="text-[#0F172A] font-black bg-white">
+                      {b.name}
+                    </option>
+                  ))}
+                  <option value="ambas" className="text-[#0F172A] font-black bg-white">
+                    Ambas Sucursales
                   </option>
-                ))}
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 text-[#0F172A] pointer-events-none absolute right-2 stroke-[2.5]" />
+                </select>
+                <ChevronDown className="w-3.5 h-3.5 text-[#0F172A] pointer-events-none absolute right-2 stroke-[2.5]" />
+              </div>
+
+              {/* Direct Google Maps Link(s) */}
+              {selectedBranch === 'ambas' ? (
+                <div className="flex items-center gap-1 shrink-0">
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                      `${getBranchBusinessConfig(business, 'sucursal_1').address || 'Montevideo 397, Rosario'}, Santa Fe, Argentina`
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1.5 sm:py-1.5 sm:px-2 rounded-xl border-2 border-slate-300 bg-white hover:bg-slate-100 text-[#0F172A] text-[11px] font-black flex items-center gap-1 shadow-2xs transition-colors cursor-pointer shrink-0"
+                    title="Ver Soham Montevideo (Montevideo 397) en Google Maps"
+                  >
+                    <MapPin className="w-3.5 h-3.5 text-[#1E3A8A] shrink-0 stroke-[2.5]" />
+                    <span className="hidden md:inline">Montevideo</span>
+                  </a>
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                      `${getBranchBusinessConfig(business, 'sucursal_2').address || 'Rioja 2954, Rosario'}, Santa Fe, Argentina`
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1.5 sm:py-1.5 sm:px-2 rounded-xl border-2 border-slate-300 bg-white hover:bg-slate-100 text-[#0F172A] text-[11px] font-black flex items-center gap-1 shadow-2xs transition-colors cursor-pointer shrink-0"
+                    title="Ver Soham Rioja (Rioja 2954) en Google Maps"
+                  >
+                    <MapPin className="w-3.5 h-3.5 text-[#9A7B1C] shrink-0 stroke-[2.5]" />
+                    <span className="hidden md:inline">Rioja</span>
+                  </a>
+                </div>
+              ) : (
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                    `${
+                      getBranchBusinessConfig(business, selectedBranch).address ||
+                      (selectedBranch === 'sucursal_2' ? 'Rioja 2954, Rosario' : 'Montevideo 397, Rosario')
+                    }, Santa Fe, Argentina`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-1.5 sm:py-2 sm:px-2.5 rounded-xl border-2 border-slate-300 bg-white hover:bg-slate-100 text-[#0F172A] text-xs font-black flex items-center gap-1 shadow-2xs transition-colors cursor-pointer shrink-0"
+                  title={`Ver ubicación de ${selectedBranch === 'sucursal_2' ? 'Soham Rioja' : 'Soham Montevideo'} en Google Maps`}
+                >
+                  <MapPin className="w-3.5 h-3.5 text-rose-600 shrink-0 stroke-[2.5]" />
+                  <span className="hidden md:inline">Mapa</span>
+                </a>
+              )}
             </div>
 
-            {/* Direct Google Maps Link */}
-            <a
-              href={
-                selectedBranch === 'sucursal_2'
-                  ? 'https://www.google.com/maps/search/?api=1&query=Rioja+2954,+Rosario,+Santa+Fe,+Argentina'
-                  : 'https://www.google.com/maps/search/?api=1&query=Soham+Montevideo+1420'
-              }
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-1.5 sm:py-2 sm:px-2.5 rounded-xl border-2 border-slate-300 bg-white hover:bg-slate-100 text-[#0F172A] text-xs font-black flex items-center gap-1 shadow-2xs transition-colors cursor-pointer shrink-0"
-              title={`Ver ubicación de ${selectedBranch === 'sucursal_2' ? 'Soham Rioja' : 'Soham Montevideo'} en Google Maps`}
+            {/* Fecha Actual (Desktop) */}
+            <div className="hidden lg:flex items-center gap-2 text-xs font-black text-[#0F172A] bg-white border border-slate-300 px-3 py-1.5 rounded-xl capitalize shrink-0 shadow-2xs">
+              <Calendar className="w-3.5 h-3.5 text-[#0F172A] shrink-0" />
+              <span>{formatDateSpanishLong(todayStr)}</span>
+            </div>
+
+            {/* Botón 'Instalar App' */}
+            <button
+              type="button"
+              onClick={handleInstallClick}
+              className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-black bg-[#0F172A] hover:bg-black active:scale-98 text-white shadow-xs hover:shadow-md transition-all whitespace-nowrap cursor-pointer shrink-0"
+              title="Instala nuestra App en tu celular para un acceso más rápido"
             >
-              <MapPin className="w-3.5 h-3.5 text-rose-600 shrink-0 stroke-[2.5]" />
-              <span className="hidden md:inline">Mapa</span>
-            </a>
+              <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 stroke-[2.5]" />
+              <span className="hidden xs:inline sm:inline">Instalar App</span>
+              <span className="inline xs:hidden sm:hidden">Instalar</span>
+            </button>
           </div>
+        </div>
 
-          {/* Fecha Actual (Desktop) */}
-          <div
-            className="hidden lg:flex items-center gap-2 text-xs font-black text-[#0F172A] bg-white border border-slate-300 px-3 py-1.5 rounded-xl capitalize shrink-0 shadow-2xs"
-          >
-            <Calendar className="w-3.5 h-3.5 text-[#0F172A] shrink-0" />
-            <span>{formatDateSpanishLong(todayStr)}</span>
-          </div>
-
-          {/* Botón 'Instalar App' */}
-          <button
-            type="button"
-            onClick={handleInstallClick}
-            className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-black bg-[#0F172A] hover:bg-black active:scale-98 text-white shadow-xs hover:shadow-md transition-all whitespace-nowrap cursor-pointer shrink-0"
-            title="Instala nuestra App en tu celular para un acceso más rápido"
-          >
-            <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 stroke-[2.5]" />
-            <span className="hidden xs:inline sm:inline">Instalar App</span>
-            <span className="inline xs:hidden sm:hidden">Instalar</span>
-          </button>
+        {/* Mobile / Tablet Section Navigation Strip (when desktop sidebar is hidden) */}
+        <div className="lg:hidden border-t border-slate-200 bg-white px-3 py-1.5 flex items-center gap-1.5 overflow-x-auto">
+          {(
+            [
+              { id: 'agenda', label: 'Agenda' },
+              { id: 'clientes', label: 'Clientes' },
+              { id: 'servicios', label: 'Servicios' },
+              { id: 'profesionales', label: 'Profesionales' },
+              { id: 'recursos', label: 'Cabinas y equipos' },
+              { id: 'caja', label: 'Caja diaria' },
+              { id: 'giftcards', label: 'Gift Cards' },
+              { id: 'reportes', label: 'Estadísticas' },
+              { id: 'exportar', label: 'Imprimir/Excel' },
+              { id: 'configuracion', label: 'Ajustes' },
+            ] as { id: ViewTab; label: string }[]
+          ).map((tab) => {
+            const active = currentTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => onSelectTab(tab.id)}
+                className={`px-3 py-1 rounded-lg text-[11px] font-black whitespace-nowrap transition-colors cursor-pointer shrink-0 border ${
+                  active
+                    ? 'bg-[#1E3A8A] text-white border-[#1E3A8A] shadow-2xs'
+                    : 'bg-white text-[#0F172A] border-slate-300 hover:bg-slate-100'
+                }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
       </header>
 

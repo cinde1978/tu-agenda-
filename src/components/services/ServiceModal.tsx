@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Sparkles, Clock, DollarSign, Tag, Check } from 'lucide-react';
-import { Service } from '../../types';
+import { Service, SERVICE_CATEGORY_PRESETS } from '../../types';
 import { useApp } from '../../context/AppContext';
 
 interface ServiceModalProps {
@@ -9,14 +9,7 @@ interface ServiceModalProps {
   onSaved: (serviceId: string) => void;
 }
 
-const CATEGORIES = [
-  'Estética Facial',
-  'Estética Corporal',
-  'Cosmetología',
-  'Masajes',
-  'Manicuría & Pestañas',
-  'Otro',
-];
+const CATEGORIES: string[] = [...SERVICE_CATEGORY_PRESETS, 'Otro'];
 
 const COLORS = [
   '#2563eb', // royal blue
@@ -81,24 +74,25 @@ export function ServiceModal({ serviceToEdit, onClose, onSaved }: ServiceModalPr
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-md max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
-        <div className="bg-gradient-to-r from-blue-700 to-sky-600 p-5 text-white flex items-center justify-between">
+      <div className="bg-white rounded-2xl shadow-2xl border-2 border-slate-300 w-full max-w-md max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+        <div className="bg-[#1E3A8A] p-5 text-white flex items-center justify-between border-b border-blue-900">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-white/20 rounded-xl backdrop-blur-xs">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="font-bold text-lg">
+              <h3 className="font-black text-lg">
                 {serviceToEdit ? 'Editar Servicio' : 'Nuevo Servicio'}
               </h3>
-              <p className="text-blue-100 text-xs">
+              <p className="text-blue-100 text-xs font-medium">
                 Configura duración, precio y categoría
               </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 hover:bg-white/20 rounded-lg text-white/80 hover:text-white"
+            className="p-1.5 hover:bg-white/20 rounded-lg text-white/80 hover:text-white cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>

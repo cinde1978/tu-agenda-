@@ -1,39 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   X,
   Gift,
   DollarSign,
   Sparkles,
-  User,
-  Phone,
-  MessageSquare,
-  Building2,
-  Calendar,
-  CheckCircle2,
-  Wallet,
+  AlertCircle,
 } from 'lucide-react';
-import { GiftCard, GiftCardType, PaymentMethod, StaffBranchScope } from '../../types';
+import {
+  ENABLED_PAYMENT_METHOD_OPTIONS,
+  GiftCardType,
+  PaymentMethod,
+  StaffBranchScope,
+} from '../../types';
 import { useApp } from '../../context/AppContext';
 import { formatCurrency } from '../../utils/formatters';
+import { getBranchBusinessConfig, getTodayDateString } from '../../utils/initialData';
 
 interface GiftCardModalProps {
   onClose: () => void;
   onSuccess?: (giftCardId: string) => void;
 }
 
+const PAYMENT_LABELS: Record<string, string> = {
+  efectivo: 'Efectivo',
+  transferencia: 'Transferencia',
+  mercadopago: 'Mercado Pago',
+  tarjeta: 'Tarjeta Débito/Crédito',
+};
+
 export function GiftCardModal({ onClose, onSuccess }: GiftCardModalProps) {
   const { services, business, selectedBranch, createGiftCard } = useApp();
 
+  // Only show active, non-deleted configured services
+  const activeServices = useMemo(() => services.filter((s) => s.active), [services]);
+
   const [type, setType] = useState<GiftCardType>('monto');
-  const [amount, setAmount] = useState<number>(15000);
-  const [serviceId, setServiceId] = useState<string>(services[0]?.id || '');
+  const [amountInput, setAmountInput] = useState<string>('');
+  const [serviceId, setServiceId] = useState<string>(activeServices[0]?.id || '');
   const [buyerName, setBuyerName] = useState('');
   const [buyerPhone, setBuyerPhone] = useState('');
   const [recipientName, setRecipientName] = useState('');
   const [recipientPhone, setRecipientPhone] = useState('');
   const [message, setMessage] = useState('');
   const [branchScope, setBranchScope] = useState<StaffBranchScope>(selectedBranch);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('mercadopago');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('efectivo');
   const [registerInCash, setRegisterInCash] = useState(true);
 
   // Expiry date (default 6 months from now)
@@ -46,7 +56,28 @@ export function GiftCardModal({ onClose, onSuccess }: GiftCardModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const selectedService = services.find((s) => s.id === serviceId);
+  useEffect(() => {
+    if (activeServices.length === 0) {
+      if (serviceId !== '') setServiceId('');
+    } else if (!activeServices.some((s) => s.id === serviceId)) {
+      setServiceId(activeServices[0].id);
+    }
+  }, [activeServices, serviceId]);
+
+  const availablePaymentMethods = useMemo(() => {
+    if (branchScope === 'sucursal_1' || branchScope === 'sucursal_2') {
+      return getBranchBusinessConfig(business, branchScope).enabledPaymentMethods;
+    }
+    return ENABLED_PAYMENT_METHOD_OPTIONS;
+  }, [business, branchScope]);
+
+  useEffect(() => {
+    if (availablePaymentMethods.length > 0 && !availablePaymentMethods.includes(paymentMethod)) {
+      setPaymentMethod(availablePaymentMethods[0]);
+    }
+  }, [availablePaymentMethods, paymentMethod]);
+
+  const selectedService = activeServices.find((s) => s.id === serviceId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,22 +91,28 @@ export function GiftCardModal({ onClose, onSuccess }: GiftCardModalProps) {
       setErrorMsg('Por favor indicá el nombre de la persona que compra el voucher.');
       return;
     }
-    if (type === 'monto' && (!amount || amount <= 0)) {
+
+    const numericAmount = Number(amountInput);
+    if (type === 'monto' && (!Number.isFinite(numericAmount) || numericAmount <= 0)) {
       setErrorMsg('Por favor ingresá un monto válido mayor a $0.');
+      return;
+    }
+    if (type === 'tratamiento' && (!serviceId || !selectedService)) {
+      setErrorMsg('Primero debés crear y activar al menos un servicio en Servicios o Ajustes.');
       return;
     }
 
     setIsSubmitting(true);
     try {
       const randomCode = `SOHAM-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-      const effectiveAmount = type === 'monto' ? amount : selectedService?.price || 0;
+      const effectiveAmount = type === 'monto' ? numericAmount : selectedService?.price || 0;
 
       const createdId = await createGiftCard(
         {
           code: randomCode,
           type,
           amount: effectiveAmount,
-          serviceId: type === 'tratamiento' ? serviceId : undefined,
+          serviceId: type === 'tratamiento' ? selectedService?.id : undefined,
           serviceName: type === 'tratamiento' ? selectedService?.name : undefined,
           buyerName: buyerName.trim(),
           buyerPhone: buyerPhone.trim() || undefined,
@@ -85,7 +122,7 @@ export function GiftCardModal({ onClose, onSuccess }: GiftCardModalProps) {
           branchId: branchScope,
           status: 'activa',
           paymentMethod,
-          issueDate: new Date().toISOString().split('T')[0],
+          issueDate: getTodayDateString(),
           expiryDate: expiryDate || undefined,
         },
         registerInCash
@@ -115,7 +152,7 @@ export function GiftCardModal({ onClose, onSuccess }: GiftCardModalProps) {
                 Emitir Nueva Gift Card / Voucher
               </h3>
               <p className="text-xs text-blue-100 font-medium">
-                Soham Belleza & Bienestar
+                Soham Montevideo & Soham Rioja
               </p>
             </div>
           </div>
@@ -130,10 +167,11 @@ export function GiftCardModal({ onClose, onSuccess }: GiftCardModalProps) {
         </div>
 
         {/* Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 text-[#0F172A]">
+        <form noValidate onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 text-[#0F172A]">
           {errorMsg && (
-            <div className="p-3 rounded-xl bg-rose-50 border-2 border-rose-300 text-rose-900 text-xs font-bold">
-              {errorMsg}
+            <div className="p-3 rounded-xl bg-rose-50 border-2 border-rose-300 text-rose-900 text-xs font-black flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>{errorMsg}</span>
             </div>
           )}
 
@@ -145,7 +183,10 @@ export function GiftCardModal({ onClose, onSuccess }: GiftCardModalProps) {
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => setType('monto')}
+                onClick={() => {
+                  setErrorMsg(null);
+                  setType('monto');
+                }}
                 className={`p-3 rounded-xl border-2 text-xs font-black flex items-center justify-center gap-2 transition-all cursor-pointer ${
                   type === 'monto'
                     ? 'bg-[#1E3A8A] text-white border-[#1E3A8A] shadow-xs'
@@ -158,7 +199,10 @@ export function GiftCardModal({ onClose, onSuccess }: GiftCardModalProps) {
 
               <button
                 type="button"
-                onClick={() => setType('tratamiento')}
+                onClick={() => {
+                  setErrorMsg(null);
+                  setType('tratamiento');
+                }}
                 className={`p-3 rounded-xl border-2 text-xs font-black flex items-center justify-center gap-2 transition-all cursor-pointer ${
                   type === 'tratamiento'
                     ? 'bg-[#1E3A8A] text-white border-[#1E3A8A] shadow-xs'
@@ -173,35 +217,52 @@ export function GiftCardModal({ onClose, onSuccess }: GiftCardModalProps) {
             {type === 'monto' ? (
               <div className="pt-2">
                 <label className="text-xs font-bold text-[#0F172A] block mb-1">
-                  Monto a regalar ($ ARS) *
+                  Monto a regalar ({business?.currency || '$'}) *
                 </label>
                 <input
                   type="number"
-                  min={1000}
-                  step={500}
-                  required
-                  value={amount}
-                  onChange={(e) => setAmount(Number(e.target.value))}
+                  min="1"
+                  step="any"
+                  value={amountInput}
+                  onChange={(e) => {
+                    setErrorMsg(null);
+                    setAmountInput(e.target.value);
+                  }}
                   className="w-full p-2.5 rounded-xl border-2 border-slate-300 bg-white font-black text-sm text-[#0F172A] focus:border-[#1E3A8A] outline-none"
-                  placeholder="Ej. 15000"
+                  placeholder="Ingresá libremente el importe en pesos"
                 />
               </div>
             ) : (
-              <div className="pt-2">
-                <label className="text-xs font-bold text-[#0F172A] block mb-1">
-                  Seleccionar Servicio / Tratamiento *
+              <div className="pt-2 space-y-2">
+                <label className="text-xs font-bold text-[#0F172A] block">
+                  Seleccionar Servicio / Tratamiento Activo *
                 </label>
                 <select
                   value={serviceId}
-                  onChange={(e) => setServiceId(e.target.value)}
+                  onChange={(e) => {
+                    setErrorMsg(null);
+                    setServiceId(e.target.value);
+                  }}
                   className="w-full p-2.5 rounded-xl border-2 border-slate-300 bg-white font-bold text-xs sm:text-sm text-[#0F172A] focus:border-[#1E3A8A] outline-none cursor-pointer"
                 >
-                  {services.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} ({formatCurrency(s.price, business?.currency)})
-                    </option>
-                  ))}
+                  {activeServices.length === 0 ? (
+                    <option value="">-- Sin servicios activos configurados --</option>
+                  ) : (
+                    activeServices.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} ({formatCurrency(s.price, business?.currency)})
+                      </option>
+                    ))
+                  )}
                 </select>
+                {selectedService && (
+                  <div className="px-3 py-2 rounded-xl bg-white border border-blue-200 text-xs font-bold text-[#0F172A] flex items-center justify-between">
+                    <span>Precio vigente del tratamiento:</span>
+                    <span className="font-black text-[#1E3A8A]">
+                      {formatCurrency(selectedService.price, business?.currency)}
+                    </span>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -220,7 +281,7 @@ export function GiftCardModal({ onClose, onSuccess }: GiftCardModalProps) {
                 <input
                   type="text"
                   required
-                  placeholder="Ej. Paula Santillán"
+                  placeholder="Nombre del destinatario"
                   value={recipientName}
                   onChange={(e) => setRecipientName(e.target.value)}
                   className="w-full p-2.5 rounded-xl border-2 border-slate-300 bg-white font-bold text-xs sm:text-sm text-[#0F172A] focus:border-[#1E3A8A] outline-none"
@@ -232,7 +293,7 @@ export function GiftCardModal({ onClose, onSuccess }: GiftCardModalProps) {
                 </label>
                 <input
                   type="tel"
-                  placeholder="+54 9 341 ..."
+                  placeholder="Teléfono o WhatsApp (opcional)"
                   value={recipientPhone}
                   onChange={(e) => setRecipientPhone(e.target.value)}
                   className="w-full p-2.5 rounded-xl border-2 border-slate-300 bg-white font-bold text-xs sm:text-sm text-[#0F172A] focus:border-[#1E3A8A] outline-none"
@@ -248,7 +309,7 @@ export function GiftCardModal({ onClose, onSuccess }: GiftCardModalProps) {
                 <input
                   type="text"
                   required
-                  placeholder="Ej. Martín Díaz"
+                  placeholder="Nombre de quien regala"
                   value={buyerName}
                   onChange={(e) => setBuyerName(e.target.value)}
                   className="w-full p-2.5 rounded-xl border-2 border-slate-300 bg-white font-bold text-xs sm:text-sm text-[#0F172A] focus:border-[#1E3A8A] outline-none"
@@ -260,7 +321,7 @@ export function GiftCardModal({ onClose, onSuccess }: GiftCardModalProps) {
                 </label>
                 <input
                   type="tel"
-                  placeholder="+54 9 341 ..."
+                  placeholder="Teléfono o WhatsApp (opcional)"
                   value={buyerPhone}
                   onChange={(e) => setBuyerPhone(e.target.value)}
                   className="w-full p-2.5 rounded-xl border-2 border-slate-300 bg-white font-bold text-xs sm:text-sm text-[#0F172A] focus:border-[#1E3A8A] outline-none"
@@ -274,7 +335,7 @@ export function GiftCardModal({ onClose, onSuccess }: GiftCardModalProps) {
               </label>
               <textarea
                 rows={2}
-                placeholder="Ej. ¡Feliz cumple! Que disfrutes mucho esta tarde de relax en Soham..."
+                placeholder="Mensaje o dedicatoria (opcional)"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 className="w-full p-2.5 rounded-xl border-2 border-slate-300 bg-white font-medium text-xs sm:text-sm text-[#0F172A] focus:border-[#1E3A8A] outline-none"
@@ -298,9 +359,9 @@ export function GiftCardModal({ onClose, onSuccess }: GiftCardModalProps) {
                   onChange={(e) => setBranchScope(e.target.value as StaffBranchScope)}
                   className="w-full p-2.5 rounded-xl border-2 border-slate-300 bg-white font-bold text-xs sm:text-sm text-[#0F172A] focus:border-[#1E3A8A] outline-none cursor-pointer"
                 >
-                  <option value="ambas">Ambas Sucursales</option>
                   <option value="sucursal_1">Soham Montevideo</option>
                   <option value="sucursal_2">Soham Rioja</option>
+                  <option value="ambas">Ambas Sucursales</option>
                 </select>
               </div>
 
@@ -313,10 +374,11 @@ export function GiftCardModal({ onClose, onSuccess }: GiftCardModalProps) {
                   onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
                   className="w-full p-2.5 rounded-xl border-2 border-slate-300 bg-white font-bold text-xs sm:text-sm text-[#0F172A] focus:border-[#1E3A8A] outline-none cursor-pointer"
                 >
-                  <option value="mercadopago">Mercado Pago</option>
-                  <option value="transferencia">Transferencia</option>
-                  <option value="efectivo">Efectivo</option>
-                  <option value="tarjeta">Tarjeta Débito/Crédito</option>
+                  {availablePaymentMethods.map((m) => (
+                    <option key={m} value={m}>
+                      {PAYMENT_LABELS[m] || m}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -352,7 +414,7 @@ export function GiftCardModal({ onClose, onSuccess }: GiftCardModalProps) {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl border-2 border-slate-300 text-xs font-black text-[#0F172A] hover:bg-slate-100 transition-colors cursor-pointer"
+              className="px-4 py-2.5 rounded-xl bg-white border-2 border-slate-300 text-xs font-black text-[#0F172A] hover:bg-slate-100 transition-colors cursor-pointer"
             >
               Cancelar
             </button>
