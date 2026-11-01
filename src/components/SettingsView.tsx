@@ -1115,6 +1115,16 @@ export function SettingsView({ initialTab = 'suscripcion', focusSeq }: SettingsV
                                       Desactivar servicio
                                     </button>
                                   )}
+                                  <button
+                                    type="button"
+                                    onClick={async () => {
+                                      await deleteService(service.id);
+                                      setConfirmDeleteServiceId(null);
+                                    }}
+                                    className="px-3 py-1.5 rounded-lg bg-rose-700 hover:bg-rose-800 text-white text-xs font-black cursor-pointer shadow-xs"
+                                  >
+                                    Eliminar de todos modos
+                                  </button>
                                 </div>
                               </>
                             ) : (

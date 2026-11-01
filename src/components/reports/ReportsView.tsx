@@ -99,7 +99,7 @@ export function ReportsView() {
   const averageTicket =
     completedTurns.length > 0 ? Math.round(totalRevenue / completedTurns.length) : 0;
   const resolvedTurnsCount = completedTurns.length + cancelledTurns.length;
-  const hasAttendanceData = resolvedTurnsCount > 0;
+  const hasAttendanceData = totalTurns > 0 && resolvedTurnsCount > 0;
   const attendanceRateLabel = hasAttendanceData
     ? `${Math.round((completedTurns.length / resolvedTurnsCount) * 100)}%`
     : 'Sin datos';
@@ -312,15 +312,29 @@ export function ReportsView() {
                 {attendanceRateLabel}
               </div>
             </div>
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center shrink-0 shadow-xs">
+            <div
+              className={`w-12 h-12 rounded-2xl border flex items-center justify-center shrink-0 shadow-xs ${
+                hasAttendanceData
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : 'bg-slate-100 text-slate-500 border-slate-300'
+              }`}
+            >
               <CheckCircle2 className="w-6 h-6" />
             </div>
           </div>
           <div className="flex items-center gap-1.5 text-xs text-slate-600 pt-2 border-t border-slate-100">
-            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-50 text-rose-800 border border-rose-200">
-              {cancelledTurns.length} cancelados
-            </span>
-            <span>total de bajas</span>
+            {totalTurns === 0 ? (
+              <span className="text-[11px] font-bold text-slate-500">
+                Sin turnos en este período
+              </span>
+            ) : (
+              <>
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-50 text-rose-800 border border-rose-200">
+                  {cancelledTurns.length} cancelados
+                </span>
+                <span>total de bajas</span>
+              </>
+            )}
           </div>
         </div>
 

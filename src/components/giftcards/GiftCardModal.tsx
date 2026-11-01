@@ -31,8 +31,11 @@ const PAYMENT_LABELS: Record<string, string> = {
 export function GiftCardModal({ onClose, onSuccess }: GiftCardModalProps) {
   const { services, business, selectedBranch, createGiftCard } = useApp();
 
-  // Only show active, non-deleted configured services
-  const activeServices = useMemo(() => services.filter((s) => s.active), [services]);
+  // Show existing configured services (active or fallback to all existing services)
+  const activeServices = useMemo(() => {
+    const activeOnly = services.filter((s) => s.active !== false);
+    return activeOnly.length > 0 ? activeOnly : services;
+  }, [services]);
 
   const [type, setType] = useState<GiftCardType>('monto');
   const [amountInput, setAmountInput] = useState<string>('');

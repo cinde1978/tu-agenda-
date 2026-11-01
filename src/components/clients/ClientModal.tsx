@@ -293,7 +293,11 @@ export function ClientModal({ clientToEdit, onClose, onSaved }: ClientModalProps
             <button
               type="submit"
               disabled={isSubmitting || Boolean(duplicateClient) || !name.trim()}
-              className="px-5 py-2.5 rounded-xl bg-[#1E3A8A] hover:bg-blue-900 active:scale-98 disabled:opacity-50 text-white font-black text-xs shadow-xs flex items-center gap-2 cursor-pointer transition-all"
+              className={`px-6 py-2.5 rounded-xl font-black text-xs sm:text-sm flex items-center gap-2 transition-all ${
+                isSubmitting || Boolean(duplicateClient) || !name.trim()
+                  ? 'bg-slate-200 text-slate-700 border-2 border-slate-300 cursor-not-allowed shadow-none'
+                  : 'bg-[#1E3A8A] hover:bg-[#172554] active:scale-98 text-white cursor-pointer shadow-md'
+              }`}
             >
               <Check className="w-4 h-4 stroke-[3]" />
               <span>

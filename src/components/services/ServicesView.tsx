@@ -155,11 +155,11 @@ export function ServicesView() {
                           <p className="text-[11px] font-bold text-rose-900">
                             Para no perder el historial, podés desactivarlo en lugar de borrarlo.
                           </p>
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex items-center justify-end gap-2 flex-wrap">
                             <button
                               type="button"
                               onClick={() => setConfirmDeleteId(null)}
-                              className="px-3 py-1 rounded-lg bg-white border-2 border-slate-400 text-[#0F172A] text-xs font-black cursor-pointer"
+                              className="px-3 py-1 rounded-lg bg-white border-2 border-slate-400 text-[#0F172A] text-xs font-black cursor-pointer hover:bg-slate-100"
                             >
                               Cancelar
                             </button>
@@ -175,6 +175,16 @@ export function ServicesView() {
                                 Desactivar
                               </button>
                             )}
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                await deleteService(service.id);
+                                setConfirmDeleteId(null);
+                              }}
+                              className="px-3 py-1 rounded-lg bg-rose-700 hover:bg-rose-800 text-white text-xs font-black cursor-pointer shadow-xs"
+                            >
+                              Eliminar de todos modos
+                            </button>
                           </div>
                         </>
                       ) : (
@@ -186,7 +196,7 @@ export function ServicesView() {
                             <button
                               type="button"
                               onClick={() => setConfirmDeleteId(null)}
-                              className="px-3 py-1 rounded-lg bg-white border-2 border-slate-400 text-[#0F172A] text-xs font-black cursor-pointer"
+                              className="px-3 py-1 rounded-lg bg-white border-2 border-slate-400 text-[#0F172A] text-xs font-black cursor-pointer hover:bg-slate-100"
                             >
                               Cancelar
                             </button>
@@ -196,9 +206,9 @@ export function ServicesView() {
                                 await deleteService(service.id);
                                 setConfirmDeleteId(null);
                               }}
-                              className="px-3 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-black cursor-pointer"
+                              className="px-3 py-1 rounded-lg bg-rose-700 hover:bg-rose-800 text-white text-xs font-black cursor-pointer shadow-xs"
                             >
-                              Confirmar
+                              Confirmar eliminación
                             </button>
                           </div>
                         </>

@@ -77,9 +77,10 @@ export function ExportView() {
           <button
             type="button"
             onClick={handleDownloadExcel}
-            className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+            className="px-4 py-2.5 bg-[#0F172A] hover:bg-black active:scale-98 text-white border-2 border-slate-900 rounded-xl text-xs sm:text-sm font-black flex items-center gap-2 shadow-sm hover:shadow-md transition-all cursor-pointer"
+            title={`Descargar Excel (.CSV) de ${SCOPE_NAMES[selectedBranch]} (${filterMode === 'dia' ? selectedDate : 'Todos los turnos'})`}
           >
-            <FileSpreadsheet className="w-4 h-4" />
+            <FileSpreadsheet className="w-4 h-4 text-emerald-400 stroke-[2.5]" />
             <span>Descargar Excel (.CSV)</span>
           </button>
 

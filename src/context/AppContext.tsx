@@ -68,24 +68,28 @@ function sanitizeBusinessConfig(biz: Business): Business {
   ) {
     sanitized.tagline = 'Desarrollado por Iris Quiroz';
   }
-  if (sanitized.phone === '+54 9 11 4567-8901') {
-    sanitized.phone = '';
+  function isFictitiousOrSample(val?: string | null): boolean {
+    if (!val) return false;
+    const v = val.toLowerCase().trim();
+    return (
+      v === 'agenda.turnos.mp' ||
+      v === '0000003100085492109482' ||
+      v === 'app_usr-78219401284-102914-tuagenda-prod' ||
+      v.includes('ejemplo') ||
+      v.includes('ficticio') ||
+      v.includes('sample') ||
+      v === '+54 9 11 4567-8901' ||
+      v === '1145678901' ||
+      v === '1234567890' ||
+      v === 'test'
+    );
   }
-  if (!sanitized.address || sanitized.address === 'Av. Principal 1234' || sanitized.address.includes('Montevideo 1420')) {
-    sanitized.address = 'Montevideo 397 / Rioja 2954, Rosario';
-  }
-  if (sanitized.cbuAlias === 'agenda.turnos.mp') {
-    sanitized.cbuAlias = '';
-  }
-  if (sanitized.mercadoPagoAlias === 'agenda.turnos.mp') {
-    sanitized.mercadoPagoAlias = '';
-  }
-  if (sanitized.mercadoPagoCvu === '0000003100085492109482') {
-    sanitized.mercadoPagoCvu = '';
-  }
-  if (sanitized.mercadoPagoAccessToken === 'APP_USR-78219401284-102914-tuagenda-prod') {
-    sanitized.mercadoPagoAccessToken = '';
-  }
+
+  if (isFictitiousOrSample(sanitized.phone)) sanitized.phone = '';
+  if (isFictitiousOrSample(sanitized.cbuAlias)) sanitized.cbuAlias = '';
+  if (isFictitiousOrSample(sanitized.mercadoPagoAlias)) sanitized.mercadoPagoAlias = '';
+  if (isFictitiousOrSample(sanitized.mercadoPagoCvu)) sanitized.mercadoPagoCvu = '';
+  if (isFictitiousOrSample(sanitized.mercadoPagoAccessToken)) sanitized.mercadoPagoAccessToken = '';
 
   const defaultBranches = getDefaultBranchSettings();
   const sanitizeBranchEntry = (branchId: BranchId) => {
@@ -95,12 +99,12 @@ function sanitizeBusinessConfig(biz: Business): Business {
       if (branchId === 'sucursal_1' && !sanitized.branchSettings) {
         return {
           ...base,
-          phone: sanitized.phone || '',
-          whatsapp: sanitized.phone || '',
-          cbuAlias: sanitized.cbuAlias || '',
-          mercadoPagoAlias: sanitized.mercadoPagoAlias || '',
-          mercadoPagoCvu: sanitized.mercadoPagoCvu || '',
-          mercadoPagoAccessToken: sanitized.mercadoPagoAccessToken || '',
+          phone: isFictitiousOrSample(sanitized.phone) ? '' : (sanitized.phone || ''),
+          whatsapp: isFictitiousOrSample(sanitized.phone) ? '' : (sanitized.phone || ''),
+          cbuAlias: isFictitiousOrSample(sanitized.cbuAlias) ? '' : (sanitized.cbuAlias || ''),
+          mercadoPagoAlias: isFictitiousOrSample(sanitized.mercadoPagoAlias) ? '' : (sanitized.mercadoPagoAlias || ''),
+          mercadoPagoCvu: isFictitiousOrSample(sanitized.mercadoPagoCvu) ? '' : (sanitized.mercadoPagoCvu || ''),
+          mercadoPagoAccessToken: isFictitiousOrSample(sanitized.mercadoPagoAccessToken) ? '' : (sanitized.mercadoPagoAccessToken || ''),
         };
       }
       return base;
@@ -110,15 +114,14 @@ function sanitizeBusinessConfig(biz: Business): Business {
       ...raw,
       name: raw.name || base.name,
       address: raw.address || base.address,
-      phone: raw.phone === '+54 9 11 4567-8901' ? '' : (raw.phone ?? ''),
-      whatsapp: raw.whatsapp === '+54 9 11 4567-8901' ? '' : (raw.whatsapp ?? ''),
-      cbuAlias: raw.cbuAlias === 'agenda.turnos.mp' ? '' : (raw.cbuAlias ?? ''),
-      mercadoPagoAlias: raw.mercadoPagoAlias === 'agenda.turnos.mp' ? '' : (raw.mercadoPagoAlias ?? ''),
-      mercadoPagoCvu: raw.mercadoPagoCvu === '0000003100085492109482' ? '' : (raw.mercadoPagoCvu ?? ''),
-      mercadoPagoAccessToken:
-        raw.mercadoPagoAccessToken === 'APP_USR-78219401284-102914-tuagenda-prod'
-          ? ''
-          : (raw.mercadoPagoAccessToken ?? ''),
+      phone: isFictitiousOrSample(raw.phone) ? '' : (raw.phone ?? ''),
+      whatsapp: isFictitiousOrSample(raw.whatsapp) ? '' : (raw.whatsapp ?? ''),
+      cbuAlias: isFictitiousOrSample(raw.cbuAlias) ? '' : (raw.cbuAlias ?? ''),
+      mercadoPagoAlias: isFictitiousOrSample(raw.mercadoPagoAlias) ? '' : (raw.mercadoPagoAlias ?? ''),
+      mercadoPagoCvu: isFictitiousOrSample(raw.mercadoPagoCvu) ? '' : (raw.mercadoPagoCvu ?? ''),
+      mercadoPagoAccessToken: isFictitiousOrSample(raw.mercadoPagoAccessToken)
+        ? ''
+        : (raw.mercadoPagoAccessToken ?? ''),
       enabledPaymentMethods:
         Array.isArray(raw.enabledPaymentMethods) && raw.enabledPaymentMethods.length > 0
           ? raw.enabledPaymentMethods

@@ -181,22 +181,25 @@ export function CashView() {
     setTimeout(() => conceptInputRef.current?.focus(), 150);
   };
 
+  const [dateFilterMode, setDateFilterMode] = useState<'dia' | 'todos'>('dia');
+
   const safeSelectedDate = /^\d{4}-\d{2}-\d{2}$/.test(selectedDate)
     ? selectedDate
     : getTodayDateString();
 
   const dayMovements = cashMovements.filter((m) => m.date === safeSelectedDate);
-  const incomeMovements = dayMovements.filter((m) => m.type === 'ingreso');
-  const expenseMovements = dayMovements.filter((m) => m.type === 'gasto');
+  const baseMovements = dateFilterMode === 'dia' ? dayMovements : cashMovements;
+  const incomeMovements = baseMovements.filter((m) => m.type === 'ingreso');
+  const expenseMovements = baseMovements.filter((m) => m.type === 'gasto');
 
-  const filteredMovements = dayMovements.filter((m) => {
+  const filteredMovements = baseMovements.filter((m) => {
     if (activeTab === 'todos') return true;
     if (activeTab === 'ingresos') return m.type === 'ingreso';
     return m.type === 'gasto';
   });
 
-  const totalIncome = incomeMovements.reduce((sum, m) => sum + (m.amount || 0), 0);
-  const totalExpenses = expenseMovements.reduce((sum, m) => sum + (m.amount || 0), 0);
+  const totalIncome = dayMovements.filter((m) => m.type === 'ingreso').reduce((sum, m) => sum + (m.amount || 0), 0);
+  const totalExpenses = dayMovements.filter((m) => m.type === 'gasto').reduce((sum, m) => sum + (m.amount || 0), 0);
   const netBalance = totalIncome - totalExpenses;
 
   const dayAppointments = appointments.filter(
@@ -679,21 +682,49 @@ export function CashView() {
         {/* Tab Filters + Quick Action */}
         <div className="p-4 border-b-2 border-slate-200 flex flex-wrap items-center justify-between gap-3 bg-slate-50">
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Vista por día o historial completo */}
+            <div className="flex items-center bg-white p-1 rounded-xl border-2 border-slate-300 shadow-2xs mr-2">
+              <button
+                type="button"
+                onClick={() => setDateFilterMode('dia')}
+                className={`px-3 py-1 rounded-lg text-xs font-black transition-colors cursor-pointer ${
+                  dateFilterMode === 'dia'
+                    ? 'bg-[#1E3A8A] text-white shadow-xs'
+                    : 'text-[#0F172A] hover:bg-slate-100'
+                }`}
+                title="Ver sólo los movimientos del día seleccionado"
+              >
+                Día seleccionado ({dayMovements.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setDateFilterMode('todos')}
+                className={`px-3 py-1 rounded-lg text-xs font-black transition-colors cursor-pointer ${
+                  dateFilterMode === 'todos'
+                    ? 'bg-[#1E3A8A] text-white shadow-xs'
+                    : 'text-[#0F172A] hover:bg-slate-100'
+                }`}
+                title="Ver todos los movimientos históricos (ideal para revisar y limpiar registros de prueba)"
+              >
+                Todos los días ({cashMovements.length})
+              </button>
+            </div>
+
             <button
               type="button"
               onClick={() => handleTabSwitch('todos')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-black border-2 transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-black border-2 transition-all cursor-pointer ${
                 activeTab === 'todos'
-                  ? 'bg-[#1E3A8A] text-white border-[#1E3A8A] shadow-xs'
+                  ? 'bg-[#0F172A] text-white border-[#0F172A] shadow-xs'
                   : 'bg-white text-[#0F172A] border-slate-300 hover:border-slate-500'
               }`}
             >
-              Todos ({dayMovements.length})
+              Todos ({baseMovements.length})
             </button>
             <button
               type="button"
               onClick={() => handleTabSwitch('ingresos')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-black border-2 transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-black border-2 transition-all cursor-pointer ${
                 activeTab === 'ingresos'
                   ? 'bg-emerald-700 text-white border-emerald-700 shadow-xs'
                   : 'bg-white text-[#0F172A] border-slate-300 hover:border-slate-500'
@@ -704,7 +735,7 @@ export function CashView() {
             <button
               type="button"
               onClick={() => handleTabSwitch('gastos')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-black border-2 transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-black border-2 transition-all cursor-pointer ${
                 activeTab === 'gastos'
                   ? 'bg-rose-700 text-white border-rose-700 shadow-xs'
                   : 'bg-white text-[#0F172A] border-slate-300 hover:border-slate-500'
@@ -817,10 +848,18 @@ export function CashView() {
                         <button
                           type="button"
                           onClick={async () => {
-                            await deleteCashMovement(mov.id);
-                            setConfirmDeleteId(null);
+                            try {
+                              await deleteCashMovement(mov.id);
+                              setFormSuccess('✓ Movimiento eliminado correctamente de la caja.');
+                              setTimeout(() => setFormSuccess(''), 3000);
+                            } catch (err: any) {
+                              console.error(err);
+                              setFormError(err?.message || 'Error al eliminar el movimiento');
+                            } finally {
+                              setConfirmDeleteId(null);
+                            }
                           }}
-                          className="px-3 py-1.5 rounded-lg bg-rose-700 hover:bg-rose-800 text-white border border-rose-800 text-xs font-black cursor-pointer"
+                          className="px-3 py-1.5 rounded-lg bg-rose-700 hover:bg-rose-800 text-white border border-rose-800 text-xs font-black cursor-pointer shadow-xs"
                         >
                           Confirmar
                         </button>
@@ -836,7 +875,7 @@ export function CashView() {
                       <button
                         type="button"
                         onClick={() => setConfirmDeleteId(mov.id)}
-                        className="px-2.5 py-1.5 bg-white hover:bg-rose-50 border border-rose-300 rounded-lg text-rose-700 text-xs font-black flex items-center gap-1 transition-colors cursor-pointer"
+                        className="px-2.5 py-1.5 bg-white hover:bg-rose-50 border border-rose-300 rounded-lg text-rose-700 text-xs font-black flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
                         title="Eliminar movimiento"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

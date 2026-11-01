@@ -48,14 +48,48 @@
     font-weight: 700;
   }
 
+  select:hover,
+  select:focus {
+    color: #0F172A;
+    background-color: #FFFFFF;
+    border-color: #1E3A8A;
+  }
+
   select option {
     color: #0F172A;
     background-color: #FFFFFF;
     font-weight: 600;
   }
 
+  select option:hover,
+  select option:focus,
+  select option:active,
+  select option:checked {
+    background-color: #1E3A8A !important;
+    color: #FFFFFF !important;
+  }
+
   input::placeholder, textarea::placeholder {
-    color: #64748b;
+    color: #475569 !important;
+    opacity: 1;
+  }
+
+  /* Prevent disabled buttons and inputs from becoming unreadable washed-out ghosts */
+  button:disabled,
+  input:disabled,
+  select:disabled,
+  textarea:disabled {
+    opacity: 0.72 !important;
+    cursor: not-allowed !important;
+  }
+
+  /* High visibility focus ring */
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  button:focus-visible {
+    outline: 2px solid #1E3A8A !important;
+    outline-offset: 1px;
   }
 }
 
