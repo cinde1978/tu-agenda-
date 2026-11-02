@@ -204,14 +204,14 @@ export function ServiceModal({ serviceToEdit, onClose, onSaved }: ServiceModalPr
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 rounded-xl border border-slate-400 hover:border-black bg-white hover:bg-slate-100 text-[#000000] font-black text-sm shadow-2xs transition-colors cursor-pointer"
+              className="px-5 py-2.5 rounded-xl border-2 border-[#1E3A8A] bg-white hover:bg-slate-50 text-[#1E3A8A] font-black text-sm shadow-2xs transition-colors cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-6 py-2.5 rounded-xl bg-[#1E3A8A] hover:bg-[#172554] active:scale-98 text-white font-black text-sm shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              className="px-6 py-2.5 rounded-xl bg-[#1E3A8A] hover:bg-blue-900 active:scale-98 text-white font-black text-sm shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer border-2 border-[#1E3A8A] disabled:opacity-50"
             >
               <Check className="w-4 h-4 stroke-[3]" />
               <span>{isSubmitting ? 'Guardando...' : serviceToEdit ? 'Guardar Cambios' : 'Crear Servicio'}</span>

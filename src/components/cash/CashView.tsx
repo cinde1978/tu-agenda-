@@ -323,10 +323,14 @@ export function CashView() {
               setModalInitialType(activeTab === 'gastos' ? 'gasto' : 'ingreso');
               setIsModalOpen(true);
             }}
-            className="px-4 py-2.5 bg-[#1E3A8A] hover:bg-[#172554] active:bg-[#0F172A] text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-md border-2 border-[#1E3A8A] transition-all shrink-0 cursor-pointer"
+            className={`px-4 py-2.5 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-md border-2 transition-all shrink-0 cursor-pointer text-white disabled:cursor-not-allowed disabled:opacity-75 ${
+              activeTab === 'gastos'
+                ? 'bg-[#B91C1C] hover:bg-[#991b1b] active:bg-[#7f1d1d] border-[#B91C1C] text-white disabled:bg-[#B91C1C] disabled:text-white'
+                : 'bg-[#1E3A8A] hover:bg-[#172554] active:bg-[#0F172A] border-[#1E3A8A] text-white disabled:bg-[#1E3A8A] disabled:text-white'
+            }`}
           >
             <Plus className="w-4 h-4 stroke-[2.5] text-white" />
-            <span>Registrar movimiento</span>
+            <span className="text-white">Registrar movimiento</span>
           </button>
         </div>
       </div>
@@ -615,14 +619,14 @@ export function CashView() {
             <button
               type="submit"
               disabled={isSavingInline}
-              className={`w-full sm:w-auto px-6 py-3 rounded-xl text-white font-black text-xs sm:text-sm shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 ${
-                formType === 'gasto'
-                  ? 'bg-rose-700 hover:bg-rose-800'
-                  : 'bg-[#1E3A8A] hover:bg-[#172554]'
+              className={`w-full sm:w-auto px-6 py-3 rounded-xl font-black text-xs sm:text-sm shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer text-white disabled:cursor-not-allowed disabled:opacity-75 ${
+                formType === 'gasto' || activeTab === 'gastos'
+                  ? 'bg-[#B91C1C] hover:bg-[#991b1b] active:bg-[#7f1d1d] border-2 border-[#B91C1C] text-white disabled:bg-[#B91C1C] disabled:text-white'
+                  : 'bg-[#1E3A8A] hover:bg-[#172554] active:bg-[#0F172A] border-2 border-[#1E3A8A] text-white disabled:bg-[#1E3A8A] disabled:text-white'
               }`}
             >
-              <Check className="w-4 h-4 stroke-[3]" />
-              <span>{isSavingInline ? 'Guardando...' : 'Registrar movimiento'}</span>
+              <Check className="w-4 h-4 stroke-[3] text-white" />
+              <span className="text-white">{isSavingInline ? 'Guardando...' : 'Registrar movimiento'}</span>
             </button>
           </div>
         </form>
@@ -750,14 +754,14 @@ export function CashView() {
             onClick={() =>
               focusMovementForm(activeTab === 'gastos' ? 'gasto' : 'ingreso')
             }
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-black text-white flex items-center gap-1.5 cursor-pointer shadow-2xs ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-black text-white flex items-center gap-1.5 cursor-pointer shadow-2xs border-2 transition-all disabled:opacity-75 disabled:cursor-not-allowed ${
               activeTab === 'gastos'
-                ? 'bg-rose-700 hover:bg-rose-800'
-                : 'bg-[#1E3A8A] hover:bg-blue-950'
+                ? 'bg-[#B91C1C] hover:bg-[#991b1b] active:bg-[#7f1d1d] border-[#B91C1C] text-white disabled:bg-[#B91C1C] disabled:text-white'
+                : 'bg-[#1E3A8A] hover:bg-[#172554] active:bg-[#0F172A] border-[#1E3A8A] text-white disabled:bg-[#1E3A8A] disabled:text-white'
             }`}
           >
-            <Plus className="w-3.5 h-3.5 stroke-[3]" />
-            <span>
+            <Plus className="w-3.5 h-3.5 stroke-[3] text-white" />
+            <span className="text-white">
               {activeTab === 'gastos'
                 ? 'Cargar nuevo gasto arriba'
                 : 'Cargar nuevo movimiento arriba'}
@@ -859,14 +863,14 @@ export function CashView() {
                               setConfirmDeleteId(null);
                             }
                           }}
-                          className="px-3 py-1.5 rounded-lg bg-rose-700 hover:bg-rose-800 text-white border border-rose-800 text-xs font-black cursor-pointer shadow-xs"
+                          className="px-3 py-1.5 rounded-lg bg-red-700 hover:bg-red-800 text-white border border-red-800 text-xs font-black cursor-pointer shadow-xs"
                         >
                           Confirmar
                         </button>
                         <button
                           type="button"
                           onClick={() => setConfirmDeleteId(null)}
-                          className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-[#0F172A] border-2 border-slate-300 text-xs font-black cursor-pointer"
+                          className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-[#1E3A8A] border-2 border-[#1E3A8A] text-xs font-black cursor-pointer shadow-2xs"
                         >
                           Cancelar
                         </button>
@@ -875,7 +879,7 @@ export function CashView() {
                       <button
                         type="button"
                         onClick={() => setConfirmDeleteId(mov.id)}
-                        className="px-2.5 py-1.5 bg-white hover:bg-rose-50 border border-rose-300 rounded-lg text-rose-700 text-xs font-black flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
+                        className="px-2.5 py-1.5 bg-red-700 hover:bg-red-800 text-white border border-red-800 rounded-lg text-xs font-black flex items-center gap-1 transition-colors cursor-pointer shadow-xs"
                         title="Eliminar movimiento"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

@@ -166,7 +166,7 @@ export function ResourcesView() {
                       onClick={() =>
                         setConfirmDeleteId((prev) => (prev === res.id ? null : res.id))
                       }
-                      className="p-1.5 hover:bg-rose-50 rounded-lg text-rose-700 border border-rose-200 cursor-pointer"
+                      className="p-1.5 bg-red-700 hover:bg-red-800 text-white rounded-lg border border-red-800 cursor-pointer shadow-xs"
                       title="Eliminar"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -191,7 +191,7 @@ export function ResourcesView() {
                       <button
                         type="button"
                         onClick={() => setConfirmDeleteId(null)}
-                        className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-[#0F172A] border-2 border-slate-300 font-black cursor-pointer"
+                        className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 text-[#1E3A8A] border-2 border-[#1E3A8A] font-black cursor-pointer shadow-2xs"
                       >
                         Cancelar
                       </button>
@@ -201,7 +201,7 @@ export function ResourcesView() {
                           await deleteResource(res.id);
                           setConfirmDeleteId(null);
                         }}
-                        className="px-3 py-1.5 rounded-lg bg-rose-700 hover:bg-rose-800 text-white border border-rose-800 font-black cursor-pointer"
+                        className="px-3 py-1.5 rounded-lg bg-red-700 hover:bg-red-800 text-white border border-red-800 font-black cursor-pointer shadow-xs"
                       >
                         Confirmar
                       </button>

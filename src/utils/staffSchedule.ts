@@ -454,9 +454,9 @@ export function normalizeStaffMember(member: StaffMember): StaffMember {
   let resolvedBranchScope: StaffBranchScope = member.branchId || 'ambas';
   if (worksInMvd && worksInRioja) {
     resolvedBranchScope = 'ambas';
-  } else if (worksInMvd && !worksInRioja && member.branchId !== 'ambas') {
+  } else if (worksInMvd && !worksInRioja) {
     resolvedBranchScope = 'sucursal_1';
-  } else if (worksInRioja && !worksInMvd && member.branchId !== 'ambas') {
+  } else if (worksInRioja && !worksInMvd) {
     resolvedBranchScope = 'sucursal_2';
   }
 
@@ -560,33 +560,102 @@ export function getStaffEffectiveShift(
 }
 
 /**
+ * Resolves the real branch membership of a staff member based on their active shifts
+ * and assigned branch scope, ensuring clean counters (e.g. Todas: 1, Montevideo: 1, Rioja: 0).
+ */
+export function getStaffBranchMembership(member: StaffMember): {
+  belongsToS1: boolean;
+  belongsToS2: boolean;
+  scope: StaffBranchScope;
+  label: string;
+} {
+  if (!member || member.active === false) {
+    return {
+      belongsToS1: false,
+      belongsToS2: false,
+      scope: 'ambas',
+      label: 'Inactivo',
+    };
+  }
+
+  const hasShiftsS1 = ALL_WEEK_DAYS.some((d) => {
+    const sched = getStaffDaySchedule(member, d);
+    return getStaffEffectiveShift(sched, 'sucursal_1').active;
+  });
+
+  const hasShiftsS2 = ALL_WEEK_DAYS.some((d) => {
+    const sched = getStaffDaySchedule(member, d);
+    return getStaffEffectiveShift(sched, 'sucursal_2').active;
+  });
+
+  // If active shifts exist in one or both branches, shifts define the real roster
+  if (hasShiftsS1 && hasShiftsS2) {
+    return {
+      belongsToS1: true,
+      belongsToS2: true,
+      scope: 'ambas',
+      label: 'Ambas sucursales (Montevideo / Rioja)',
+    };
+  }
+
+  if (hasShiftsS1 && !hasShiftsS2) {
+    return {
+      belongsToS1: true,
+      belongsToS2: false,
+      scope: 'sucursal_1',
+      label: 'Soham Montevideo',
+    };
+  }
+
+  if (!hasShiftsS1 && hasShiftsS2) {
+    return {
+      belongsToS1: false,
+      belongsToS2: true,
+      scope: 'sucursal_2',
+      label: 'Soham Rioja',
+    };
+  }
+
+  // If no shifts are currently active, use declared branchId
+  if (member.branchId === 'sucursal_2') {
+    return {
+      belongsToS1: false,
+      belongsToS2: true,
+      scope: 'sucursal_2',
+      label: 'Soham Rioja',
+    };
+  }
+
+  if (member.branchId === 'ambas') {
+    return {
+      belongsToS1: true,
+      belongsToS2: true,
+      scope: 'ambas',
+      label: 'Ambas sucursales (Montevideo / Rioja)',
+    };
+  }
+
+  // Default to Montevideo (sucursal_1)
+  return {
+    belongsToS1: true,
+    belongsToS2: false,
+    scope: 'sucursal_1',
+    label: 'Soham Montevideo',
+  };
+}
+
+/**
  * Determines whether an active staff member is part of a branch's roster (even on days off like Monday).
  */
 export function staffBelongsToBranch(
   member: StaffMember,
   branchFilter: BranchId | 'ambas'
 ): boolean {
-  if (!member || !member.active) return false;
+  if (!member || member.active === false) return false;
   if (branchFilter === 'ambas') return true;
 
-  const worksInRequested = ALL_WEEK_DAYS.some((d) => {
-    const sched = getStaffDaySchedule(member, d);
-    return getStaffEffectiveShift(sched, branchFilter).active;
-  });
-  if (worksInRequested) return true;
-
-  const otherBranch: BranchId = branchFilter === 'sucursal_1' ? 'sucursal_2' : 'sucursal_1';
-  const worksInOther = ALL_WEEK_DAYS.some((d) => {
-    const sched = getStaffDaySchedule(member, d);
-    return getStaffEffectiveShift(sched, otherBranch).active;
-  });
-
-  // If they already have active shifts only in the other branch and aren't explicitly assigned to 'ambas', they belong only to the other branch
-  if (worksInOther && member.branchId !== 'ambas' && member.branchId !== branchFilter) {
-    return false;
-  }
-
-  return !member.branchId || member.branchId === 'ambas' || member.branchId === branchFilter;
+  const membership = getStaffBranchMembership(member);
+  return branchFilter === 'sucursal_1' ? membership.belongsToS1 : membership.belongsToS2;
 }
 
 /**

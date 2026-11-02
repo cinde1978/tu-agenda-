@@ -605,14 +605,14 @@ export function GiftCardsView() {
                             await deleteGiftCard(card.id);
                             setConfirmDeleteId(null);
                           }}
-                          className="px-3 py-1.5 rounded-xl bg-rose-700 hover:bg-rose-800 text-white border border-rose-800 text-xs font-black cursor-pointer"
+                          className="px-3 py-1.5 rounded-xl bg-red-700 hover:bg-red-800 text-white border border-red-800 text-xs font-black cursor-pointer shadow-xs"
                         >
                           Confirmar
                         </button>
                         <button
                           type="button"
                           onClick={() => setConfirmDeleteId(null)}
-                          className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-[#0F172A] border-2 border-slate-300 text-xs font-black cursor-pointer"
+                          className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-[#1E3A8A] border-2 border-[#1E3A8A] text-xs font-black cursor-pointer shadow-2xs"
                         >
                           Cancelar
                         </button>
@@ -621,7 +621,7 @@ export function GiftCardsView() {
                       <button
                         type="button"
                         onClick={() => setConfirmDeleteId(card.id)}
-                        className="px-2.5 py-2 bg-white hover:bg-rose-50 border border-rose-300 text-rose-700 rounded-xl text-xs font-black flex items-center gap-1 transition-colors cursor-pointer"
+                        className="px-2.5 py-2 bg-red-700 hover:bg-red-800 text-white border border-red-800 rounded-xl text-xs font-black flex items-center gap-1 transition-colors cursor-pointer shadow-xs"
                         title="Eliminar voucher"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

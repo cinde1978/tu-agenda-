@@ -325,7 +325,7 @@ export function AppointmentDetailModal({
                 <button
                   type="button"
                   onClick={handleCompleteTurn}
-                  className="w-full py-2.5 bg-[#1E3A8A] hover:bg-blue-900 text-white font-black text-xs rounded-xl shadow-md transition-colors cursor-pointer"
+                  className="w-full py-2.5 bg-[#1E3A8A] hover:bg-blue-900 active:scale-98 text-white font-black text-xs rounded-xl shadow-md transition-colors cursor-pointer border-2 border-[#1E3A8A]"
                 >
                   Confirmar y Registrar en Caja Diaria
                 </button>
@@ -344,7 +344,7 @@ export function AppointmentDetailModal({
                   <button
                     type="button"
                     onClick={() => setConfirmAction(null)}
-                    className="px-3.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 border-2 border-slate-400 text-[#0F172A] text-xs font-black cursor-pointer"
+                    className="px-3.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border-2 border-[#1E3A8A] text-[#1E3A8A] text-xs font-black cursor-pointer shadow-2xs transition-colors"
                   >
                     Cancelar
                   </button>
@@ -352,7 +352,7 @@ export function AppointmentDetailModal({
                     type="button"
                     disabled={isDeleting}
                     onClick={confirmAction === 'delete' ? executeDeleteTurn : executeCancelTurn}
-                    className="px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-black cursor-pointer disabled:opacity-50"
+                    className="px-4 py-1.5 rounded-lg bg-red-700 hover:bg-red-800 text-white text-xs font-black cursor-pointer shadow-xs border border-red-800 disabled:opacity-50"
                   >
                     {confirmAction === 'delete' ? 'Confirmar eliminación' : 'Confirmar cancelación'}
                   </button>
@@ -370,7 +370,7 @@ export function AppointmentDetailModal({
                       setCollectedAmount(appointment.remainingBalance);
                       setShowCompletePrompt(true);
                     }}
-                    className="p-2.5 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+                    className="p-2.5 bg-[#1E3A8A] hover:bg-blue-900 text-white font-black text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors shadow-xs cursor-pointer border border-[#1E3A8A]"
                   >
                     <CheckCircle2 className="w-4 h-4" />
                     <span>Completar y Cobrar</span>
@@ -381,7 +381,7 @@ export function AppointmentDetailModal({
                   type="button"
                   onClick={() => setConfirmAction('delete')}
                   disabled={isDeleting}
-                  className="p-2.5 bg-white border-2 border-slate-300 hover:bg-rose-50 hover:border-rose-400 text-slate-700 hover:text-rose-700 font-black text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
+                  className="p-2.5 bg-red-700 hover:bg-red-800 active:bg-red-900 text-white border-2 border-red-800 font-black text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors shadow-xs cursor-pointer disabled:opacity-50"
                 >
                   <Trash2 className="w-3.5 h-3.5 stroke-[2.5]" />
                   <span>Eliminar Turno</span>
@@ -409,7 +409,7 @@ export function AppointmentDetailModal({
                 <button
                   type="button"
                   onClick={() => setConfirmAction('cancel')}
-                  className="px-2.5 py-2 bg-white hover:bg-rose-50 border border-rose-300 text-rose-800 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                  className="px-2.5 py-2 bg-white hover:bg-slate-50 border-2 border-[#1E3A8A] text-[#1E3A8A] rounded-xl text-xs font-black transition-colors cursor-pointer shadow-2xs"
                   title="Cancelar turno"
                 >
                   <XCircle className="w-3.5 h-3.5" />
@@ -435,7 +435,7 @@ export function AppointmentDetailModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 bg-[#1E3A8A] hover:bg-blue-900 active:scale-98 text-white rounded-xl text-xs font-black shadow-xs transition-all cursor-pointer"
+                className="px-4 py-2 bg-[#1E3A8A] hover:bg-blue-900 active:scale-98 text-white rounded-xl text-xs font-black shadow-xs transition-all cursor-pointer border border-[#1E3A8A]"
               >
                 Cerrar
               </button>

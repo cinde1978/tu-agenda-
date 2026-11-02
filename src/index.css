@@ -79,7 +79,7 @@
   input:disabled,
   select:disabled,
   textarea:disabled {
-    opacity: 0.72 !important;
+    opacity: 0.75 !important;
     cursor: not-allowed !important;
   }
 
@@ -91,6 +91,86 @@
     outline: 2px solid #1E3A8A !important;
     outline-offset: 1px;
   }
+}
+
+/* High contrast action button utility standards */
+.btn-primary-solid {
+  background-color: #1E3A8A !important;
+  color: #FFFFFF !important;
+  border: 2px solid #1E3A8A !important;
+  font-weight: 800 !important;
+}
+.btn-primary-solid:hover {
+  background-color: #172554 !important;
+  color: #FFFFFF !important;
+}
+.btn-primary-solid:active {
+  background-color: #0F172A !important;
+  color: #FFFFFF !important;
+}
+.btn-primary-solid:disabled {
+  background-color: #1E3A8A !important;
+  color: #FFFFFF !important;
+}
+
+/* Dedicated styling for Registrar Cliente with zero transparency */
+.btn-registrar-cliente,
+button.btn-registrar-cliente,
+button.btn-registrar-cliente:disabled,
+button.btn-registrar-cliente[disabled] {
+  background-color: #1E3A8A !important;
+  color: #FFFFFF !important;
+  border: 2px solid #1E3A8A !important;
+  opacity: 1 !important;
+}
+button.btn-registrar-cliente:hover {
+  background-color: #172554 !important;
+  color: #FFFFFF !important;
+  border-color: #172554 !important;
+  opacity: 1 !important;
+}
+button.btn-registrar-cliente:active {
+  background-color: #0F172A !important;
+  color: #FFFFFF !important;
+  border-color: #0F172A !important;
+  opacity: 1 !important;
+}
+button.btn-registrar-cliente span,
+button.btn-registrar-cliente svg {
+  color: #FFFFFF !important;
+  stroke: #FFFFFF !important;
+  opacity: 1 !important;
+}
+
+.btn-danger-solid {
+  background-color: #B91C1C !important;
+  color: #FFFFFF !important;
+  border: 2px solid #B91C1C !important;
+  font-weight: 800 !important;
+}
+.btn-danger-solid:hover {
+  background-color: #991b1b !important;
+  color: #FFFFFF !important;
+}
+.btn-danger-solid:active {
+  background-color: #7f1d1d !important;
+  color: #FFFFFF !important;
+}
+.btn-danger-solid:disabled {
+  background-color: #B91C1C !important;
+  color: #FFFFFF !important;
+  opacity: 0.75 !important;
+}
+
+.btn-cancel-solid {
+  background-color: #FFFFFF !important;
+  color: #1E3A8A !important;
+  border: 2px solid #1E3A8A !important;
+  font-weight: 800 !important;
+}
+.btn-cancel-solid:hover {
+  background-color: #f8fafc !important;
+  color: #1E3A8A !important;
 }
 
 /* Custom scrollbars */

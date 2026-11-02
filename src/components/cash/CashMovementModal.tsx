@@ -307,7 +307,7 @@ export function CashMovementModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2.5 rounded-xl border border-slate-400 hover:border-black bg-white hover:bg-slate-100 text-[#0F172A] font-black text-xs shadow-2xs transition-colors cursor-pointer"
+            className="px-4 py-2.5 rounded-xl border-2 border-[#1E3A8A] bg-white hover:bg-slate-50 text-[#1E3A8A] font-black text-xs shadow-2xs transition-colors cursor-pointer"
           >
             Cancelar
           </button>
@@ -315,14 +315,14 @@ export function CashMovementModal({
             type="submit"
             form="cash-movement-modal-form"
             disabled={isSubmitting}
-            className={`px-5 py-2.5 rounded-xl text-white font-black text-xs shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50 ${
-              type === 'ingreso'
-                ? 'bg-[#1E3A8A] hover:bg-[#172554]'
-                : 'bg-rose-700 hover:bg-rose-800'
+            className={`px-5 py-2.5 rounded-xl font-black text-xs shadow-md flex items-center gap-2 cursor-pointer transition-all text-white disabled:cursor-not-allowed disabled:opacity-75 ${
+              type === 'gasto'
+                ? 'bg-[#B91C1C] hover:bg-[#991b1b] active:bg-[#7f1d1d] border-2 border-[#B91C1C] text-white disabled:bg-[#B91C1C] disabled:text-white'
+                : 'bg-[#1E3A8A] hover:bg-[#172554] active:bg-[#0F172A] border-2 border-[#1E3A8A] text-white disabled:bg-[#1E3A8A] disabled:text-white'
             }`}
           >
-            <Check className="w-4 h-4 stroke-[3]" />
-            <span>{isSubmitting ? 'Guardando...' : 'Registrar movimiento'}</span>
+            <Check className="w-4 h-4 stroke-[3] text-white" />
+            <span className="text-white">{isSubmitting ? 'Guardando...' : 'Registrar movimiento'}</span>
           </button>
         </div>
       </div>

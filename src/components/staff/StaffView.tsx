@@ -23,6 +23,7 @@ import {
   DAY_LABELS,
   getStaffDaySchedule,
   getStaffEffectiveShift,
+  getStaffBranchMembership,
   staffBelongsToBranch,
   formatShiftRanges,
 } from '../../utils/staffSchedule';
@@ -46,14 +47,7 @@ export function StaffView() {
     return allAppointments.filter((a) => a.staffId === staffId && a.status !== 'cancelado').length;
   };
 
-  const staffHasActiveShiftInBranch = (member: StaffMember, bId: BranchId) => {
-    return ALL_WEEK_DAYS.some((d) => {
-      const sched = getStaffDaySchedule(member, d);
-      return getStaffEffectiveShift(sched, bId).active;
-    });
-  };
-
-  // Filter staff by branch roster and search term
+  // Filter staff by branch roster and search term without altering assignments
   const filteredStaff = staff.filter((member) => {
     if (activeBranchFilter !== 'todas') {
       if (!staffBelongsToBranch(member, activeBranchFilter)) return false;
@@ -69,41 +63,33 @@ export function StaffView() {
   });
 
   const getBranchBadge = (member: StaffMember) => {
-    const inMontevideo = staffHasActiveShiftInBranch(member, 'sucursal_1');
-    const inRioja = staffHasActiveShiftInBranch(member, 'sucursal_2');
+    const membership = getStaffBranchMembership(member);
 
-    if (inMontevideo && inRioja) {
+    if (membership.scope === 'sucursal_1') {
       return (
-        <span className="px-2.5 py-1 rounded-lg text-[11px] font-black bg-blue-50 text-[#0F172A] border border-[#D4AF37] inline-flex items-center gap-1">
-          <Building2 className="w-3.5 h-3.5 text-[#1E3A8A]" />
-          <span>Ambas sucursales (Montevideo / Rioja)</span>
-        </span>
-      );
-    }
-    if (inMontevideo || (!inRioja && member.branchId === 'sucursal_1')) {
-      return (
-        <span className="px-2.5 py-1 rounded-lg text-[11px] font-black bg-blue-50 text-[#1E3A8A] border border-blue-200 inline-flex items-center gap-1">
+        <span className="px-2.5 py-1 rounded-lg text-[11px] font-black bg-blue-50 text-[#1E3A8A] border border-blue-300 inline-flex items-center gap-1 shadow-2xs">
           <Building2 className="w-3.5 h-3.5 text-[#1E3A8A]" />
           <span>Soham Montevideo</span>
         </span>
       );
     }
-    if (inRioja || (!inMontevideo && member.branchId === 'sucursal_2')) {
+    if (membership.scope === 'sucursal_2') {
       return (
-        <span className="px-2.5 py-1 rounded-lg text-[11px] font-black bg-amber-50 text-[#0F172A] border border-[#D4AF37] inline-flex items-center gap-1">
+        <span className="px-2.5 py-1 rounded-lg text-[11px] font-black bg-amber-50 text-[#92400E] border border-amber-300 inline-flex items-center gap-1 shadow-2xs">
           <Building2 className="w-3.5 h-3.5 text-[#B45309]" />
           <span>Soham Rioja</span>
         </span>
       );
     }
     return (
-      <span className="px-2.5 py-1 rounded-lg text-[11px] font-black bg-blue-50 text-[#0F172A] border border-[#D4AF37] inline-flex items-center gap-1">
+      <span className="px-2.5 py-1 rounded-lg text-[11px] font-black bg-indigo-50 text-[#1E3A8A] border border-indigo-200 inline-flex items-center gap-1 shadow-2xs">
         <Building2 className="w-3.5 h-3.5 text-[#1E3A8A]" />
-        <span>Ambas sucursales</span>
+        <span>Ambas sucursales (Montevideo / Rioja)</span>
       </span>
     );
   };
 
+  const countTodas = staff.filter((s) => s.active !== false).length;
   const countMontevideo = staff.filter((s) => staffBelongsToBranch(s, 'sucursal_1')).length;
   const countRioja = staff.filter((s) => staffBelongsToBranch(s, 'sucursal_2')).length;
 
@@ -184,7 +170,7 @@ export function StaffView() {
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Todas ({staff.length})
+              Todas ({countTodas})
             </button>
             <button
               type="button"
@@ -267,19 +253,28 @@ export function StaffView() {
                             {member.name}
                           </h4>
                           {getBranchBadge(member)}
+                          <span
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-black ${
+                              member.active !== false
+                                ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                                : 'bg-slate-200 text-slate-700 border border-slate-300'
+                            }`}
+                          >
+                            {member.active !== false ? 'Activo' : 'Inactivo'}
+                          </span>
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-slate-600 font-bold mt-0.5 flex-wrap">
-                          <span className="text-[#1E3A8A]">{member.role}</span>
+                        <div className="flex items-center gap-3 text-xs text-slate-600 font-bold mt-1 flex-wrap">
+                          <span className="text-[#1E3A8A] font-black">{member.role}</span>
                           {member.phone && (
-                            <span className="flex items-center gap-1 text-slate-500 font-medium">
-                              <Phone className="w-3 h-3 text-slate-400" />
+                            <span className="flex items-center gap-1 text-slate-600 font-bold">
+                              <Phone className="w-3.5 h-3.5 text-slate-400" />
                               <span>{member.phone}</span>
                               {cleanPhone && (
                                 <a
                                   href={`https://wa.me/${cleanPhone}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-emerald-700 hover:text-emerald-900 ml-0.5 font-bold"
+                                  className="text-emerald-700 hover:text-emerald-900 ml-0.5 font-black hover:underline"
                                   title="Enviar WhatsApp"
                                 >
                                   (WhatsApp)
@@ -287,8 +282,11 @@ export function StaffView() {
                               )}
                             </span>
                           )}
-                          <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] font-black">
+                          <span className="bg-slate-100 text-slate-800 px-2 py-0.5 rounded-md text-[11px] font-black border border-slate-200">
                             Comisión: {member.commissionPercentage ?? 40}%
+                          </span>
+                          <span className="bg-blue-50 text-[#1E3A8A] px-2 py-0.5 rounded-md text-[11px] font-black border border-blue-200">
+                            {getLinkedAppointmentsCount(member.id)} turno(s) en agenda
                           </span>
                         </div>
                       </div>
@@ -302,7 +300,7 @@ export function StaffView() {
                           setInitialDayToEdit(undefined);
                           setIsModalOpen(true);
                         }}
-                        className="px-3.5 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#1E3A8A] text-xs font-black flex items-center gap-1.5 transition-colors cursor-pointer border border-blue-200"
+                        className="px-3.5 py-1.5 rounded-xl bg-[#1E3A8A] hover:bg-blue-900 active:scale-98 text-white text-xs font-black flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs border border-[#1E3A8A]"
                         title="Modificar días, horarios y sucursales"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
@@ -314,7 +312,7 @@ export function StaffView() {
                         onClick={() =>
                           setConfirmDeleteId(confirmDeleteId === member.id ? null : member.id)
                         }
-                        className="px-3 py-1.5 bg-white hover:bg-rose-50 border border-slate-300 hover:border-rose-400 rounded-xl text-[#0F172A] hover:text-rose-700 text-xs font-black flex items-center gap-1 transition-colors cursor-pointer"
+                        className="px-3.5 py-1.5 bg-red-700 hover:bg-red-800 active:bg-red-900 border border-red-800 rounded-xl text-white text-xs font-black flex items-center gap-1 transition-colors cursor-pointer shadow-xs"
                         title="Eliminar profesional"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -345,14 +343,14 @@ export function StaffView() {
                         <button
                           type="button"
                           onClick={() => setConfirmDeleteId(null)}
-                          className="px-3.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 border-2 border-slate-400 text-[#0F172A] text-xs font-black cursor-pointer"
+                          className="px-3.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border-2 border-[#1E3A8A] text-[#1E3A8A] text-xs font-black cursor-pointer shadow-2xs transition-colors"
                         >
                           Cancelar
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDelete(member.id)}
-                          className="px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-black cursor-pointer"
+                          className="px-3.5 py-1.5 rounded-lg bg-red-700 hover:bg-red-800 active:bg-red-900 border border-red-800 text-white text-xs font-black cursor-pointer shadow-xs transition-colors"
                         >
                           Confirmar
                         </button>
@@ -514,7 +512,7 @@ export function StaffView() {
                         <p className="text-xs text-[#1E3A8A] font-bold">{member.role}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1.5">
                       <button
                         type="button"
                         onClick={() => {
@@ -522,7 +520,7 @@ export function StaffView() {
                           setInitialDayToEdit(undefined);
                           setIsModalOpen(true);
                         }}
-                        className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-[#1E3A8A] transition-colors cursor-pointer"
+                        className="p-1.5 bg-blue-50 hover:bg-blue-100 text-[#1E3A8A] border border-blue-200 rounded-lg transition-colors cursor-pointer shadow-2xs"
                         title="Editar"
                       >
                         <Edit2 className="w-4 h-4" />
@@ -532,7 +530,7 @@ export function StaffView() {
                         onClick={() =>
                           setConfirmDeleteId(confirmDeleteId === member.id ? null : member.id)
                         }
-                        className="p-1.5 hover:bg-rose-50 rounded-lg text-slate-600 hover:text-rose-700 transition-colors cursor-pointer"
+                        className="p-1.5 bg-red-700 hover:bg-red-800 text-white rounded-lg transition-colors cursor-pointer shadow-xs border border-red-800"
                         title="Eliminar"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -555,14 +553,14 @@ export function StaffView() {
                         <button
                           type="button"
                           onClick={() => setConfirmDeleteId(null)}
-                          className="px-3 py-1 rounded-lg bg-white hover:bg-slate-100 border-2 border-slate-400 text-[#0F172A] text-xs font-black cursor-pointer"
+                          className="px-3 py-1 rounded-lg bg-white hover:bg-slate-50 border-2 border-[#1E3A8A] text-[#1E3A8A] text-xs font-black cursor-pointer shadow-2xs"
                         >
                           Cancelar
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDelete(member.id)}
-                          className="px-3 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-black cursor-pointer"
+                          className="px-3 py-1 rounded-lg bg-red-700 hover:bg-red-800 active:bg-red-900 border border-red-800 text-white text-xs font-black cursor-pointer shadow-xs"
                         >
                           Confirmar
                         </button>
@@ -665,7 +663,7 @@ export function StaffView() {
                       setInitialDayToEdit(undefined);
                       setIsModalOpen(true);
                     }}
-                    className="w-full py-2.5 px-4 rounded-xl bg-[#1E3A8A] hover:bg-blue-900 text-white text-xs font-black flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer"
+                    className="w-full py-2.5 px-4 rounded-xl bg-[#1E3A8A] hover:bg-blue-900 active:scale-98 text-white text-xs font-black flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer border border-[#1E3A8A]"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                     <span>Editar Ficha y Horarios</span>

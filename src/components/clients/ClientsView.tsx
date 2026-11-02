@@ -89,10 +89,16 @@ export function ClientsView({ onSelectAppointment, onNewAppointmentForClient }: 
               setClientToEdit(null);
               setIsModalOpen(true);
             }}
-            className="px-4 py-2.5 bg-[#1E3A8A] hover:bg-blue-900 active:scale-98 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-xs transition-all shrink-0 cursor-pointer"
+            className="btn-registrar-cliente px-4 py-2.5 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-md border-2 transition-all shrink-0 cursor-pointer"
+            style={{
+              backgroundColor: '#1E3A8A',
+              color: '#FFFFFF',
+              borderColor: '#1E3A8A',
+              opacity: 1,
+            }}
           >
-            <Plus className="w-4 h-4 stroke-[3]" />
-            <span>+ Nuevo Cliente</span>
+            <Plus className="w-4 h-4 stroke-[3]" style={{ color: '#FFFFFF', stroke: '#FFFFFF' }} />
+            <span style={{ color: '#FFFFFF', opacity: 1 }}>Registrar cliente</span>
           </button>
         </div>
       </div>
@@ -115,10 +121,16 @@ export function ClientsView({ onSelectAppointment, onNewAppointmentForClient }: 
                 setClientToEdit(null);
                 setIsModalOpen(true);
               }}
-              className="mt-4 px-4 py-2.5 bg-[#1E3A8A] hover:bg-blue-900 text-white rounded-xl text-xs font-black inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
+              className="btn-registrar-cliente mt-4 px-4 py-2.5 rounded-xl text-xs font-black inline-flex items-center gap-1.5 shadow-md border-2 cursor-pointer transition-all"
+              style={{
+                backgroundColor: '#1E3A8A',
+                color: '#FFFFFF',
+                borderColor: '#1E3A8A',
+                opacity: 1,
+              }}
             >
-              <Plus className="w-4 h-4 stroke-[3]" />
-              <span>Registrar primer cliente</span>
+              <Plus className="w-4 h-4 stroke-[3]" style={{ color: '#FFFFFF', stroke: '#FFFFFF' }} />
+              <span style={{ color: '#FFFFFF', opacity: 1 }}>Registrar cliente</span>
             </button>
           )}
         </div>
@@ -198,7 +210,7 @@ export function ClientsView({ onSelectAppointment, onNewAppointmentForClient }: 
                         onClick={() =>
                           setConfirmDeleteId(confirmDeleteId === client.id ? null : client.id)
                         }
-                        className="p-1.5 hover:bg-rose-50 rounded-lg text-slate-500 hover:text-rose-700 transition-colors cursor-pointer"
+                        className="p-1.5 bg-red-700 hover:bg-red-800 text-white rounded-lg transition-colors cursor-pointer shadow-xs border border-red-800"
                         title="Eliminar cliente"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -226,14 +238,14 @@ export function ClientsView({ onSelectAppointment, onNewAppointmentForClient }: 
                         <button
                           type="button"
                           onClick={() => setConfirmDeleteId(null)}
-                          className="px-3 py-1 rounded-lg bg-white hover:bg-slate-100 border-2 border-slate-400 text-[#0F172A] text-xs font-black cursor-pointer"
+                          className="px-3 py-1 rounded-lg bg-white hover:bg-slate-50 border-2 border-[#1E3A8A] text-[#1E3A8A] text-xs font-black cursor-pointer shadow-2xs transition-colors"
                         >
                           Cancelar
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDeleteClient(client)}
-                          className="px-3 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-black cursor-pointer"
+                          className="px-3 py-1 rounded-lg bg-red-700 hover:bg-red-800 active:bg-red-900 border border-red-800 text-white text-xs font-black cursor-pointer shadow-xs transition-colors"
                         >
                           Confirmar
                         </button>

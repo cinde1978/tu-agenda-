@@ -1795,7 +1795,7 @@ export function StaffModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl border-2 border-slate-300 hover:border-slate-800 bg-white hover:bg-slate-100 text-[#0F172A] font-bold text-sm shadow-2xs transition-colors cursor-pointer"
+                className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl border-2 border-[#1E3A8A] bg-white hover:bg-slate-50 text-[#1E3A8A] font-black text-sm shadow-2xs transition-colors cursor-pointer"
               >
                 Cancelar
               </button>
@@ -1803,7 +1803,7 @@ export function StaffModal({
                 type="submit"
                 form="staff-form"
                 disabled={isSubmitting}
-                className="flex-1 sm:flex-none px-7 py-2.5 rounded-xl bg-[#1E3A8A] hover:bg-[#172554] active:scale-98 text-white font-extrabold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="flex-1 sm:flex-none px-7 py-2.5 rounded-xl bg-[#1E3A8A] hover:bg-blue-900 active:scale-98 text-white font-black text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer border-2 border-[#1E3A8A] disabled:opacity-50"
               >
                 <Check className="w-4 h-4 stroke-[3]" />
                 <span>
@@ -1866,7 +1866,7 @@ export function StaffModal({
               <button
                 type="button"
                 onClick={() => setShowConflictWarning(false)}
-                className="px-4 py-2 rounded-xl text-xs font-black text-[#0F172A] bg-white border-2 border-slate-400 hover:bg-slate-100 cursor-pointer"
+                className="px-4 py-2 rounded-xl text-xs font-black text-[#1E3A8A] bg-white border-2 border-[#1E3A8A] hover:bg-slate-50 cursor-pointer shadow-2xs transition-colors"
               >
                 Cancelar
               </button>
@@ -1876,7 +1876,7 @@ export function StaffModal({
                   setShowConflictWarning(false);
                   executeSave();
                 }}
-                className="px-5 py-2 bg-[#1E3A8A] hover:bg-blue-900 text-white rounded-xl text-xs font-black shadow-xs cursor-pointer"
+                className="px-5 py-2 bg-[#1E3A8A] hover:bg-blue-900 active:scale-98 text-white rounded-xl text-xs font-black shadow-xs cursor-pointer border-2 border-[#1E3A8A]"
               >
                 Confirmar y guardar
               </button>

@@ -136,7 +136,7 @@ export function ServicesView() {
                       <button
                         type="button"
                         onClick={() => setConfirmDeleteId(isConfirming ? null : service.id)}
-                        className="p-1.5 hover:bg-rose-50 rounded-lg text-slate-500 hover:text-rose-700 transition-colors cursor-pointer"
+                        className="p-1.5 bg-red-700 hover:bg-red-800 text-white rounded-lg transition-colors cursor-pointer shadow-xs border border-red-800"
                         title="Eliminar servicio"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -159,7 +159,7 @@ export function ServicesView() {
                             <button
                               type="button"
                               onClick={() => setConfirmDeleteId(null)}
-                              className="px-3 py-1 rounded-lg bg-white border-2 border-slate-400 text-[#0F172A] text-xs font-black cursor-pointer hover:bg-slate-100"
+                              className="px-3 py-1 rounded-lg bg-white hover:bg-slate-50 border-2 border-[#1E3A8A] text-[#1E3A8A] text-xs font-black cursor-pointer shadow-2xs transition-colors"
                             >
                               Cancelar
                             </button>
@@ -170,7 +170,7 @@ export function ServicesView() {
                                   await updateService({ ...service, active: false });
                                   setConfirmDeleteId(null);
                                 }}
-                                className="px-3 py-1 rounded-lg bg-[#1E3A8A] hover:bg-blue-900 text-white text-xs font-black cursor-pointer"
+                                className="px-3 py-1 rounded-lg bg-[#1E3A8A] hover:bg-blue-900 text-white text-xs font-black cursor-pointer shadow-xs border border-[#1E3A8A]"
                               >
                                 Desactivar
                               </button>
@@ -181,7 +181,7 @@ export function ServicesView() {
                                 await deleteService(service.id);
                                 setConfirmDeleteId(null);
                               }}
-                              className="px-3 py-1 rounded-lg bg-rose-700 hover:bg-rose-800 text-white text-xs font-black cursor-pointer shadow-xs"
+                              className="px-3 py-1 rounded-lg bg-red-700 hover:bg-red-800 text-white text-xs font-black cursor-pointer shadow-xs border border-red-800"
                             >
                               Eliminar de todos modos
                             </button>
@@ -196,7 +196,7 @@ export function ServicesView() {
                             <button
                               type="button"
                               onClick={() => setConfirmDeleteId(null)}
-                              className="px-3 py-1 rounded-lg bg-white border-2 border-slate-400 text-[#0F172A] text-xs font-black cursor-pointer hover:bg-slate-100"
+                              className="px-3 py-1 rounded-lg bg-white hover:bg-slate-50 border-2 border-[#1E3A8A] text-[#1E3A8A] text-xs font-black cursor-pointer shadow-2xs transition-colors"
                             >
                               Cancelar
                             </button>
@@ -206,7 +206,7 @@ export function ServicesView() {
                                 await deleteService(service.id);
                                 setConfirmDeleteId(null);
                               }}
-                              className="px-3 py-1 rounded-lg bg-rose-700 hover:bg-rose-800 text-white text-xs font-black cursor-pointer shadow-xs"
+                              className="px-3 py-1 rounded-lg bg-red-700 hover:bg-red-800 text-white text-xs font-black cursor-pointer shadow-xs border border-red-800"
                             >
                               Confirmar eliminación
                             </button>

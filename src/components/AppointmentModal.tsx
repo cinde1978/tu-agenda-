@@ -1860,7 +1860,7 @@ export function AppointmentModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 rounded-xl border border-slate-400 hover:border-slate-800 bg-white hover:bg-slate-100 text-[#0F172A] font-bold text-sm shadow-2xs transition-colors cursor-pointer"
+              className="px-5 py-2.5 rounded-xl border-2 border-[#1E3A8A] bg-white hover:bg-slate-50 text-[#1E3A8A] font-black text-sm shadow-2xs transition-colors cursor-pointer"
             >
               Cancelar
             </button>
@@ -1868,7 +1868,7 @@ export function AppointmentModal({
               type="submit"
               form="appointment-form"
               disabled={isSubmitting}
-              className="px-7 py-2.5 rounded-xl bg-[#1E3A8A] hover:bg-[#172554] active:scale-98 text-white font-extrabold text-sm shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed"
+              className="px-7 py-2.5 rounded-xl bg-[#1E3A8A] hover:bg-blue-900 active:scale-98 text-white font-black text-sm shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer border-2 border-[#1E3A8A] disabled:opacity-45 disabled:cursor-not-allowed"
             >
               <Check className="w-4 h-4 stroke-[3]" />
               <span>

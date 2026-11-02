@@ -152,14 +152,14 @@ export function ResourceModal({ resourceToEdit, onClose, onSaved }: ResourceModa
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl border-2 border-slate-300 text-xs font-black text-[#0F172A] hover:bg-slate-100"
+              className="px-4 py-2 rounded-xl border-2 border-[#1E3A8A] bg-white hover:bg-slate-50 text-xs font-black text-[#1E3A8A] cursor-pointer shadow-2xs transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-5 py-2 rounded-xl bg-[#1E3A8A] hover:bg-blue-900 text-white text-xs font-black"
+              className="px-5 py-2 rounded-xl bg-[#1E3A8A] hover:bg-blue-900 active:scale-98 text-white text-xs font-black border-2 border-[#1E3A8A] shadow-md cursor-pointer transition-all disabled:opacity-50"
             >
               {isSubmitting ? 'Guardando...' : 'Guardar Recurso'}
             </button>

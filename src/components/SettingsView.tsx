@@ -621,14 +621,14 @@ export function SettingsView({ initialTab = 'suscripcion', focusSeq }: SettingsV
                   <button
                     type="button"
                     onClick={() => setConfirmClearSample(null)}
-                    className="px-3.5 py-1.5 rounded-lg bg-white border-2 border-slate-400 text-[#0F172A] text-xs font-black cursor-pointer"
+                    className="px-3.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border-2 border-[#1E3A8A] text-[#1E3A8A] text-xs font-black cursor-pointer shadow-2xs"
                   >
                     Cancelar
                   </button>
                   <button
                     type="button"
                     onClick={executeClearSampleStaff}
-                    className="px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-black cursor-pointer"
+                    className="px-3.5 py-1.5 rounded-lg bg-red-700 hover:bg-red-800 text-white text-xs font-black cursor-pointer shadow-xs border border-red-800"
                   >
                     Confirmar
                   </button>
@@ -754,7 +754,7 @@ export function SettingsView({ initialTab = 'suscripcion', focusSeq }: SettingsV
                                   confirmDeleteStaffId === member.id ? null : member.id
                                 )
                               }
-                              className="p-2 hover:bg-rose-50 border-2 border-slate-300 hover:border-rose-400 rounded-xl text-rose-600 transition-colors cursor-pointer"
+                              className="p-2 bg-red-700 hover:bg-red-800 text-white rounded-xl border border-red-800 transition-colors cursor-pointer shadow-xs"
                               title="Eliminar profesional"
                             >
                               <Trash2 className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -776,7 +776,7 @@ export function SettingsView({ initialTab = 'suscripcion', focusSeq }: SettingsV
                               <button
                                 type="button"
                                 onClick={() => setConfirmDeleteStaffId(null)}
-                                className="px-3 py-1 rounded-lg bg-white border-2 border-slate-400 text-[#0F172A] text-xs font-black cursor-pointer"
+                                className="px-3 py-1 rounded-lg bg-white hover:bg-slate-50 border-2 border-[#1E3A8A] text-[#1E3A8A] text-xs font-black cursor-pointer shadow-2xs"
                               >
                                 Cancelar
                               </button>
@@ -786,7 +786,7 @@ export function SettingsView({ initialTab = 'suscripcion', focusSeq }: SettingsV
                                   await deleteStaff(member.id);
                                   setConfirmDeleteStaffId(null);
                                 }}
-                                className="px-3 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-black cursor-pointer"
+                                className="px-3 py-1 rounded-lg bg-red-700 hover:bg-red-800 text-white text-xs font-black cursor-pointer shadow-xs border border-red-800"
                               >
                                 Confirmar
                               </button>
@@ -915,14 +915,14 @@ export function SettingsView({ initialTab = 'suscripcion', focusSeq }: SettingsV
                   <button
                     type="button"
                     onClick={() => setConfirmClearSample(null)}
-                    className="px-3.5 py-1.5 rounded-lg bg-white border-2 border-slate-400 text-[#0F172A] text-xs font-black cursor-pointer"
+                    className="px-3.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border-2 border-[#1E3A8A] text-[#1E3A8A] text-xs font-black cursor-pointer shadow-2xs"
                   >
                     Cancelar
                   </button>
                   <button
                     type="button"
                     onClick={executeClearSampleServices}
-                    className="px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-black cursor-pointer"
+                    className="px-3.5 py-1.5 rounded-lg bg-red-700 hover:bg-red-800 text-white text-xs font-black cursor-pointer shadow-xs border border-red-800"
                   >
                     Confirmar
                   </button>
@@ -1073,7 +1073,7 @@ export function SettingsView({ initialTab = 'suscripcion', focusSeq }: SettingsV
                               onClick={() =>
                                 setConfirmDeleteServiceId(isConfirming ? null : service.id)
                               }
-                              className="px-2 py-1.5 hover:bg-rose-50 border-2 border-slate-300 hover:border-rose-400 rounded-lg text-rose-700 text-xs font-black flex items-center gap-1 transition-colors cursor-pointer"
+                              className="px-2 py-1.5 bg-red-700 hover:bg-red-800 text-white border border-red-800 rounded-lg text-xs font-black flex items-center gap-1 transition-colors cursor-pointer shadow-xs"
                               title="Eliminar servicio"
                             >
                               <Trash2 className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -1099,7 +1099,7 @@ export function SettingsView({ initialTab = 'suscripcion', focusSeq }: SettingsV
                                   <button
                                     type="button"
                                     onClick={() => setConfirmDeleteServiceId(null)}
-                                    className="px-3 py-1.5 rounded-lg bg-white border-2 border-slate-400 text-[#0F172A] text-xs font-black cursor-pointer"
+                                    className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 border-2 border-[#1E3A8A] text-[#1E3A8A] text-xs font-black cursor-pointer shadow-2xs"
                                   >
                                     Cancelar
                                   </button>
@@ -1110,7 +1110,7 @@ export function SettingsView({ initialTab = 'suscripcion', focusSeq }: SettingsV
                                         await updateService({ ...service, active: false });
                                         setConfirmDeleteServiceId(null);
                                       }}
-                                      className="px-3 py-1.5 rounded-lg bg-[#1E3A8A] hover:bg-blue-900 text-white text-xs font-black cursor-pointer"
+                                      className="px-3 py-1.5 rounded-lg bg-[#1E3A8A] hover:bg-blue-900 text-white text-xs font-black cursor-pointer shadow-xs border border-[#1E3A8A]"
                                     >
                                       Desactivar servicio
                                     </button>
@@ -1121,7 +1121,7 @@ export function SettingsView({ initialTab = 'suscripcion', focusSeq }: SettingsV
                                       await deleteService(service.id);
                                       setConfirmDeleteServiceId(null);
                                     }}
-                                    className="px-3 py-1.5 rounded-lg bg-rose-700 hover:bg-rose-800 text-white text-xs font-black cursor-pointer shadow-xs"
+                                    className="px-3 py-1.5 rounded-lg bg-red-700 hover:bg-red-800 text-white text-xs font-black cursor-pointer shadow-xs border border-red-800"
                                   >
                                     Eliminar de todos modos
                                   </button>
@@ -1139,7 +1139,7 @@ export function SettingsView({ initialTab = 'suscripcion', focusSeq }: SettingsV
                                   <button
                                     type="button"
                                     onClick={() => setConfirmDeleteServiceId(null)}
-                                    className="px-3 py-1.5 rounded-lg bg-white border-2 border-slate-400 text-[#0F172A] text-xs font-black cursor-pointer"
+                                    className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 border-2 border-[#1E3A8A] text-[#1E3A8A] text-xs font-black cursor-pointer shadow-2xs"
                                   >
                                     Cancelar
                                   </button>
@@ -1149,7 +1149,7 @@ export function SettingsView({ initialTab = 'suscripcion', focusSeq }: SettingsV
                                       await deleteService(service.id);
                                       setConfirmDeleteServiceId(null);
                                     }}
-                                    className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-black cursor-pointer"
+                                    className="px-3 py-1.5 rounded-lg bg-red-700 hover:bg-red-800 text-white text-xs font-black cursor-pointer shadow-xs border border-red-800"
                                   >
                                     Confirmar eliminación
                                   </button>

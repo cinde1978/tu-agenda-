@@ -1,6 +1,6 @@
 {
   "name": "tu-agenda-lista-2",
-  "description": "Imported from GitHub: cinde1978/tu-agenda-lista",
+  "description": "Tu Agenda Lista — Software profesional para gestión de turnos, clientes y finanzas.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

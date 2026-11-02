@@ -85,7 +85,7 @@ export function ClientDetailDrawer({
               <button
                 type="button"
                 onClick={() => setConfirmingDelete((prev) => !prev)}
-                className="p-2 hover:bg-rose-50 rounded-xl text-rose-700 border border-rose-200 transition-colors cursor-pointer"
+                className="p-2 bg-red-700 hover:bg-red-800 text-white rounded-xl border border-red-800 transition-colors cursor-pointer shadow-xs"
                 title="Eliminar cliente"
               >
                 <Trash2 className="w-4 h-4" />
@@ -127,14 +127,14 @@ export function ClientDetailDrawer({
                 <button
                   type="button"
                   onClick={() => setConfirmingDelete(false)}
-                  className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-100 text-[#0F172A] border-2 border-slate-300 text-xs font-black cursor-pointer"
+                  className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-[#1E3A8A] border-2 border-[#1E3A8A] text-xs font-black cursor-pointer shadow-2xs transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="button"
                   onClick={handleConfirmDelete}
-                  className="px-4 py-2 rounded-xl bg-rose-700 hover:bg-rose-800 text-white border-2 border-rose-800 text-xs font-black cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-red-700 hover:bg-red-800 text-white border-2 border-red-800 text-xs font-black cursor-pointer shadow-xs"
                 >
                   Confirmar eliminación
                 </button>

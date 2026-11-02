@@ -639,14 +639,14 @@ export function ReportsView() {
                             );
                             setTimeout(() => setLiquidationFeedback(null), 4000);
                           }}
-                          className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-black cursor-pointer"
+                          className="px-3 py-1.5 bg-[#1E3A8A] hover:bg-blue-900 active:scale-98 text-white rounded-xl text-xs font-black cursor-pointer shadow-xs border border-[#1E3A8A]"
                         >
                           Confirmar
                         </button>
                         <button
                           type="button"
                           onClick={() => setConfirmLiquidateStaffId(null)}
-                          className="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-[#0F172A] border-2 border-slate-300 rounded-xl text-xs font-black cursor-pointer"
+                          className="px-2.5 py-1.5 bg-white hover:bg-slate-50 text-[#1E3A8A] border-2 border-[#1E3A8A] rounded-xl text-xs font-black cursor-pointer shadow-2xs"
                         >
                           Cancelar
                         </button>
@@ -655,7 +655,7 @@ export function ReportsView() {
                       <button
                         type="button"
                         onClick={() => setConfirmLiquidateStaffId(st.id)}
-                        className="px-3 py-2 bg-[#1E3A8A] hover:bg-blue-900 active:scale-98 text-white rounded-xl text-xs font-black shrink-0 transition-all cursor-pointer shadow-2xs"
+                        className="px-3 py-2 bg-[#1E3A8A] hover:bg-blue-900 active:scale-98 text-white rounded-xl text-xs font-black shrink-0 transition-all cursor-pointer shadow-xs border border-[#1E3A8A]"
                       >
                         Registrar en Caja
                       </button>

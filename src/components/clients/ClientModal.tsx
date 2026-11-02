@@ -286,21 +286,23 @@ export function ClientModal({ clientToEdit, onClose, onSaved }: ClientModalProps
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-4 py-2.5 rounded-xl border-2 border-slate-300 hover:bg-slate-100 text-[#0F172A] text-xs font-black cursor-pointer transition-colors"
+              className="px-4 py-2.5 rounded-xl border-2 border-[#1E3A8A] bg-white hover:bg-slate-50 text-[#1E3A8A] text-xs font-black cursor-pointer transition-colors shadow-2xs"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isSubmitting || Boolean(duplicateClient) || !name.trim()}
-              className={`px-6 py-2.5 rounded-xl font-black text-xs sm:text-sm flex items-center gap-2 transition-all ${
-                isSubmitting || Boolean(duplicateClient) || !name.trim()
-                  ? 'bg-slate-200 text-slate-700 border-2 border-slate-300 cursor-not-allowed shadow-none'
-                  : 'bg-[#1E3A8A] hover:bg-[#172554] active:scale-98 text-white cursor-pointer shadow-md'
-              }`}
+              className="btn-registrar-cliente px-6 py-2.5 rounded-xl font-black text-xs sm:text-sm flex items-center gap-2 transition-all shadow-md border-2 cursor-pointer disabled:cursor-not-allowed"
+              style={{
+                backgroundColor: '#1E3A8A',
+                color: '#FFFFFF',
+                borderColor: '#1E3A8A',
+                opacity: 1,
+              }}
             >
-              <Check className="w-4 h-4 stroke-[3]" />
-              <span>
+              <Check className="w-4 h-4 stroke-[3]" style={{ color: '#FFFFFF', stroke: '#FFFFFF' }} />
+              <span style={{ color: '#FFFFFF', opacity: 1 }}>
                 {isSubmitting
                   ? 'Guardando...'
                   : clientToEdit
