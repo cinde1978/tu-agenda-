@@ -280,11 +280,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Compute businessId: if signed in, derived from user.uid; if demo, "biz_local_active"
+    // Shared business: Iris owns the account and Soham operates the same agenda.
+  const IRIS_OWNER_UID = '7s53P27wzQWuTYCbDxvCSlIM58n2';
+  const SHARED_BUSINESS_ID = 'biz_7s53P27wzQWuTYCbDxvC';
+
   const currentBusinessId = useMemo(() => {
-    if (user) {
-      return `biz_${user.uid.replace(/[^a-zA-Z0-9]/g, '').slice(0, 20)}`;
+    if (!user) return 'biz_local_active';
+
+    if (user.uid === IRIS_OWNER_UID) {
+      return SHARED_BUSINESS_ID;
     }
-    return 'biz_local_active';
+
+    if (
+      user.email === 'rosariosoham@gmail.com' &&
+      user.emailVerified
+    ) {
+      return SHARED_BUSINESS_ID;
+    }
+
+    return `biz_${user.uid.replace(/[^a-zA-Z0-9]/g, '').slice(0, 20)}`;
   }, [user]);
 
   // Load from LocalStorage if not signed in
