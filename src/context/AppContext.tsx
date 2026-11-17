@@ -959,31 +959,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           updatedAt: getTodayDateString(),
         })
       );
+      setAppointments((prev) => prev.map((a) => (a.id === apt.id ? updated : a)));
+
       if (user && currentBusinessId) {
         try {
           await setDoc(doc(db, `businesses/${currentBusinessId}/appointments`, apt.id), updated);
         } catch (err) {
           handleFirestoreError(err, OperationType.UPDATE, `businesses/${currentBusinessId}/appointments/${apt.id}`);
         }
-
-
-      setAppointments((prev) => prev.map((a) => (a.id === apt.id ? updated : a)));
-
+      }
     },
     [currentBusinessId, user, rawAppointments, staff, activeSingleBranch, resources]
   );
 
   const deleteAppointment = useCallback(
     async (id: string) => {
+      setAppointments((prev) => prev.filter((a) => a.id !== id));
       if (user && currentBusinessId) {
         try {
           await deleteDoc(doc(db, `businesses/${currentBusinessId}/appointments`, id));
         } catch (err) {
           handleFirestoreError(err, OperationType.DELETE, `businesses/${currentBusinessId}/appointments/${id}`);
         }
-
-
-      setAppointments((prev) => prev.filter((a) => a.id !== id));
+      }
     },
     [currentBusinessId, user]
   );
@@ -1090,30 +1088,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       const cleanClient: Client = JSON.parse(JSON.stringify(newClient));
 
-      if (user && currentBusinessId) {
-        try {
-          await setDoc(doc(db, `businesses/${currentBusinessId}/clients`, id), cleanClient);
-        } catch (err) {
-          handleFirestoreError(err, OperationType.CREATE, `businesses/${currentBusinessId}/clients/${id}`);
-        }
-
-
-      if (user && currentBusinessId) {
-        try {
-          await setDoc(doc(db, `businesses/${currentBusinessId}/clients`, cleanClient.id), cleanClient);
-        } catch (err) {
-          handleFirestoreError(err, OperationType.UPDATE, `businesses/${currentBusinessId}/clients/${cleanClient.id}`);
-        }
-
-
-      if (user && currentBusinessId) {
-        try {
-          await deleteDoc(doc(db, `businesses/${currentBusinessId}/clients`, id));
-        } catch (err) {
-          handleFirestoreError(err, OperationType.DELETE, `businesses/${currentBusinessId}/clients/${id}`);
-        }
-
-
       setClients((prev) => {
         // Double check inside state updater
         if (prev.some((c) => c.id === id || (cleanName && c.name.trim().toLowerCase() === cleanName.toLowerCase()))) {
@@ -1133,6 +1107,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return nextClients;
       });
 
+      if (user && currentBusinessId) {
+        try {
+          await setDoc(doc(db, `businesses/${currentBusinessId}/clients`, id), cleanClient);
+        } catch (err) {
+          handleFirestoreError(err, OperationType.CREATE, `businesses/${currentBusinessId}/clients/${id}`);
+        }
+      }
       return id;
     },
     [currentBusinessId, user, clients]
@@ -1161,6 +1142,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return nextClients;
       });
 
+      if (user && currentBusinessId) {
+        try {
+          await setDoc(doc(db, `businesses/${currentBusinessId}/clients`, cleanClient.id), cleanClient);
+        } catch (err) {
+          handleFirestoreError(err, OperationType.UPDATE, `businesses/${currentBusinessId}/clients/${cleanClient.id}`);
+        }
+      }
     },
     [currentBusinessId, user]
   );
@@ -1182,6 +1170,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return nextClients;
       });
 
+      if (user && currentBusinessId) {
+        try {
+          await deleteDoc(doc(db, `businesses/${currentBusinessId}/clients`, id));
+        } catch (err) {
+          handleFirestoreError(err, OperationType.DELETE, `businesses/${currentBusinessId}/clients/${id}`);
+        }
+      }
     },
     [currentBusinessId, user]
   );
@@ -1198,16 +1193,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         createdAt: today,
       };
 
+      setServices((prev) => [newService, ...prev]);
+
       if (user && currentBusinessId) {
         try {
           await setDoc(doc(db, `businesses/${currentBusinessId}/services`, id), newService);
         } catch (err) {
           handleFirestoreError(err, OperationType.CREATE, `businesses/${currentBusinessId}/services/${id}`);
         }
-
-
-      setServices((prev) => [newService, ...prev]);
-
+      }
       return id;
     },
     [currentBusinessId, user]
@@ -1215,30 +1209,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const updateService = useCallback(
     async (srv: Service) => {
+      setServices((prev) => prev.map((s) => (s.id === srv.id ? srv : s)));
       if (user && currentBusinessId) {
         try {
           await setDoc(doc(db, `businesses/${currentBusinessId}/services`, srv.id), srv);
         } catch (err) {
           handleFirestoreError(err, OperationType.UPDATE, `businesses/${currentBusinessId}/services/${srv.id}`);
         }
-
-
-      setServices((prev) => prev.map((s) => (s.id === srv.id ? srv : s)));
+      }
     },
     [currentBusinessId, user]
   );
 
   const deleteService = useCallback(
     async (id: string) => {
+      setServices((prev) => prev.filter((s) => s.id !== id));
       if (user && currentBusinessId) {
         try {
           await deleteDoc(doc(db, `businesses/${currentBusinessId}/services`, id));
         } catch (err) {
           handleFirestoreError(err, OperationType.DELETE, `businesses/${currentBusinessId}/services/${id}`);
         }
-
-
-      setServices((prev) => prev.filter((s) => s.id !== id));
+      }
     },
     [currentBusinessId, user]
   );
@@ -1256,30 +1248,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       });
       const cleanStaff: StaffMember = JSON.parse(JSON.stringify(rawStaff));
 
-      if (user && currentBusinessId) {
-        try {
-          await setDoc(doc(db, `businesses/${currentBusinessId}/staff`, id), cleanStaff);
-        } catch (err) {
-          handleFirestoreError(err, OperationType.CREATE, `businesses/${currentBusinessId}/staff/${id}`);
-        }
-
-
-      if (user && currentBusinessId) {
-        try {
-          await setDoc(doc(db, `businesses/${currentBusinessId}/staff`, cleanStaff.id), cleanStaff);
-        } catch (err) {
-          handleFirestoreError(err, OperationType.UPDATE, `businesses/${currentBusinessId}/staff/${cleanStaff.id}`);
-        }
-
-
-      if (user && currentBusinessId) {
-        try {
-          await deleteDoc(doc(db, `businesses/${currentBusinessId}/staff`, id));
-        } catch (err) {
-          handleFirestoreError(err, OperationType.DELETE, `businesses/${currentBusinessId}/staff/${id}`);
-        }
-
-
       setStaff((prev) => {
         const nextStaff = [cleanStaff, ...prev];
         try {
@@ -1295,6 +1263,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return nextStaff;
       });
 
+      if (user && currentBusinessId) {
+        try {
+          await setDoc(doc(db, `businesses/${currentBusinessId}/staff`, id), cleanStaff);
+        } catch (err) {
+          handleFirestoreError(err, OperationType.CREATE, `businesses/${currentBusinessId}/staff/${id}`);
+        }
+      }
       return id;
     },
     [currentBusinessId, user]
@@ -1318,6 +1293,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return nextStaff;
       });
 
+      if (user && currentBusinessId) {
+        try {
+          await setDoc(doc(db, `businesses/${currentBusinessId}/staff`, cleanStaff.id), cleanStaff);
+        } catch (err) {
+          handleFirestoreError(err, OperationType.UPDATE, `businesses/${currentBusinessId}/staff/${cleanStaff.id}`);
+        }
+      }
     },
     [currentBusinessId, user]
   );
@@ -1339,6 +1321,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return nextStaff;
       });
 
+      if (user && currentBusinessId) {
+        try {
+          await deleteDoc(doc(db, `businesses/${currentBusinessId}/staff`, id));
+        } catch (err) {
+          handleFirestoreError(err, OperationType.DELETE, `businesses/${currentBusinessId}/staff/${id}`);
+        }
+      }
     },
     [currentBusinessId, user]
   );
