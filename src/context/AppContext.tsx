@@ -454,6 +454,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           { name: 'giftCards', values: [] },
           { name: 'resources', values: [] },
         ];
+        // Combine every available local snapshot, keeping the first version of each ID.
+        // Never replace an existing cloud document: this only fills missing records.
         for (const entry of arrays) {
           const seen = new Set<string>();
           for (const candidate of candidates) {
@@ -466,7 +468,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 entry.values.push(value);
               }
             }
-            if (entry.values.length) break;
           }
         }
 
@@ -474,11 +475,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           if (isCancelled || entry.values.length === 0) continue;
           const target = collection(db, `businesses/${currentBusinessId}/${entry.name}`);
           const existing = await getDocs(target);
-          if (existing.size > 0) continue;
+          const existingIds = new Set(existing.docs.map((record) => record.id));
+          const missing = entry.values.filter((value) => {
+            const item = value as { id?: unknown };
+            return typeof item.id === 'string' && !existingIds.has(item.id);
+          });
 
-          for (let offset = 0; offset < entry.values.length; offset += 400) {
+          for (let offset = 0; offset < missing.length; offset += 400) {
+            if (isCancelled) return;
             const batch = writeBatch(db);
-            const chunk = entry.values.slice(offset, offset + 400);
+            const chunk = missing.slice(offset, offset + 400);
             chunk.forEach((value) => {
               const item = value as { id: string };
               batch.set(
