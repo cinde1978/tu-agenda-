@@ -795,7 +795,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Update business profile
   const updateBusiness = useCallback(
     async (updated: Partial<Business>) => {
-      if (!business) return;
+      requireCloudSession(user, currentBusinessId);
+      if (!business) throw new Error('No se pudo cargar la configuración del negocio. No se guardaron los cambios.');
       const merged: Business = {
         ...business,
         ...updated,
@@ -803,15 +804,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         tagline: 'Desarrollado por Iris Quiroz',
         updatedAt: getTodayDateString(),
       };
-      setBusiness(merged);
 
-      if (user && currentBusinessId) {
-        try {
-          await setDoc(doc(db, 'businesses', currentBusinessId), merged, { merge: true });
-        } catch (err) {
-          handleFirestoreError(err, OperationType.UPDATE, `businesses/${currentBusinessId}`);
-        }
+      try {
+        await setDoc(doc(db, 'businesses', currentBusinessId), merged, { merge: true });
+      } catch (err) {
+        handleFirestoreError(err, OperationType.UPDATE, `businesses/${currentBusinessId}`);
       }
+      setBusiness(merged);
     },
     [business, currentBusinessId, user]
   );
@@ -1611,18 +1610,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Reset base business settings without re-injecting sample records
   const resetToSampleData = useCallback(async () => {
-    const cleanBiz = getDefaultBusiness(user ? user.uid : 'local_owner', 'Tu Agenda Lista');
+    requireCloudSession(user, currentBusinessId);
+    const cleanBiz = getDefaultBusiness(user.uid, 'Tu Agenda Lista');
     cleanBiz.id = currentBusinessId;
     cleanBiz.cleanStartVersion = CLEAN_START_VERSION;
-    setBusiness(cleanBiz);
-
-    if (user && currentBusinessId) {
-      try {
-        await setDoc(doc(db, 'businesses', currentBusinessId), cleanBiz, { merge: true });
-      } catch (err) {
-        console.error('Error updating business config in firestore', err);
-      }
+    try {
+      await setDoc(doc(db, 'businesses', currentBusinessId), cleanBiz, { merge: true });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `businesses/${currentBusinessId}`);
     }
+    setBusiness(cleanBiz);
   }, [currentBusinessId, user]);
 
   // Export to Excel / CSV with UTF-8 BOM and branch filter support
