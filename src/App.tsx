@@ -27,7 +27,7 @@ import { getTodayDateString } from './utils/initialData';
 import { Sparkles, LogIn, Plus, X, Award } from 'lucide-react';
 
 function MainAppContent() {
-  const { user, loginWithGoogle, business, unreadRemindersCount, staff } = useApp();
+  const { user, loginWithGoogle, business, unreadRemindersCount, staff, hasFirestoreError } = useApp();
 
   const [currentTab, setCurrentTab] = useState<ViewTab>('agenda');
   const [settingsRequest, setSettingsRequest] = useState<{ tab: SettingsSubTab; seq: number }>({
@@ -159,6 +159,14 @@ function MainAppContent() {
           onNewAppointment={() => handleOpenNewAppointment()}
           onOpenReminders={() => setIsRemindersModalOpen(true)}
         />
+
+        {user && hasFirestoreError && (
+          <div role="alert" className="mx-4 mt-3 rounded-xl border-2 border-amber-400 bg-amber-50 px-4 py-3 text-sm text-amber-950 shadow-sm">
+            <strong className="block font-black">Atención: hay un problema de sincronización</strong>
+            <span className="mt-1 block break-words">{hasFirestoreError}</span>
+            <span className="mt-2 block font-semibold">No continúes cargando información hasta resolverlo. Los datos podrían no estar sincronizados con la nube.</span>
+          </div>
+        )}
 
         {/* Main Workspace Body with safe bottom padding for mobile navigation */}
         <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 pb-28 lg:pb-8 space-y-6">
