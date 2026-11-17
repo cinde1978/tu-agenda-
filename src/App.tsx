@@ -27,7 +27,7 @@ import { getTodayDateString } from './utils/initialData';
 import { Sparkles, LogIn, Plus, X, Award } from 'lucide-react';
 
 function MainAppContent() {
-  const { user, loginWithGoogle, business, unreadRemindersCount, staff } = useApp();
+  const { user, loginWithGoogle, business, unreadRemindersCount, staff, hasFirestoreError, isLoadingData } = useApp();
 
   const [currentTab, setCurrentTab] = useState<ViewTab>('agenda');
   const [settingsRequest, setSettingsRequest] = useState<{ tab: SettingsSubTab; seq: number }>({
@@ -159,6 +159,18 @@ function MainAppContent() {
           onNewAppointment={() => handleOpenNewAppointment()}
           onOpenReminders={() => setIsRemindersModalOpen(true)}
         />
+
+        {/* Diagnóstico temporal de sincronización: no modifica datos */}
+        {user && (
+          <section className="no-print mx-4 mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs text-slate-800 sm:mx-6 lg:mx-8" role="status">
+            <div className="font-bold">Estado de sincronización</div>
+            <div>Cuenta: {user.email || 'sin correo'} </div>
+            <div>UID: {user.uid}</div>
+            <div>Negocio: {business?.id || 'todavía no identificado'}</div>
+            <div>Lectura: {isLoadingData ? 'cargando datos…' : hasFirestoreError ? 'con error' : 'sin error informado'}</div>
+            {hasFirestoreError && <div className="mt-1 font-semibold text-red-700">Error de Firebase: {hasFirestoreError}</div>}
+          </section>
+        )}
 
         {/* Main Workspace Body with safe bottom padding for mobile navigation */}
         <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 pb-28 lg:pb-8 space-y-6">
