@@ -291,10 +291,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return SHARED_BUSINESS_ID;
     }
 
-    if (
-      user.email === 'rosariosoham@gmail.com' &&
-      user.emailVerified
-    ) {
+    // Secretaria autorizada por UID: no depender del correo verificado,
+    // que puede variar según el proveedor de inicio de sesión.
+    if (user.uid === 'mPGgPnM9mgf4T1TjWKVhII6bONZ2') {
       return SHARED_BUSINESS_ID;
     }
 
