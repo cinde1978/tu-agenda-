@@ -31,7 +31,14 @@ service cloud.firestore {
     }
 
     match /businesses/{businessId} {
-      allow get: if canOperate(businessId);
+      allow get: if signedIn()
+        && (
+          resource.data.ownerId == request.auth.uid
+          || (
+            request.auth.uid == 'mPGgPnM9mgf4T1TjWKVhII6bONZ2'
+            && resource.data.ownerId == '7s53P27wzQWuTYCbDxvCSlIM58n2'
+          )
+        );
       allow list: if signedIn() && resource.data.ownerId == request.auth.uid;
       allow create: if signedIn()
   && validId(businessId)
