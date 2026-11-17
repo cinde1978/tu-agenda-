@@ -1478,9 +1478,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const redeemGiftCard = useCallback(
     async (
       codeToRedeem: string,
-      redemptionData: {
-      requireCloudSession(user, currentBusinessId); staffId?: string; staffName?: string; branchId: BranchId; notes?: string }
+      redemptionData: { staffId?: string; staffName?: string; branchId: BranchId; notes?: string }
     ): Promise<{ success: boolean; giftCard: GiftCard }> => {
+      requireCloudSession(user, currentBusinessId);
       const cleanCode = codeToRedeem.trim().toUpperCase();
       const targetCard = rawGiftCards.find(
         (c) => c.code.trim().toUpperCase() === cleanCode
