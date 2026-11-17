@@ -48,6 +48,19 @@ const LOCAL_STORAGE_KEY = 'tu_agenda_lista_data_v4_clean';
 const LEGACY_LOCAL_STORAGE_KEYS = ['tu_agenda_lista_data_v3', 'tu_agenda_lista_data_v2'];
 const LOCAL_BACKUP_KEY = 'tu_agenda_backup_pre_clean_v1';
 const CLEAN_START_VERSION = '2026-10-31';
+function requireCloudSession(user: User | null, businessId: string | null | undefined): asserts user is User {
+  if (!user || !businessId) {
+    throw new Error('La sesión de la agenda no está conectada. Iniciá sesión nuevamente antes de guardar cambios. No se guardó ningún dato.');
+  }
+}
+
+function createRecordId(prefix: string): string {
+  const unique = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID().replace(/-/g, '')
+    : `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  return `${prefix}_${unique}`;
+}
+
 
 function sanitizeBusinessConfig(biz: Business): Business {
   const sanitized: Business = { ...biz };
@@ -496,7 +509,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           }
         }
       } catch (error) {
-        console.warn('Local recovery could not be completed', error);
+        const detail = error instanceof Error ? error.message : String(error);
+        setHasFirestoreError(`No se pudo completar la recuperación local. No cierres esta sesión ni borres los datos del navegador. Detalle: ${detail}`);
+        console.error('Local recovery could not be completed', error);
       }
     };
 
@@ -804,7 +819,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Appointments actions
   const createAppointment = useCallback(
     async (aptData: Omit<Appointment, 'id' | 'businessId' | 'createdAt' | 'updatedAt'>): Promise<string> => {
-      const id = `apt_${Date.now()}`;
+      requireCloudSession(user, currentBusinessId);
+      const id = createRecordId('apt');
       const today = getTodayDateString();
       const targetBranch: BranchId = aptData.branchId || activeSingleBranch;
       const duration = Math.max(5, Number(aptData.durationMinutes || 30));
@@ -902,6 +918,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const updateAppointment = useCallback(
     async (apt: Appointment) => {
+      requireCloudSession(user, currentBusinessId);
       const existing = rawAppointments.find((a) => a.id === apt.id);
       const scheduleFieldsChanged =
         !existing ||
@@ -974,6 +991,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const deleteAppointment = useCallback(
     async (id: string) => {
+      requireCloudSession(user, currentBusinessId);
       setAppointments((prev) => prev.filter((a) => a.id !== id));
       if (user && currentBusinessId) {
         try {
@@ -988,6 +1006,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const markAppointmentCompleted = useCallback(
     async (apt: Appointment, collectedRemaining: number, paymentMethod: Appointment['paymentMethod']) => {
+      requireCloudSession(user, currentBusinessId);
       const updatedApt: Appointment = {
         ...apt,
         status: 'completado',
@@ -999,7 +1018,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await updateAppointment(updatedApt);
 
       if (collectedRemaining > 0) {
-        const cashId = `csh_${Date.now()}`;
+        const cashId = createRecordId('csh');
         const mov: CashMovement = {
           id: cashId,
           businessId: currentBusinessId,
@@ -1052,6 +1071,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Client actions
   const createClient = useCallback(
     async (cliData: Omit<Client, 'id' | 'businessId' | 'createdAt' | 'updatedAt' | 'totalVisits' | 'totalSpent'>): Promise<string> => {
+      requireCloudSession(user, currentBusinessId);
       const cleanName = (cliData.name || '').trim();
       const cleanPhone = (cliData.phone || '').trim();
       const cleanDigits = cleanPhone.replace(/\D/g, '');
@@ -1074,7 +1094,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return existing.id;
       }
 
-      const id = `cli_${Date.now()}`;
+      const id = createRecordId('cli');
       const today = getTodayDateString();
       const newClient: Client = {
         ...cliData,
@@ -1121,6 +1141,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const updateClient = useCallback(
     async (cli: Client) => {
+      requireCloudSession(user, currentBusinessId);
       const updated: Client = {
         ...cli,
         updatedAt: getTodayDateString(),
@@ -1155,6 +1176,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const deleteClient = useCallback(
     async (id: string) => {
+      requireCloudSession(user, currentBusinessId);
       setClients((prev) => {
         const nextClients = prev.filter((c) => c.id !== id);
         try {
@@ -1184,7 +1206,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Service actions
   const createService = useCallback(
     async (srvData: Omit<Service, 'id' | 'businessId' | 'createdAt'>): Promise<string> => {
-      const id = `srv_${Date.now()}`;
+      requireCloudSession(user, currentBusinessId);
+      const id = createRecordId('srv');
       const today = getTodayDateString();
       const newService: Service = {
         ...srvData,
@@ -1209,6 +1232,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const updateService = useCallback(
     async (srv: Service) => {
+      requireCloudSession(user, currentBusinessId);
       setServices((prev) => prev.map((s) => (s.id === srv.id ? srv : s)));
       if (user && currentBusinessId) {
         try {
@@ -1223,6 +1247,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const deleteService = useCallback(
     async (id: string) => {
+      requireCloudSession(user, currentBusinessId);
       setServices((prev) => prev.filter((s) => s.id !== id));
       if (user && currentBusinessId) {
         try {
@@ -1238,7 +1263,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Staff actions
   const createStaff = useCallback(
     async (stfData: Omit<StaffMember, 'id' | 'businessId' | 'createdAt'>): Promise<string> => {
-      const id = `stf_${Date.now()}`;
+      requireCloudSession(user, currentBusinessId);
+      const id = createRecordId('stf');
       const today = getTodayDateString();
       const rawStaff: StaffMember = normalizeStaffMember({
         ...stfData,
@@ -1277,6 +1303,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const updateStaff = useCallback(
     async (stf: StaffMember) => {
+      requireCloudSession(user, currentBusinessId);
       const cleanStaff: StaffMember = JSON.parse(JSON.stringify(normalizeStaffMember(stf)));
       setStaff((prev) => {
         const nextStaff = prev.map((s) => (s.id === cleanStaff.id ? cleanStaff : s));
@@ -1306,6 +1333,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const deleteStaff = useCallback(
     async (id: string) => {
+      requireCloudSession(user, currentBusinessId);
       setStaff((prev) => {
         const nextStaff = prev.filter((s) => s.id !== id);
         try {
@@ -1335,7 +1363,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Cash movement actions
   const createCashMovement = useCallback(
     async (movData: Omit<CashMovement, 'id' | 'businessId' | 'createdAt'>): Promise<string> => {
-      const id = `csh_${Date.now()}`;
+      requireCloudSession(user, currentBusinessId);
+      const id = createRecordId('csh');
       const today = getTodayDateString();
       const targetBranch: BranchId = movData.branchId || activeSingleBranch;
       const newMovement: CashMovement = JSON.parse(
@@ -1376,6 +1405,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const deleteCashMovement = useCallback(
     async (id: string) => {
+      requireCloudSession(user, currentBusinessId);
       setCashMovements((prev) => prev.filter((m) => m.id !== id));
       if (user && currentBusinessId) {
         try {
@@ -1394,7 +1424,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       gcData: Omit<GiftCard, 'id' | 'businessId' | 'createdAt' | 'updatedAt'>,
       registerCashMovement: boolean = true
     ): Promise<string> => {
-      const id = `gc_${Date.now()}`;
+      requireCloudSession(user, currentBusinessId);
+      const id = createRecordId('gc');
       const today = getTodayDateString();
       const randomSuffix = Math.random().toString(36).substring(2, 8).toUpperCase();
       const code = gcData.code && gcData.code.trim().length > 0 ? gcData.code.trim().toUpperCase() : `SOHAM-${randomSuffix}`;
@@ -1447,7 +1478,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const redeemGiftCard = useCallback(
     async (
       codeToRedeem: string,
-      redemptionData: { staffId?: string; staffName?: string; branchId: BranchId; notes?: string }
+      redemptionData: {
+      requireCloudSession(user, currentBusinessId); staffId?: string; staffName?: string; branchId: BranchId; notes?: string }
     ): Promise<{ success: boolean; giftCard: GiftCard }> => {
       const cleanCode = codeToRedeem.trim().toUpperCase();
       const targetCard = rawGiftCards.find(
@@ -1505,6 +1537,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const deleteGiftCard = useCallback(
     async (id: string) => {
+      requireCloudSession(user, currentBusinessId);
       setRawGiftCards((prev) => prev.filter((c) => c.id !== id));
       if (user && currentBusinessId) {
         try {
@@ -1520,7 +1553,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Resource actions (Cabinas & Equipos)
   const createResource = useCallback(
     async (resData: Omit<Resource, 'id' | 'businessId' | 'createdAt'>): Promise<string> => {
-      const id = `res_${Date.now()}`;
+      requireCloudSession(user, currentBusinessId);
+      const id = createRecordId('res');
       const today = getTodayDateString();
       const newResource: Resource = {
         ...resData,
@@ -1546,6 +1580,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const updateResource = useCallback(
     async (res: Resource) => {
+      requireCloudSession(user, currentBusinessId);
       setResources((prev) => prev.map((r) => (r.id === res.id ? res : r)));
       if (user && currentBusinessId) {
         try {
@@ -1561,6 +1596,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const deleteResource = useCallback(
     async (id: string) => {
+      requireCloudSession(user, currentBusinessId);
       setResources((prev) => prev.filter((r) => r.id !== id));
       if (user && currentBusinessId) {
         try {
