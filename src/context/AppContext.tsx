@@ -6,6 +6,7 @@ import {
   setDoc,
   deleteDoc,
   onSnapshot,
+  getDocs,
   writeBatch
 } from 'firebase/firestore';
 import {
@@ -408,6 +409,90 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const subcollectionUnsubs: (() => void)[] = [];
     let subcollectionsAttached = false;
     let isCancelled = false;
+    let recoveryAttempted = false;
+
+    // Recover browser-local records only for the two authorized Soham accounts.
+    // Each cloud collection is checked first and is imported only when completely empty.
+    const recoverLocalRecords = async () => {
+      if (recoveryAttempted || isCancelled) return;
+      recoveryAttempted = true;
+      if (
+        user.uid !== '7s53P27wzQWuTYCbDxvCSlIM58n2' &&
+        user.uid !== 'mPGgPnM9mgf4T1TjWKVhII6bONZ2'
+      ) return;
+
+      try {
+        const candidates: Partial<LocalStoredState>[] = [];
+        const parseCandidate = (raw: string | null) => {
+          if (!raw) return;
+          try {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object') {
+              if (parsed.legacyData && typeof parsed.legacyData === 'object') {
+                Object.values(parsed.legacyData).forEach((value) => {
+                  if (typeof value === 'string') {
+                    try { candidates.push(JSON.parse(value)); } catch {}
+                  } else if (value && typeof value === 'object') {
+                    candidates.push(value as Partial<LocalStoredState>);
+                  }
+                });
+              }
+              candidates.push(parsed as Partial<LocalStoredState>);
+            }
+          } catch {}
+        };
+
+        parseCandidate(localStorage.getItem(LOCAL_STORAGE_KEY));
+        LEGACY_LOCAL_STORAGE_KEYS.forEach((key) => parseCandidate(localStorage.getItem(key)));
+        parseCandidate(localStorage.getItem(LOCAL_BACKUP_KEY));
+
+        const arrays: Array<{ name: string; values: unknown[] }> = [
+          { name: 'clients', values: [] },
+          { name: 'services', values: [] },
+          { name: 'appointments', values: [] },
+          { name: 'cashMovements', values: [] },
+          { name: 'giftCards', values: [] },
+          { name: 'resources', values: [] },
+        ];
+        for (const entry of arrays) {
+          const seen = new Set<string>();
+          for (const candidate of candidates) {
+            const values = (candidate as Record<string, unknown>)[entry.name];
+            if (!Array.isArray(values)) continue;
+            for (const value of values) {
+              const item = value as { id?: unknown };
+              if (item && typeof item.id === 'string' && item.id && !seen.has(item.id)) {
+                seen.add(item.id);
+                entry.values.push(value);
+              }
+            }
+            if (entry.values.length) break;
+          }
+        }
+
+        for (const entry of arrays) {
+          if (isCancelled || entry.values.length === 0) continue;
+          const target = collection(db, `businesses/${currentBusinessId}/${entry.name}`);
+          const existing = await getDocs(target);
+          if (existing.size > 0) continue;
+
+          for (let offset = 0; offset < entry.values.length; offset += 400) {
+            const batch = writeBatch(db);
+            const chunk = entry.values.slice(offset, offset + 400);
+            chunk.forEach((value) => {
+              const item = value as { id: string };
+              batch.set(
+                doc(db, `businesses/${currentBusinessId}/${entry.name}`, item.id),
+                JSON.parse(JSON.stringify({ ...(value as object), businessId: currentBusinessId }))
+              );
+            });
+            await batch.commit();
+          }
+        }
+      } catch (error) {
+        console.warn('Local recovery could not be completed', error);
+      }
+    };
 
     const attachSubcollections = () => {
       if (subcollectionsAttached || isCancelled) return;
@@ -540,6 +625,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (snap.exists()) {
           const remoteBiz = snap.data() as Business;
           setBusiness(sanitizeBusinessConfig(remoteBiz));
+          await recoverLocalRecords();
+          if (isCancelled) return;
           attachSubcollections();
         } else {
           // Initialize clean business in Firestore without sample data
