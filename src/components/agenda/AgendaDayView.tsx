@@ -31,7 +31,7 @@ interface AgendaDayViewProps {
 const DEFAULT_START_HOUR = 8; // 08:00
 const DEFAULT_END_HOUR = 21; // 21:00
 const HOUR_HEIGHT = 80; // 80px per 60 minutes
-const SLOT_HEIGHT = 40; // 40px per 30 minutes
+const SLOT_HEIGHT = 20; // 20px per 15 minutes
 
 function calculateEndTime(startTime: string, durationMinutes: number): string {
   const total = timeToMinutes(startTime) + (durationMinutes || 30);
@@ -253,7 +253,9 @@ export function AgendaDayView({
     for (let h = minHour; h < maxHour; h++) {
       const hStr = String(h).padStart(2, '0');
       generated.push(`${hStr}:00`);
+      generated.push(`${hStr}:15`);
       generated.push(`${hStr}:30`);
+      generated.push(`${hStr}:45`);
     }
     return { slots: generated, dayStartMinutes: minHour * 60 };
   }, [workingStaffInBranchToday, dayOfWeek, selectedBranch, dayAppointments]);
@@ -459,12 +461,12 @@ export function AgendaDayView({
       {/* Hourly Timeline in Normal Flow (never collapses or renders blank) */}
       <div className="relative overflow-x-auto">
         <div className="relative min-w-[650px]">
-          {/* Background Grid: 30-min time slot rows */}
+          {/* Background Grid: 15-min time slot rows */}
           <div className="relative flex flex-col">
             {slots.map((slot) => {
               const isHour = slot.endsWith(':00');
               const slotStartMin = timeToMinutes(slot);
-              const slotEndMin = slotStartMin + 30;
+              const slotEndMin = slotStartMin + 15;
 
               let isSlotBookable = false;
               let slotStatusLabel = 'No disponible';
