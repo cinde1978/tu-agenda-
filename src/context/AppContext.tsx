@@ -377,9 +377,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setIsLoadingData(false);
   }, [user, authLoading]);
 
-  // Save to LocalStorage whenever state changes (offline & local first guarantee)
+  // Save local data only while signed out. When authenticated, Firestore is the source
+  // of truth; never overwrite a possible local recovery copy with an empty cloud snapshot.
   useEffect(() => {
-    if (!business) return;
+    if (user || !business) return;
     try {
       const stateToStore: LocalStoredState = {
         business,
@@ -395,7 +396,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       console.warn('Error saving to localStorage', e);
     }
-  }, [business, services, staff, clients, rawAppointments, rawCashMovements, rawGiftCards, resources]);
+  }, [user, business, services, staff, clients, rawAppointments, rawCashMovements, rawGiftCards, resources]);
 
   // Sync with Firestore when User is signed in
   useEffect(() => {
