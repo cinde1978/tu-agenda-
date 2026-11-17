@@ -1067,20 +1067,10 @@ export function getStaffDaySlotsForBooking(
 
   const duration = Math.max(5, Number(durationMinutes) || 30);
 
-  // Determine clean step interval (15 or 30 min) based on range boundaries, breaks, appointments, and duration
-  const hasQuarterHourAlignment =
-    duration % 30 !== 0 ||
-    shift.ranges.some((r) => timeToMinutes(r.start) % 30 !== 0 || timeToMinutes(r.end) % 30 !== 0) ||
-    shift.breaks.some((b) => timeToMinutes(b.start) % 30 !== 0 || timeToMinutes(b.end) % 30 !== 0) ||
-    (existingAppointments || []).some(
-      (a) =>
-        a.date === dateStr &&
-        a.staffId === member.id &&
-        a.status !== 'cancelado' &&
-        (timeToMinutes(a.time) % 30 !== 0 || (a.durationMinutes || 30) % 30 !== 0)
-    );
-
-  const step = hasQuarterHourAlignment ? 15 : 30;
+  // Soham requested a consistent 15-minute booking grid for every professional,
+  // service duration and branch. Availability/conflict checks below still validate
+  // the full real duration, breaks and existing appointments.
+  const step = 15;
   const candidates: BookingSlotCandidate[] = [];
 
   for (const rng of shift.ranges) {

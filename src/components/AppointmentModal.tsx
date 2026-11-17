@@ -1557,6 +1557,7 @@ export function AppointmentModal({
                 </div>
                 <input
                   type="time"
+                  step={900}
                   required
                   value={time}
                   onChange={(e) => setTime(e.target.value)}

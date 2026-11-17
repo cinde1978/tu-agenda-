@@ -252,11 +252,10 @@ export function SettingsView({ initialTab = 'suscripcion', focusSeq }: SettingsV
   };
 
   const executeClearSampleStaff = async () => {
+    // Delete only records explicitly marked as sample data by their IDs.
+    // Names are never used as a deletion criterion because they may belong to real staff.
     for (const member of staff) {
-      if (
-        member.id.startsWith('stf_sample') ||
-        ['Camila Rossi', 'Valeria Gómez', 'Lucas Medina', 'Valentina Rivas', 'Lucía Fernández', 'Mateo Benítez'].some((n) => member.name.includes(n))
-      ) {
+      if (member.id.startsWith('stf_sample')) {
         await deleteStaff(member.id);
       }
     }
@@ -264,20 +263,10 @@ export function SettingsView({ initialTab = 'suscripcion', focusSeq }: SettingsV
   };
 
   const executeClearSampleServices = async () => {
+    // Delete only records explicitly marked as sample data by their IDs.
+    // A real service can have the same name as a demonstration service.
     for (const srv of services) {
-      if (
-        srv.id.startsWith('srv_sample') ||
-        [
-          'Limpieza Facial Profunda',
-          'Lifting de Pestañas + Tinte',
-          'Semipermanente con Kapping',
-          'Masaje Descontracturante / Relajante',
-          'Tratamiento Corporal Reductor / Modelador',
-          'Corte & Peinado',
-          'Coloración Completa / Balayage',
-          'Perfilado de Barba',
-        ].some((n) => srv.name.includes(n))
-      ) {
+      if (srv.id.startsWith('srv_sample')) {
         await deleteService(srv.id);
       }
     }
@@ -368,25 +357,9 @@ export function SettingsView({ initialTab = 'suscripcion', focusSeq }: SettingsV
     });
   };
 
-  const hasSampleStaff = staff.some(
-    (s) =>
-      s.id.startsWith('stf_sample') ||
-      ['Camila Rossi', 'Valeria Gómez', 'Lucas Medina', 'Valentina Rivas', 'Lucía Fernández', 'Mateo Benítez'].some((n) => s.name.includes(n))
-  );
+  const hasSampleStaff = staff.some((s) => s.id.startsWith('stf_sample'));
 
-  const hasSampleServices = services.some(
-    (s) =>
-      s.id.startsWith('srv_sample') ||
-      [
-        'Limpieza Facial Profunda',
-        'Lifting de Pestañas + Tinte',
-        'Semipermanente con Kapping',
-        'Masaje Descontracturante / Relajante',
-        'Tratamiento Corporal Reductor / Modelador',
-        'Corte',
-        'Balayage',
-      ].some((n) => s.name.includes(n))
-  );
+  const hasSampleServices = services.some((s) => s.id.startsWith('srv_sample'));
 
   const serviceCategories = [
     'todos',

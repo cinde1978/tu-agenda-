@@ -1,0 +1,36 @@
+name: Verificar Tu Agenda Lista
+
+on:
+  push:
+    branches:
+      - estabilizacion-soham
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+      - name: Preparar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Instalar dependencias
+        run: npm install
+      - name: Revisar TypeScript
+        run: npm run lint
+      - name: Compilar aplicación
+        run: npm run build
+      - name: Guardar versión compilada
+        uses: actions/upload-artifact@v4
+        with:
+          name: tu-agenda-lista-dist
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7

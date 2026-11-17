@@ -48,7 +48,7 @@ export interface AgendaStaffViewProps {
 const DEFAULT_START_HOUR = 8; // 08:00
 const DEFAULT_END_HOUR = 21; // 21:00
 const HOUR_HEIGHT = 72; // 72px per 60 minutes
-const SLOT_HEIGHT = 36; // 36px per 30 minutes
+const SLOT_HEIGHT = 18; // 18px per 15 minutes
 
 function calculateEndTime(startTime: string, durationMinutes: number): string {
   const total = timeToMinutes(startTime) + (durationMinutes || 30);
@@ -322,7 +322,9 @@ export function AgendaStaffView({
     for (let h = minHour; h < maxHour; h++) {
       const hStr = String(h).padStart(2, '0');
       generated.push(`${hStr}:00`);
+      generated.push(`${hStr}:15`);
       generated.push(`${hStr}:30`);
+      generated.push(`${hStr}:45`);
     }
     return { slots: generated, dayStartMinutes: minHour * 60 };
   }, [rosterStaff, currentDayOfWeek, activeBranch, dayAppointments]);
@@ -739,11 +741,11 @@ export function AgendaStaffView({
                   key={member.id}
                   className="relative border-r-2 border-slate-300"
                 >
-                  {/* Background 30-min Availability Slots in normal flow */}
+                  {/* Background 15-min Availability Slots in normal flow */}
                   <div className="relative flex flex-col">
                     {slots.map((slot) => {
                       const slotStartMin = timeToMinutes(slot);
-                      const slotEndMin = slotStartMin + 30;
+                      const slotEndMin = slotStartMin + 15;
                       const isHour = slot.endsWith(':00');
 
                       const slotAvail = getSlotAvailabilityForStaff(
