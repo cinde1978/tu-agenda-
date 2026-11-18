@@ -245,36 +245,37 @@ button.btn-registrar-cliente svg {
 
 
 /* Botones WhatsApp del detalle de turno.
-   Se declara dentro de la capa utilities y con selector más específico que las
-   utilidades Tailwind !bg / !text / !border, para que el contraste sea estable. */
-@layer utilities {
-  button.btn-whatsapp-solid,
-  button.btn-whatsapp-solid:visited,
-  button.btn-whatsapp-solid:disabled {
-    background-color: #047857 !important;
-    background-image: none !important;
-    color: #FFFFFF !important;
-    border: 2px solid #065F46 !important;
-    opacity: 1 !important;
-    -webkit-text-fill-color: #FFFFFF !important;
-  }
+   Reglas globales fuera de las capas de Tailwind para que prevalezcan
+   sobre utilidades y estilos heredados del botón. */
+button.btn-whatsapp-solid,
+button.btn-whatsapp-solid:visited,
+button.btn-whatsapp-solid:disabled {
+  background: #047857 !important;
+  background-color: #047857 !important;
+  background-image: none !important;
+  color: #FFFFFF !important;
+  border: 2px solid #065F46 !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+}
 
-  button.btn-whatsapp-solid:hover,
-  button.btn-whatsapp-solid:active {
-    background-color: #065F46 !important;
-    background-image: none !important;
-    color: #FFFFFF !important;
-    border-color: #064E3B !important;
-    opacity: 1 !important;
-    -webkit-text-fill-color: #FFFFFF !important;
-  }
+button.btn-whatsapp-solid:hover,
+button.btn-whatsapp-solid:active {
+  background: #065F46 !important;
+  background-color: #065F46 !important;
+  background-image: none !important;
+  color: #FFFFFF !important;
+  border-color: #064E3B !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+}
 
-  button.btn-whatsapp-solid span,
-  button.btn-whatsapp-solid svg {
-    color: #FFFFFF !important;
-    stroke: #FFFFFF !important;
-    fill: currentColor;
-    opacity: 1 !important;
-    -webkit-text-fill-color: #FFFFFF !important;
-  }
+button.btn-whatsapp-solid span,
+button.btn-whatsapp-solid svg,
+button.btn-whatsapp-solid svg * {
+  color: #FFFFFF !important;
+  stroke: #FFFFFF !important;
+  fill: currentColor !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: #FFFFFF !important;
 }
