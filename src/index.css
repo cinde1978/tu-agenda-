@@ -242,3 +242,28 @@ button.btn-registrar-cliente svg {
     display: none !important;
   }
 }
+
+
+/* Botones WhatsApp del detalle de turno: contraste fijo en todos los navegadores */
+button.btn-whatsapp-solid,
+button.btn-whatsapp-solid:visited,
+button.btn-whatsapp-solid:disabled {
+  background-color: #047857 !important;
+  color: #FFFFFF !important;
+  border: 2px solid #065F46 !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+}
+button.btn-whatsapp-solid:hover {
+  background-color: #065F46 !important;
+  color: #FFFFFF !important;
+  border-color: #064E3B !important;
+  opacity: 1 !important;
+}
+button.btn-whatsapp-solid span,
+button.btn-whatsapp-solid svg {
+  color: #FFFFFF !important;
+  stroke: #FFFFFF !important;
+  fill: currentColor;
+  opacity: 1 !important;
+}
