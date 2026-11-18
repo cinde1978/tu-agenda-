@@ -151,7 +151,7 @@ export function AppointmentDetailModal({
                     onClick={() => {
                       openWhatsAppTurno(appointment, business.phoneCountryPrefix || '+54');
                     }}
-                    className="px-3.5 py-2 !bg-emerald-700 hover:!bg-emerald-800 !text-white !border-2 !border-emerald-800 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm shadow-emerald-600/20 transition-all hover:scale-105 active:scale-95" style={{ backgroundColor: "#047857", color: "#FFFFFF", borderColor: "#065F46", opacity: 1 }}
+                    className="btn-whatsapp-solid px-3.5 py-2 !bg-emerald-700 hover:!bg-emerald-800 !text-white !border-2 !border-emerald-800 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm shadow-emerald-600/20 transition-all hover:scale-105 active:scale-95" style={{ backgroundColor: "#047857", color: "#FFFFFF", borderColor: "#065F46", opacity: 1 }}
                     title="Abrir WhatsApp directamente con confirmación"
                   >
                     <WhatsAppIcon size={16} variant="monochrome" />
@@ -425,7 +425,7 @@ export function AppointmentDetailModal({
                   onClick={() => {
                     openWhatsAppTurno(appointment, business.phoneCountryPrefix || '+54');
                   }}
-                  className="px-4 py-2 !bg-emerald-700 hover:!bg-emerald-800 active:scale-98 !text-white !border-2 !border-emerald-800 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-sm shadow-emerald-600/20 transition-all cursor-pointer" style={{ backgroundColor: "#047857", color: "#FFFFFF", borderColor: "#065F46", opacity: 1 }}
+                  className="btn-whatsapp-solid px-4 py-2 !bg-emerald-700 hover:!bg-emerald-800 active:scale-98 !text-white !border-2 !border-emerald-800 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-sm shadow-emerald-600/20 transition-all cursor-pointer" style={{ backgroundColor: "#047857", color: "#FFFFFF", borderColor: "#065F46", opacity: 1 }}
                   title="Confirmar y dar OK al cliente por WhatsApp"
                 >
                   <WhatsAppIcon size={16} variant="monochrome" />
