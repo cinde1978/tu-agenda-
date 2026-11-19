@@ -12,7 +12,9 @@ import {
   Trash2,
   DollarSign,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Plus,
+  Save
 } from 'lucide-react';
 import { Client, Appointment } from '../../types';
 import { useApp } from '../../context/AppContext';
@@ -34,9 +36,52 @@ export function ClientDetailDrawer({
   onSelectAppointment,
   onNewAppointmentForClient,
 }: ClientDetailDrawerProps) {
-  const { business, allAppointments, deleteClient } = useApp();
+  const { business, allAppointments, deleteClient, staff, treatmentRecords, createTreatmentRecord } = useApp();
   const [selectedWhatsAppApt, setSelectedWhatsAppApt] = useState<Appointment | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [showTreatmentForm, setShowTreatmentForm] = useState(false);
+  const [savingTreatment, setSavingTreatment] = useState(false);
+  const [treatmentError, setTreatmentError] = useState('');
+  const [treatmentDate, setTreatmentDate] = useState(new Date().toISOString().slice(0, 10));
+  const [professionalId, setProfessionalId] = useState('');
+  const [treatmentName, setTreatmentName] = useState('');
+  const [treatmentZones, setTreatmentZones] = useState('');
+  const [treatmentObservations, setTreatmentObservations] = useState('');
+  const clientTreatmentRecords = treatmentRecords
+    .filter((record) => record.clientId === client.id)
+    .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt));
+
+  const handleSaveTreatment = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const professional = staff.find((member) => member.id === professionalId);
+    if (!professional) {
+      setTreatmentError('Seleccioná la profesional que realizó la sesión.');
+      return;
+    }
+    setSavingTreatment(true);
+    setTreatmentError('');
+    try {
+      await createTreatmentRecord({
+        clientId: client.id,
+        date: treatmentDate,
+        professionalId: professional.id,
+        professionalName: professional.name,
+        treatmentName,
+        zones: treatmentZones,
+        observations: treatmentObservations,
+      });
+      setTreatmentName('');
+      setTreatmentZones('');
+      setTreatmentObservations('');
+      setTreatmentDate(new Date().toISOString().slice(0, 10));
+      setProfessionalId('');
+      setShowTreatmentForm(false);
+    } catch (error) {
+      setTreatmentError(error instanceof Error ? error.message : 'No se pudo guardar la sesión. Revisá la conexión e intentá nuevamente.');
+    } finally {
+      setSavingTreatment(false);
+    }
+  };
 
   // Filter client appointments across both branches
   const clientAppointments = allAppointments.filter(
@@ -237,6 +282,79 @@ export function ClientDetailDrawer({
                   <span className="italic text-slate-500">Sin notas técnicas o preferencias cargadas aún.</span>
                 )}
               </div>
+            </div>
+
+            {/* Treatment History */}
+            <div className="border-t border-slate-200 pt-5">
+              <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-blue-600" />
+                    Historial de tratamientos ({clientTreatmentRecords.length})
+                  </h4>
+                  <p className="text-[11px] text-slate-500 mt-1">Registro compartido de cada sesión realizada.</p>
+                </div>
+                <button type="button" onClick={() => { setTreatmentError(''); setShowTreatmentForm((value) => !value); }} className="px-3 py-2 rounded-xl bg-[#1E3A8A] hover:bg-blue-900 text-white text-xs font-black flex items-center gap-1.5">
+                  <Plus className="w-3.5 h-3.5" /> Agregar sesión
+                </button>
+              </div>
+
+              {showTreatmentForm && (
+                <form onSubmit={handleSaveTreatment} className="mb-4 p-4 rounded-xl border border-blue-200 bg-blue-50/60 space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label className="text-xs font-bold text-slate-700 space-y-1 block">
+                      Fecha
+                      <input required type="date" value={treatmentDate} onChange={(e) => setTreatmentDate(e.target.value)} className="w-full rounded-lg border border-slate-300 bg-white p-2 text-sm" />
+                    </label>
+                    <label className="text-xs font-bold text-slate-700 space-y-1 block">
+                      Profesional
+                      <select required value={professionalId} onChange={(e) => setProfessionalId(e.target.value)} className="w-full rounded-lg border border-slate-300 bg-white p-2 text-sm">
+                        <option value="">Seleccionar profesional</option>
+                        {staff.filter((member) => member.active).map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}
+                      </select>
+                    </label>
+                  </div>
+                  <label className="text-xs font-bold text-slate-700 space-y-1 block">
+                    Tratamiento realizado
+                    <input required value={treatmentName} onChange={(e) => setTreatmentName(e.target.value)} placeholder="Ej.: maderoterapia, limpieza facial..." className="w-full rounded-lg border border-slate-300 bg-white p-2 text-sm" />
+                  </label>
+                  <label className="text-xs font-bold text-slate-700 space-y-1 block">
+                    Zonas trabajadas
+                    <input value={treatmentZones} onChange={(e) => setTreatmentZones(e.target.value)} placeholder="Ej.: abdomen, piernas, rostro..." className="w-full rounded-lg border border-slate-300 bg-white p-2 text-sm" />
+                  </label>
+                  <label className="text-xs font-bold text-slate-700 space-y-1 block">
+                    Observaciones y evolución
+                    <textarea value={treatmentObservations} onChange={(e) => setTreatmentObservations(e.target.value)} rows={3} placeholder="Anotar productos utilizados, respuesta de la piel, evolución y recomendaciones..." className="w-full rounded-lg border border-slate-300 bg-white p-2 text-sm resize-y" />
+                  </label>
+                  {treatmentError && <p role="alert" className="text-xs font-bold text-red-700">{treatmentError}</p>}
+                  <div className="flex justify-end gap-2">
+                    <button type="button" onClick={() => setShowTreatmentForm(false)} className="px-3 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 text-xs font-bold">Cancelar</button>
+                    <button type="submit" disabled={savingTreatment} className="px-3 py-2 rounded-lg bg-[#1E3A8A] text-white text-xs font-bold flex items-center gap-1.5 disabled:opacity-50">
+                      <Save className="w-3.5 h-3.5" /> {savingTreatment ? 'Guardando...' : 'Guardar sesión'}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {clientTreatmentRecords.length === 0 ? (
+                <div className="text-center py-6 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-slate-500 text-xs">
+                  Todavía no hay sesiones cargadas para esta clienta.
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {clientTreatmentRecords.map((record) => (
+                    <article key={record.id} className="p-3.5 rounded-xl border border-slate-200 bg-white space-y-1.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <strong className="text-sm text-slate-800">{record.treatmentName}</strong>
+                        <span className="text-[11px] text-slate-500 shrink-0">{formatDateSpanishLong(record.date)}</span>
+                      </div>
+                      <p className="text-xs text-blue-800 font-bold">Profesional: {record.professionalName}</p>
+                      {record.zones && <p className="text-xs text-slate-700"><strong>Zonas:</strong> {record.zones}</p>}
+                      {record.observations && <p className="text-xs text-slate-600 whitespace-pre-wrap">{record.observations}</p>}
+                    </article>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Appointment History */}
