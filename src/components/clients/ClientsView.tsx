@@ -34,6 +34,8 @@ export function ClientsView({ onSelectAppointment, onNewAppointmentForClient }: 
   const [clientToEdit, setClientToEdit] = useState<Client | null>(null);
   const [selectedClientForDrawer, setSelectedClientForDrawer] = useState<Client | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deletingClientId, setDeletingClientId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<{ clientId: string; message: string } | null>(null);
 
   const filteredClients = clients.filter((c) => {
     const term = searchTerm.toLowerCase();
@@ -47,8 +49,31 @@ export function ClientsView({ onSelectAppointment, onNewAppointmentForClient }: 
   });
 
   const handleDeleteClient = async (client: Client) => {
-    await deleteClient(client.id);
-    setConfirmDeleteId(null);
+    if (deletingClientId) return;
+    setDeletingClientId(client.id);
+    setDeleteError(null);
+    try {
+      await deleteClient(client.id);
+      setConfirmDeleteId(null);
+    } catch (error) {
+      const rawMessage = error instanceof Error ? error.message : String(error);
+      let detail = rawMessage;
+      try {
+        const parsed = JSON.parse(rawMessage);
+        if (typeof parsed.error === 'string') detail = parsed.error;
+      } catch {
+        // Keep the original message when it is not structured.
+      }
+      if (detail.includes('permission-denied')) {
+        setDeleteError({ clientId: client.id, message: 'La cuenta no tiene permiso para eliminar esta ficha. Avisale a Iris para revisar el acceso.' });
+      } else if (detail.includes('unavailable') || detail.includes('offline') || detail.includes('network')) {
+        setDeleteError({ clientId: client.id, message: 'No se pudo conectar. Revisá internet e intentá nuevamente. La ficha sigue guardada.' });
+      } else {
+        setDeleteError({ clientId: client.id, message: 'No se pudo eliminar la ficha. No se borraron los datos. Intentá nuevamente y, si continúa, avisale a Iris.' });
+      }
+    } finally {
+      setDeletingClientId(null);
+    }
   };
 
   return (
@@ -207,9 +232,10 @@ export function ClientsView({ onSelectAppointment, onNewAppointmentForClient }: 
                       </button>
                       <button
                         type="button"
-                        onClick={() =>
-                          setConfirmDeleteId(confirmDeleteId === client.id ? null : client.id)
-                        }
+                        onClick={() => {
+                          setDeleteError(null);
+                          setConfirmDeleteId(confirmDeleteId === client.id ? null : client.id);
+                        }}
                         className="p-1.5 bg-red-700 hover:bg-red-800 text-white rounded-lg transition-colors cursor-pointer shadow-xs border border-red-800"
                         title="Eliminar cliente"
                       >
@@ -234,10 +260,14 @@ export function ClientsView({ onSelectAppointment, onNewAppointmentForClient }: 
                           )}
                         </div>
                       </div>
+                      {deleteError?.clientId === client.id && (
+                        <p role="alert" className="text-[11px] font-bold text-red-800">{deleteError.message}</p>
+                      )}
                       <div className="flex items-center justify-end gap-2">
                         <button
                           type="button"
-                          onClick={() => setConfirmDeleteId(null)}
+                          onClick={() => { setConfirmDeleteId(null); setDeleteError(null); }}
+                          disabled={deletingClientId === client.id}
                           className="px-3 py-1 rounded-lg bg-white hover:bg-slate-50 border-2 border-[#1E3A8A] text-[#1E3A8A] text-xs font-black cursor-pointer shadow-2xs transition-colors"
                         >
                           Cancelar
@@ -245,9 +275,10 @@ export function ClientsView({ onSelectAppointment, onNewAppointmentForClient }: 
                         <button
                           type="button"
                           onClick={() => handleDeleteClient(client)}
+                          disabled={deletingClientId === client.id}
                           className="px-3 py-1 rounded-lg bg-red-700 hover:bg-red-800 active:bg-red-900 border border-red-800 text-white text-xs font-black cursor-pointer shadow-xs transition-colors"
                         >
-                          Confirmar
+                          {deletingClientId === client.id ? 'Eliminando...' : 'Confirmar'}
                         </button>
                       </div>
                     </div>
