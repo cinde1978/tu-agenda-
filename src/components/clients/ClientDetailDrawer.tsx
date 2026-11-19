@@ -39,6 +39,8 @@ export function ClientDetailDrawer({
   const { business, allAppointments, deleteClient, staff, treatmentRecords, createTreatmentRecord } = useApp();
   const [selectedWhatsAppApt, setSelectedWhatsAppApt] = useState<Appointment | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deletingClient, setDeletingClient] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const [showTreatmentForm, setShowTreatmentForm] = useState(false);
   const [savingTreatment, setSavingTreatment] = useState(false);
   const [treatmentError, setTreatmentError] = useState('');
@@ -99,13 +101,32 @@ export function ClientDetailDrawer({
   const hasLinkedHistory = clientAppointments.length > 0 || clientTreatmentRecords.length > 0 || Boolean(client.notes?.trim());
 
   const handleConfirmDelete = async () => {
-    if (clientTreatmentRecords.length > 0) {
+    if (clientTreatmentRecords.length > 0 || deletingClient) return;
+    setDeletingClient(true);
+    setDeleteError('');
+    try {
+      await deleteClient(client.id);
       setConfirmingDelete(false);
-      return;
+      onClose();
+    } catch (error) {
+      const rawMessage = error instanceof Error ? error.message : String(error);
+      let detail = rawMessage;
+      try {
+        const parsed = JSON.parse(rawMessage);
+        if (typeof parsed.error === 'string') detail = parsed.error;
+      } catch {
+        // Keep the original message when it is not structured.
+      }
+      if (detail.includes('permission-denied')) {
+        setDeleteError('No se pudo eliminar porque la cuenta no tiene permiso. Avisale a Iris para revisar el acceso.');
+      } else if (detail.includes('unavailable') || detail.includes('offline') || detail.includes('network')) {
+        setDeleteError('No se pudo conectar. Revisá internet e intentá nuevamente. La ficha sigue guardada.');
+      } else {
+        setDeleteError('No se pudo eliminar la ficha. No se borraron los datos. Intentá nuevamente y, si continúa, avisale a Iris.');
+      }
+    } finally {
+      setDeletingClient(false);
     }
-    await deleteClient(client.id);
-    setConfirmingDelete(false);
-    onClose();
   };
 
   return (
@@ -178,10 +199,12 @@ export function ClientDetailDrawer({
                   )}
                 </div>
               </div>
+              {deleteError && <p role="alert" className="text-xs font-bold text-red-800">{deleteError}</p>}
               <div className="flex items-center justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => setConfirmingDelete(false)}
+                  onClick={() => { setConfirmingDelete(false); setDeleteError(''); }}
+                  disabled={deletingClient}
                   className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-[#1E3A8A] border-2 border-[#1E3A8A] text-xs font-black cursor-pointer shadow-2xs transition-colors"
                 >
                   Cancelar
@@ -189,10 +212,10 @@ export function ClientDetailDrawer({
                 <button
                   type="button"
                   onClick={handleConfirmDelete}
-                  disabled={clientTreatmentRecords.length > 0}
+                  disabled={clientTreatmentRecords.length > 0 || deletingClient}
                   className="px-4 py-2 rounded-xl bg-red-700 hover:bg-red-800 text-white border-2 border-red-800 text-xs font-black cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {clientTreatmentRecords.length > 0 ? 'Ficha protegida por historial' : 'Confirmar eliminación'}
+                  {clientTreatmentRecords.length > 0 ? 'Ficha protegida por historial' : deletingClient ? 'Eliminando...' : 'Confirmar eliminación'}
                 </button>
               </div>
             </div>
