@@ -32,6 +32,7 @@ import {
   BRANCHES,
   Resource,
   GiftCard,
+  TreatmentRecord,
 } from '../types';
 import {
   getDefaultBusiness,
@@ -195,6 +196,8 @@ interface AppContextType {
   deleteAppointment: (id: string) => Promise<void>;
   markAppointmentCompleted: (apt: Appointment, collectedRemaining: number, paymentMethod: Appointment['paymentMethod']) => Promise<void>;
   createClient: (cli: Omit<Client, 'id' | 'businessId' | 'createdAt' | 'updatedAt' | 'totalVisits' | 'totalSpent'>) => Promise<string>;
+  treatmentRecords: TreatmentRecord[];
+  createTreatmentRecord: (record: Omit<TreatmentRecord, 'id' | 'businessId' | 'createdAt'>) => Promise<string>;
   updateClient: (cli: Client) => Promise<void>;
   deleteClient: (id: string) => Promise<void>;
   createService: (srv: Omit<Service, 'id' | 'businessId' | 'createdAt'>) => Promise<string>;
@@ -225,6 +228,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [business, setBusiness] = useState<Business | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
+  const [treatmentRecords, setTreatmentRecords] = useState<TreatmentRecord[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [rawAppointments, setRawAppointments] = useState<Appointment[]>([]);
@@ -318,6 +322,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (authLoading) return;
     if (user) return; // Will sync from Firestore
+    setTreatmentRecords([]);
 
     try {
       // Back up and purge any legacy demo/test keys once
@@ -417,6 +422,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     setIsLoadingData(true);
     setHasFirestoreError(null);
+    setTreatmentRecords([]);
 
     const bizDocRef = doc(db, 'businesses', currentBusinessId);
     const subcollectionUnsubs: (() => void)[] = [];
@@ -574,6 +580,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           },
           (error) => {
             reportListenerError(error, OperationType.LIST, `businesses/${currentBusinessId}/staff`);
+          }
+        )
+      );
+
+      const treatmentRecordsRef = collection(db, `businesses/${currentBusinessId}/treatmentRecords`);
+      subcollectionUnsubs.push(
+        onSnapshot(
+          treatmentRecordsRef,
+          (snapshot) => {
+            const list: TreatmentRecord[] = [];
+            snapshot.forEach((d) => list.push(d.data() as TreatmentRecord));
+            setTreatmentRecords(list);
+          },
+          (error) => {
+            reportListenerError(error, OperationType.LIST, `businesses/${currentBusinessId}/treatmentRecords`);
           }
         )
       );
@@ -1138,6 +1159,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [currentBusinessId, user, clients]
   );
 
+  const createTreatmentRecord = useCallback(
+    async (record: Omit<TreatmentRecord, 'id' | 'businessId' | 'createdAt'>): Promise<string> => {
+      requireCloudSession(user, currentBusinessId);
+      if (!record.clientId || !record.professionalId || !record.professionalName.trim() || !record.treatmentName.trim()) {
+        throw new Error('Completá la profesional y el tratamiento antes de guardar.');
+      }
+      const id = createRecordId('treat');
+      const newRecord: TreatmentRecord = {
+        ...record,
+        id,
+        businessId: currentBusinessId,
+        date: record.date || getTodayDateString(),
+        professionalName: record.professionalName.trim(),
+        treatmentName: record.treatmentName.trim(),
+        zones: (record.zones || '').trim(),
+        observations: (record.observations || '').trim(),
+        createdAt: new Date().toISOString(),
+      };
+      const cleanRecord = JSON.parse(JSON.stringify(newRecord)) as TreatmentRecord;
+      try {
+        await setDoc(doc(db, `businesses/${currentBusinessId}/treatmentRecords`, id), cleanRecord);
+        setTreatmentRecords((prev) => [cleanRecord, ...prev]);
+        return id;
+      } catch (err) {
+        handleFirestoreError(err, OperationType.CREATE, `businesses/${currentBusinessId}/treatmentRecords/${id}`);
+        throw err;
+      }
+    },
+    [currentBusinessId, user]
+  );
+
   const updateClient = useCallback(
     async (cli: Client) => {
       requireCloudSession(user, currentBusinessId);
@@ -1176,6 +1228,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const deleteClient = useCallback(
     async (id: string) => {
       requireCloudSession(user, currentBusinessId);
+      if (treatmentRecords.some((record) => record.clientId === id)) {
+        throw new Error('No se puede eliminar esta ficha porque tiene sesiones en su historial. Conservamos la ficha para no perder los registros de tratamientos.');
+      }
       setClients((prev) => {
         const nextClients = prev.filter((c) => c.id !== id);
         try {
@@ -1199,7 +1254,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       }
     },
-    [currentBusinessId, user]
+    [currentBusinessId, user, treatmentRecords]
   );
 
   // Service actions
@@ -1883,6 +1938,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     deleteAppointment,
     markAppointmentCompleted,
     createClient,
+    treatmentRecords,
+    createTreatmentRecord,
     updateClient,
     deleteClient,
     createService,

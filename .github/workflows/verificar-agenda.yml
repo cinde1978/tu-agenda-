@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - estabilizacion-soham
+      - ficha-digital-clientes
   pull_request:
     branches:
       - main

@@ -59,6 +59,19 @@ export interface Business {
   updatedAt: string;
 }
 
+export interface TreatmentRecord {
+  id: string;
+  businessId: string;
+  clientId: string;
+  date: string;
+  professionalId: string;
+  professionalName: string;
+  treatmentName: string;
+  zones: string;
+  observations: string;
+  createdAt: string;
+}
+
 export interface Client {
   id: string;
   businessId: string;
