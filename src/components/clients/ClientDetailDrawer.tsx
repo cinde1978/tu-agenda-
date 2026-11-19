@@ -96,9 +96,13 @@ export function ClientDetailDrawer({
   const calculatedTotalSpent = completedAppointments.reduce((acc, curr) => acc + (curr.price || 0), 0);
   const totalVisitsCount = completedAppointments.length || client.totalVisits || 0;
   const displayTotalSpent = calculatedTotalSpent || client.totalSpent || 0;
-  const hasLinkedHistory = clientAppointments.length > 0 || Boolean(client.notes?.trim());
+  const hasLinkedHistory = clientAppointments.length > 0 || clientTreatmentRecords.length > 0 || Boolean(client.notes?.trim());
 
   const handleConfirmDelete = async () => {
+    if (clientTreatmentRecords.length > 0) {
+      setConfirmingDelete(false);
+      return;
+    }
     await deleteClient(client.id);
     setConfirmingDelete(false);
     onClose();
@@ -155,7 +159,12 @@ export function ClientDetailDrawer({
                   <p className="font-black text-sm text-rose-950">
                     ¿Eliminar la ficha de "{client.name}"?
                   </p>
-                  {hasLinkedHistory ? (
+                  {clientTreatmentRecords.length > 0 ? (
+                    <p className="font-semibold text-rose-900">
+                      Esta clienta tiene <strong>{clientTreatmentRecords.length} sesión(es) de tratamiento</strong> registradas.
+                      Para proteger su historial, no se puede eliminar esta ficha.
+                    </p>
+                  ) : hasLinkedHistory ? (
                     <p className="font-semibold text-rose-900">
                       Atención: este cliente registra{' '}
                       <strong>{clientAppointments.length} turno(s)</strong> en el historial
@@ -180,9 +189,10 @@ export function ClientDetailDrawer({
                 <button
                   type="button"
                   onClick={handleConfirmDelete}
-                  className="px-4 py-2 rounded-xl bg-red-700 hover:bg-red-800 text-white border-2 border-red-800 text-xs font-black cursor-pointer shadow-xs"
+                  disabled={clientTreatmentRecords.length > 0}
+                  className="px-4 py-2 rounded-xl bg-red-700 hover:bg-red-800 text-white border-2 border-red-800 text-xs font-black cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Confirmar eliminación
+                  {clientTreatmentRecords.length > 0 ? 'Ficha protegida por historial' : 'Confirmar eliminación'}
                 </button>
               </div>
             </div>
