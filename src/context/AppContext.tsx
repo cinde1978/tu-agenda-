@@ -1228,6 +1228,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const deleteClient = useCallback(
     async (id: string) => {
       requireCloudSession(user, currentBusinessId);
+      if (treatmentRecords.some((record) => record.clientId === id)) {
+        throw new Error('No se puede eliminar esta ficha porque tiene sesiones en su historial. Conservamos la ficha para no perder los registros de tratamientos.');
+      }
       setClients((prev) => {
         const nextClients = prev.filter((c) => c.id !== id);
         try {
@@ -1251,7 +1254,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       }
     },
-    [currentBusinessId, user]
+    [currentBusinessId, user, treatmentRecords]
   );
 
   // Service actions
