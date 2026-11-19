@@ -199,7 +199,7 @@ interface AppContextType {
   treatmentRecords: TreatmentRecord[];
   createTreatmentRecord: (record: Omit<TreatmentRecord, 'id' | 'businessId' | 'createdAt'>) => Promise<string>;
   updateClient: (cli: Client) => Promise<void>;
-  deleteClient: (id: string) => Promise<void>;
+  deleteClient: (id: string, deleteTreatmentHistory?: boolean) => Promise<void>;
   createService: (srv: Omit<Service, 'id' | 'businessId' | 'createdAt'>) => Promise<string>;
   updateService: (srv: Service) => Promise<void>;
   deleteService: (id: string) => Promise<void>;
