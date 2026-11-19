@@ -322,6 +322,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (authLoading) return;
     if (user) return; // Will sync from Firestore
+    setTreatmentRecords([]);
 
     try {
       // Back up and purge any legacy demo/test keys once
@@ -421,6 +422,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     setIsLoadingData(true);
     setHasFirestoreError(null);
+    setTreatmentRecords([]);
 
     const bizDocRef = doc(db, 'businesses', currentBusinessId);
     const subcollectionUnsubs: (() => void)[] = [];
