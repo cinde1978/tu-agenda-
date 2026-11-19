@@ -7,6 +7,7 @@ on:
       - ficha-digital-clientes
       - correccion-eliminar-clientes
       - corregir-borrado-directorio
+      - opcion-eliminar-ficha-con-historial
   pull_request:
     branches:
       - main
