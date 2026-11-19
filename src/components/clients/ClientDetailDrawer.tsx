@@ -42,7 +42,8 @@ export function ClientDetailDrawer({
   const [showTreatmentForm, setShowTreatmentForm] = useState(false);
   const [savingTreatment, setSavingTreatment] = useState(false);
   const [treatmentError, setTreatmentError] = useState('');
-  const [treatmentDate, setTreatmentDate] = useState(new Date().toISOString().slice(0, 10));
+  const localToday = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  const [treatmentDate, setTreatmentDate] = useState(localToday);
   const [professionalId, setProfessionalId] = useState('');
   const [treatmentName, setTreatmentName] = useState('');
   const [treatmentZones, setTreatmentZones] = useState('');
@@ -73,7 +74,7 @@ export function ClientDetailDrawer({
       setTreatmentName('');
       setTreatmentZones('');
       setTreatmentObservations('');
-      setTreatmentDate(new Date().toISOString().slice(0, 10));
+      setTreatmentDate(localToday());
       setProfessionalId('');
       setShowTreatmentForm(false);
     } catch (error) {
@@ -273,7 +274,7 @@ export function ClientDetailDrawer({
             <div>
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
                 <FileText className="w-3.5 h-3.5 text-blue-600" />
-                Ficha Técnica & Preferencias
+                Antecedentes, alergias y observaciones
               </h4>
               <div className="p-4 bg-slate-50 border border-slate-300 rounded-xl text-xs text-[#0F172A] leading-relaxed font-sans font-medium">
                 {client.notes ? (
