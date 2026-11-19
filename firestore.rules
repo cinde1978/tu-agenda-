@@ -58,7 +58,8 @@ allow delete: if false;
             'appointments',
             'cashMovements',
             'giftCards',
-            'resources'
+            'resources',
+            'treatmentRecords'
           ]
           && validId(itemId);
       }
