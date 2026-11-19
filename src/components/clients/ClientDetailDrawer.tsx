@@ -100,12 +100,12 @@ export function ClientDetailDrawer({
   const displayTotalSpent = calculatedTotalSpent || client.totalSpent || 0;
   const hasLinkedHistory = clientAppointments.length > 0 || clientTreatmentRecords.length > 0 || Boolean(client.notes?.trim());
 
-  const handleConfirmDelete = async () => {
-    if (clientTreatmentRecords.length > 0 || deletingClient) return;
+  const handleConfirmDelete = async (deleteTreatmentHistory: boolean = false) => {
+    if (deletingClient) return;
     setDeletingClient(true);
     setDeleteError('');
     try {
-      await deleteClient(client.id);
+      await deleteClient(client.id, deleteTreatmentHistory);
       setConfirmingDelete(false);
       onClose();
     } catch (error) {
@@ -200,6 +200,11 @@ export function ClientDetailDrawer({
                 </div>
               </div>
               {deleteError && <p role="alert" className="text-xs font-bold text-red-800">{deleteError}</p>}
+              {clientTreatmentRecords.length > 0 && (
+                <p className="text-xs font-bold text-red-900 bg-rose-50 border border-rose-200 rounded-lg p-2">
+                  Atención: se eliminarán permanentemente la ficha y sus {clientTreatmentRecords.length} sesiones de tratamiento. Los turnos de agenda no se borrarán.
+                </p>
+              )}
               <div className="flex items-center justify-end gap-2">
                 <button
                   type="button"
@@ -209,14 +214,25 @@ export function ClientDetailDrawer({
                 >
                   Cancelar
                 </button>
-                <button
-                  type="button"
-                  onClick={handleConfirmDelete}
-                  disabled={clientTreatmentRecords.length > 0 || deletingClient}
-                  className="px-4 py-2 rounded-xl bg-red-700 hover:bg-red-800 text-white border-2 border-red-800 text-xs font-black cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {clientTreatmentRecords.length > 0 ? 'Ficha protegida por historial' : deletingClient ? 'Eliminando...' : 'Confirmar eliminación'}
-                </button>
+                {clientTreatmentRecords.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => handleConfirmDelete(true)}
+                    disabled={deletingClient}
+                    className="px-4 py-2 rounded-xl bg-red-700 hover:bg-red-800 text-white border-2 border-red-800 text-xs font-black cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {deletingClient ? 'Eliminando...' : `Eliminar ficha y ${clientTreatmentRecords.length} sesión(es)`}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleConfirmDelete(false)}
+                    disabled={deletingClient}
+                    className="px-4 py-2 rounded-xl bg-red-700 hover:bg-red-800 text-white border-2 border-red-800 text-xs font-black cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {deletingClient ? 'Eliminando...' : 'Confirmar eliminación'}
+                  </button>
+                )}
               </div>
             </div>
           )}

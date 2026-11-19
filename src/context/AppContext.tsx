@@ -199,7 +199,7 @@ interface AppContextType {
   treatmentRecords: TreatmentRecord[];
   createTreatmentRecord: (record: Omit<TreatmentRecord, 'id' | 'businessId' | 'createdAt'>) => Promise<string>;
   updateClient: (cli: Client) => Promise<void>;
-  deleteClient: (id: string) => Promise<void>;
+  deleteClient: (id: string, deleteTreatmentHistory?: boolean) => Promise<void>;
   createService: (srv: Omit<Service, 'id' | 'businessId' | 'createdAt'>) => Promise<string>;
   updateService: (srv: Service) => Promise<void>;
   deleteService: (id: string) => Promise<void>;
@@ -1225,14 +1225,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
 
   const deleteClient = useCallback(
-    async (id: string) => {
+    async (id: string, deleteTreatmentHistory: boolean = false) => {
       requireCloudSession(user, currentBusinessId);
-      if (treatmentRecords.some((record) => record.clientId === id)) {
-        throw new Error('No se puede eliminar esta ficha porque tiene sesiones en su historial. Conservamos la ficha para no perder los registros de tratamientos.');
+      const linkedTreatmentRecords = treatmentRecords.filter((record) => record.clientId === id);
+
+      if (linkedTreatmentRecords.length > 0 && !deleteTreatmentHistory) {
+        throw new Error('Esta ficha tiene sesiones en su historial. Elegí «Eliminar ficha y su historial» si realmente querés borrar también esas sesiones.');
+      }
+      if (linkedTreatmentRecords.length > 499) {
+        throw new Error('Esta ficha tiene demasiadas sesiones para eliminarlas en una sola operación. Contactá a Iris para realizar una eliminación segura.');
       }
 
       try {
-        await deleteDoc(doc(db, `businesses/${currentBusinessId}/clients`, id));
+        // Delete the client and its treatment records atomically so a failure
+        // never leaves a partially deleted history.
+        const batch = writeBatch(db);
+        linkedTreatmentRecords.forEach((record) => {
+          batch.delete(doc(db, `businesses/${currentBusinessId}/treatmentRecords`, record.id));
+        });
+        batch.delete(doc(db, `businesses/${currentBusinessId}/clients`, id));
+        await batch.commit();
       } catch (err) {
         handleFirestoreError(err, OperationType.DELETE, `businesses/${currentBusinessId}/clients/${id}`);
       }
@@ -1252,6 +1264,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
         return nextClients;
       });
+      if (linkedTreatmentRecords.length > 0) {
+        setTreatmentRecords((prev) => prev.filter((record) => record.clientId !== id));
+      }
     },
     [currentBusinessId, user, treatmentRecords]
   );
