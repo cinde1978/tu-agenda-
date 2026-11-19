@@ -1230,6 +1230,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (treatmentRecords.some((record) => record.clientId === id)) {
         throw new Error('No se puede eliminar esta ficha porque tiene sesiones en su historial. Conservamos la ficha para no perder los registros de tratamientos.');
       }
+
+      try {
+        await deleteDoc(doc(db, `businesses/${currentBusinessId}/clients`, id));
+      } catch (err) {
+        handleFirestoreError(err, OperationType.DELETE, `businesses/${currentBusinessId}/clients/${id}`);
+      }
+
+      // Only update the local view after Firestore confirms the deletion.
       setClients((prev) => {
         const nextClients = prev.filter((c) => c.id !== id);
         try {
@@ -1244,14 +1252,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
         return nextClients;
       });
-
-      if (user && currentBusinessId) {
-        try {
-          await deleteDoc(doc(db, `businesses/${currentBusinessId}/clients`, id));
-        } catch (err) {
-          handleFirestoreError(err, OperationType.DELETE, `businesses/${currentBusinessId}/clients/${id}`);
-        }
-      }
     },
     [currentBusinessId, user, treatmentRecords]
   );
