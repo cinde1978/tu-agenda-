@@ -28,7 +28,7 @@ interface ClientsViewProps {
 }
 
 export function ClientsView({ onSelectAppointment, onNewAppointmentForClient }: ClientsViewProps) {
-  const { clients, allAppointments, deleteClient, business } = useApp();
+  const { clients, allAppointments, treatmentRecords, deleteClient, business } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [clientToEdit, setClientToEdit] = useState<Client | null>(null);
@@ -48,12 +48,12 @@ export function ClientsView({ onSelectAppointment, onNewAppointmentForClient }: 
     );
   });
 
-  const handleDeleteClient = async (client: Client) => {
+  const handleDeleteClient = async (client: Client, deleteTreatmentHistory: boolean = false) => {
     if (deletingClientId) return;
     setDeletingClientId(client.id);
     setDeleteError(null);
     try {
-      await deleteClient(client.id);
+      await deleteClient(client.id, deleteTreatmentHistory);
       setConfirmDeleteId(null);
     } catch (error) {
       const rawMessage = error instanceof Error ? error.message : String(error);
@@ -179,6 +179,7 @@ export function ClientsView({ onSelectAppointment, onNewAppointmentForClient }: 
               0;
             const hasHistoryOrNotes =
               linkedAppointments.length > 0 || Boolean(client.notes?.trim());
+            const clientTreatmentCount = treatmentRecords.filter((record) => record.clientId === client.id).length;
 
             return (
               <div
@@ -258,6 +259,11 @@ export function ClientsView({ onSelectAppointment, onNewAppointmentForClient }: 
                               {client.notes?.trim() ? ' y notas técnicas guardadas' : ''}.
                             </p>
                           )}
+                          {clientTreatmentCount > 0 && (
+                            <p className="text-[11px] font-bold text-red-900 mt-1">
+                              Esta ficha tiene {clientTreatmentCount} sesión(es). Si confirmás «Eliminar ficha y su historial», también se borrarán esas sesiones de forma permanente.
+                            </p>
+                          )}
                         </div>
                       </div>
                       {deleteError?.clientId === client.id && (
@@ -272,14 +278,26 @@ export function ClientsView({ onSelectAppointment, onNewAppointmentForClient }: 
                         >
                           Cancelar
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteClient(client)}
-                          disabled={deletingClientId === client.id}
-                          className="px-3 py-1 rounded-lg bg-red-700 hover:bg-red-800 active:bg-red-900 border border-red-800 text-white text-xs font-black cursor-pointer shadow-xs transition-colors"
-                        >
-                          {deletingClientId === client.id ? 'Eliminando...' : 'Confirmar'}
-                        </button>
+                        {clientTreatmentCount > 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteClient(client, true)}
+                            disabled={deletingClientId === client.id}
+                            className="px-3 py-1 rounded-lg bg-red-700 hover:bg-red-800 active:bg-red-900 border border-red-800 text-white text-xs font-black cursor-pointer shadow-xs transition-colors"
+                            title="Elimina la ficha y todas sus sesiones de tratamiento"
+                          >
+                            {deletingClientId === client.id ? 'Eliminando...' : `Eliminar ficha y ${clientTreatmentCount} sesión(es)`}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteClient(client)}
+                            disabled={deletingClientId === client.id}
+                            className="px-3 py-1 rounded-lg bg-red-700 hover:bg-red-800 active:bg-red-900 border border-red-800 text-white text-xs font-black cursor-pointer shadow-xs transition-colors"
+                          >
+                            {deletingClientId === client.id ? 'Eliminando...' : 'Confirmar'}
+                          </button>
+                        )}
                       </div>
                     </div>
                   )}
