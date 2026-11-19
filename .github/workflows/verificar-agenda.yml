@@ -6,6 +6,7 @@ on:
       - estabilizacion-soham
       - ficha-digital-clientes
       - correccion-eliminar-clientes
+      - corregir-borrado-directorio
   pull_request:
     branches:
       - main
