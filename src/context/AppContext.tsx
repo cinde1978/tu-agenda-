@@ -1180,7 +1180,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const cleanRecord = JSON.parse(JSON.stringify(newRecord)) as TreatmentRecord;
       try {
         await setDoc(doc(db, `businesses/${currentBusinessId}/treatmentRecords`, id), cleanRecord);
-        setTreatmentRecords((prev) => [cleanRecord, ...prev]);
         return id;
       } catch (err) {
         handleFirestoreError(err, OperationType.CREATE, `businesses/${currentBusinessId}/treatmentRecords/${id}`);
