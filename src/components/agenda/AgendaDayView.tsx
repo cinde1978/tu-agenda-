@@ -691,6 +691,15 @@ export function AgendaDayView({
                         <span className="truncate">{apt.staffName}</span>
                       </span>
 
+                      {apt.notes?.trim() && item.height < 60 && (
+                        <span
+                          className="inline-flex items-center rounded bg-blue-50 border border-blue-200 px-1 py-0.5 text-[9px] font-black text-blue-900 shrink-0"
+                          title={`Observaciones: ${apt.notes}`}
+                        >
+                          Nota
+                        </span>
+                      )}
+
                       <span className="ml-auto font-black text-[#0F172A] text-xs">
                         {formatCurrency(apt.price, business?.currency)}
                         {apt.remainingBalance > 0 && (
