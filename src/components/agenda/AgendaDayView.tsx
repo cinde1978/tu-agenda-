@@ -632,7 +632,7 @@ export function AgendaDayView({
                   }`}
                   title={`${apt.clientName} - ${apt.serviceName} (${apt.time} a ${endTime} hs) [${
                     BRANCH_SHORT_NAMES[apt.branchId || 'sucursal_1']
-                  }]`}
+                  }]${apt.notes ? ` · Observaciones: ${apt.notes}` : ''}`}
                 >
                   <div
                     className="absolute left-0 top-0 bottom-0 w-2.5"
@@ -700,6 +700,11 @@ export function AgendaDayView({
                         )}
                       </span>
                     </div>
+                    {apt.notes?.trim() && item.height >= 60 && (
+                      <div className="mt-1 text-[10px] leading-tight font-semibold text-slate-700 truncate" title={apt.notes}>
+                        <span className="font-black text-blue-800">Nota:</span> {apt.notes}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
