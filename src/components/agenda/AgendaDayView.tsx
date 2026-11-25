@@ -632,7 +632,7 @@ export function AgendaDayView({
                   }`}
                   title={`${apt.clientName} - ${apt.serviceName} (${apt.time} a ${endTime} hs) [${
                     BRANCH_SHORT_NAMES[apt.branchId || 'sucursal_1']
-                  }]`}
+                  }]${apt.notes ? ` · Observaciones: ${apt.notes}` : ''}`}
                 >
                   <div
                     className="absolute left-0 top-0 bottom-0 w-2.5"
@@ -691,6 +691,15 @@ export function AgendaDayView({
                         <span className="truncate">{apt.staffName}</span>
                       </span>
 
+                      {apt.notes?.trim() && item.height < 60 && (
+                        <span
+                          className="inline-flex items-center rounded bg-blue-50 border border-blue-200 px-1 py-0.5 text-[9px] font-black text-blue-900 shrink-0 max-w-[140px]"
+                          title={`Observaciones: ${apt.notes}`}
+                        >
+                          <span className="truncate">Nota: {apt.notes}</span>
+                        </span>
+                      )}
+
                       <span className="ml-auto font-black text-[#0F172A] text-xs">
                         {formatCurrency(apt.price, business?.currency)}
                         {apt.remainingBalance > 0 && (
@@ -700,6 +709,11 @@ export function AgendaDayView({
                         )}
                       </span>
                     </div>
+                    {apt.notes?.trim() && item.height >= 60 && (
+                      <div className="mt-1 text-[10px] leading-tight font-semibold text-slate-700 truncate" title={apt.notes}>
+                        <span className="font-black text-blue-800">Nota:</span> {apt.notes}
+                      </div>
+                    )}
                   </div>
                 </div>
               );

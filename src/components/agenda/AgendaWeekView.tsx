@@ -652,6 +652,12 @@ export function AgendaWeekView({
                               <span className="truncate">{apt.serviceName}</span>
                             </div>
 
+                            {apt.notes?.trim() && (
+                              <div className="text-[10px] leading-tight text-slate-700 font-semibold line-clamp-2" title={apt.notes}>
+                                <span className="font-black text-blue-800">Nota:</span> {apt.notes}
+                              </div>
+                            )}
+
                             {selectedStaffId === 'todos' && (
                               <div className="pt-1 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-700 font-bold">
                                 <span className="truncate flex items-center gap-1">

@@ -91,7 +91,9 @@ export function AppointmentModal({
   }, [allAppointments, appointments]);
 
   const selectableServices = useMemo(() => {
-    return services.filter((s) => s.active || s.id === appointmentToEdit?.serviceId);
+    return services
+      .filter((s) => s.active || s.id === appointmentToEdit?.serviceId)
+      .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
   }, [services, appointmentToEdit?.serviceId]);
 
   // Form states
@@ -1307,7 +1309,7 @@ export function AppointmentModal({
               <select
                 value={serviceId}
                 onChange={(e) => handleServiceChange(e.target.value)}
-                className="w-full text-xs font-black p-2.5 rounded-xl border-2 border-slate-300 bg-white focus:border-[#1E3A8A] outline-none text-[#0F172A]"
+                className="w-full text-sm font-black p-2.5 rounded-xl border-2 border-slate-300 bg-white focus:border-[#1E3A8A] outline-none text-[#0F172A]"
               >
                 {selectableServices.length > 0 && (
                   <option value="">-- Seleccionar servicio --</option>

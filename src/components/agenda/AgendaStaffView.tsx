@@ -849,7 +849,7 @@ export function AgendaStaffView({
                             width: `calc(${item.widthPercent}% - 6px)`,
                           }}
                           className="pointer-events-auto rounded-xl border-2 border-slate-300 bg-white hover:border-blue-600 hover:shadow-md transition-all cursor-pointer overflow-hidden flex flex-col justify-between group shadow-xs"
-                          title={`Ocupado: ${apt.clientName} - ${apt.serviceName} (${apt.time} a ${endTime} hs) [${branchTag}]`}
+                          title={`Ocupado: ${apt.clientName} - ${apt.serviceName} (${apt.time} a ${endTime} hs) [${branchTag}]${apt.notes?.trim() ? ` · Observaciones: ${apt.notes}` : ""}`}
                         >
                           <div
                             className="absolute left-0 top-0 bottom-0 w-2"
@@ -872,7 +872,20 @@ export function AgendaStaffView({
                               <div className="flex items-center gap-1 text-[10px] font-bold text-slate-700 truncate mt-0.5">
                                 <Sparkles className="w-2.5 h-2.5 text-blue-600 shrink-0" />
                                 <span className="truncate">{apt.serviceName}</span>
+                                {apt.notes?.trim() && item.height < 58 && (
+                                  <span
+                                    className="inline-flex items-center rounded bg-blue-50 border border-blue-200 px-1 py-0.5 text-[8px] font-black text-blue-900 shrink-0"
+                                    title={`Observaciones: ${apt.notes}`}
+                                  >
+                                    <span className="max-w-[90px] truncate">Nota: {apt.notes}</span>
+                                  </span>
+                                )}
                               </div>
+                              {apt.notes?.trim() && item.height >= 58 && (
+                                <div className="text-[9px] leading-tight text-slate-700 font-semibold truncate mt-0.5" title={apt.notes}>
+                                  <span className="font-black text-blue-800">Nota:</span> {apt.notes}
+                                </div>
+                              )}
                             </div>
 
                             <div className="flex items-center justify-between text-[10px] font-black text-slate-900 border-t border-slate-100 pt-0.5 mt-0.5">
