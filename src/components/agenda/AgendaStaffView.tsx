@@ -873,6 +873,11 @@ export function AgendaStaffView({
                                 <Sparkles className="w-2.5 h-2.5 text-blue-600 shrink-0" />
                                 <span className="truncate">{apt.serviceName}</span>
                               </div>
+                              {apt.notes?.trim() && item.height >= 58 && (
+                                <div className="text-[9px] leading-tight text-slate-700 font-semibold truncate mt-0.5" title={apt.notes}>
+                                  <span className="font-black text-blue-800">Nota:</span> {apt.notes}
+                                </div>
+                              )}
                             </div>
 
                             <div className="flex items-center justify-between text-[10px] font-black text-slate-900 border-t border-slate-100 pt-0.5 mt-0.5">
