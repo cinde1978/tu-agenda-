@@ -872,6 +872,14 @@ export function AgendaStaffView({
                               <div className="flex items-center gap-1 text-[10px] font-bold text-slate-700 truncate mt-0.5">
                                 <Sparkles className="w-2.5 h-2.5 text-blue-600 shrink-0" />
                                 <span className="truncate">{apt.serviceName}</span>
+                                {apt.notes?.trim() && item.height < 58 && (
+                                  <span
+                                    className="inline-flex items-center rounded bg-blue-50 border border-blue-200 px-1 py-0.5 text-[8px] font-black text-blue-900 shrink-0"
+                                    title={`Observaciones: ${apt.notes}`}
+                                  >
+                                    Nota
+                                  </span>
+                                )}
                               </div>
                               {apt.notes?.trim() && item.height >= 58 && (
                                 <div className="text-[9px] leading-tight text-slate-700 font-semibold truncate mt-0.5" title={apt.notes}>
