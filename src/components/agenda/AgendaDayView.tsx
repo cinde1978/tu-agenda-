@@ -696,7 +696,7 @@ export function AgendaDayView({
                           className="inline-flex items-center rounded bg-blue-50 border border-blue-200 px-1 py-0.5 text-[9px] font-black text-blue-900 shrink-0"
                           title={`Observaciones: ${apt.notes}`}
                         >
-                          Nota
+                          <span className="truncate">Nota: {apt.notes}</span>
                         </span>
                       )}
 
