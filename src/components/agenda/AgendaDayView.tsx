@@ -693,7 +693,7 @@ export function AgendaDayView({
 
                       {apt.notes?.trim() && item.height < 60 && (
                         <span
-                          className="inline-flex items-center rounded bg-blue-50 border border-blue-200 px-1 py-0.5 text-[9px] font-black text-blue-900 shrink-0"
+                          className="inline-flex items-center rounded bg-blue-50 border border-blue-200 px-1 py-0.5 text-[9px] font-black text-blue-900 shrink-0 max-w-[140px]"
                           title={`Observaciones: ${apt.notes}`}
                         >
                           <span className="truncate">Nota: {apt.notes}</span>
