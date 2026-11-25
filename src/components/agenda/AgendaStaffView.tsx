@@ -849,7 +849,7 @@ export function AgendaStaffView({
                             width: `calc(${item.widthPercent}% - 6px)`,
                           }}
                           className="pointer-events-auto rounded-xl border-2 border-slate-300 bg-white hover:border-blue-600 hover:shadow-md transition-all cursor-pointer overflow-hidden flex flex-col justify-between group shadow-xs"
-                          title={`Ocupado: ${apt.clientName} - ${apt.serviceName} (${apt.time} a ${endTime} hs) [${branchTag}]`}
+                          title={`Ocupado: ${apt.clientName} - ${apt.serviceName} (${apt.time} a ${endTime} hs) [${branchTag}]${apt.notes?.trim() ? ` · Observaciones: ${apt.notes}` : ""}`}
                         >
                           <div
                             className="absolute left-0 top-0 bottom-0 w-2"
